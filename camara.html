@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ARCHIVAX - CAMARA</title>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
+<style>
+  body { margin:0; background:black; color:white; font-family:monospace; overflow:hidden }
+  #video { position:absolute; width:100%; height:100%; object-fit:cover; transform: scaleX(-1); }
+  #canvas { position:absolute; width:100%; height:100%; }
+  #ui { position:absolute; top:0; width:100%; padding:10px; box-sizing:border-box; display:flex; justify-content:space-between; z-index:10 }
+  #evp { position:absolute; bottom:90px; width:100%; text-align:center; z-index:10; }
+  #evp-text { background:rgba(255,0,0,0.8); color:white; display:inline-block; padding:6px 12px; border-radius:20px; font-size:13px; min-width:200px; }
+  #controls { position:absolute; bottom:15px; width:100%; display:flex; justify-content:center; gap:20px; z-index:10 }
+ .btn { width:60px; height:60px; border-radius:50%; border:2px solid #ff0000; background:black; color:white; font-size:20px; }
+ .btn-rec { background:#ff0000; }
+</style>
+</head>
+<body>
+<video id="video" autoplay playsinline></video>
+<canvas id="canvas"></canvas>
+
+<div id="ui">
+  <button onclick="location.href='/'" style="background:black; border:1px solid #ff0000; color:#ff0000; padding:6px 10px;">← SALIR</button>
+  <button onclick="cambiarCamara()" style="background:black; border:1px solid white; color:white; padding:6px 10px;">↻ CAMARA</button>
+  <span id="timer" style="background:#ff0000; padding:4px 8px; border-radius:6px; font-size:11px;">INVITADO 10:00</span>
+</div>
+
+<div id="evp"><span id="evp-text">🎙️ Escaneando EVP... Silencio total</span></div>
+
+<div id="controls">
+  <button class="btn" onclick="tomarFoto()">📸</button>
+  <button class="btn btn-rec" id="btnRec" onclick="grabar()">●</button>
+  <button class="btn" onclick="toggleAudio()">🎧</button>
+</div>
+
+<script>
+let facing = "environment";
+let stream, recorder, chunks=[];
+let audioContext, analyser;
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+const evpText = document.getElementById('evp-text');
+
+async function iniciar() {
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  stream = await navigator.mediaDevices.getUserMedia({
+    video: { facingMode: facing, width:1280, height:720 },
+    audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:true }
+  });
+  video.srcObject = stream;
+
+  // AUDIO EVP SIN ECO
+  audioContext = new AudioContext();
+  const src = audioContext.createMediaStreamSource(stream);
+  analyser = audioContext.createAnalyser();
+  const gain = audioContext.createGain();
+  gain.gain.value = 3.5; // amplifica lo que no se escucha
+  const filter = audioContext.createBiquadFilter();
+  filter.type = "highpass"; filter.frequency.value = 80; // saca eco grave
+  src.connect(filter); filter.connect(gain); gain.connect(analyser);
+
+  // TRANSCRIPCION VOZ REAL (EVP)
+  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(Speech){
+    const rec = new Speech(); rec.lang="es-AR"; rec.continuous=true; rec.interimResults=true;
+    rec.onresult = e => {
+      let t = e.results[e.results.length-1][0].transcript;
+      if(e.results[e.results.length-1][0].confidence > 0.6){
+        evpText.innerHTML = `👻 VOZ DETECTADA: "${t.toUpperCase()}"`;
+        evpText.style.background = "#ff0000";
+      }
+    };
+    rec.start();
+  }
+
+  // POSE ROJO - MUÑECO REAL EN MOVIMIENTO
+  const pose = new Pose({locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});
+  pose.setOptions({modelComplexity:1, smoothLandmarks:true, minDetectionConfidence:0.6, minTrackingConfidence:0.6});
+  pose.onResults(onResults);
+  const camera = new Camera(video, {
+    onFrame: async () => { await pose.send({image: video}); },
+    width:1280, height:720
+  });
+  camera.start();
+}
+
+function onResults(results){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.save();
+  ctx.scale(-1,1); ctx.translate(-canvas.width,0);
+  // DIBUJA SOLO SI HAY PERSONA
+  if(results.poseLandmarks){
+    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {color:'#ff0000', lineWidth:4});
+    drawLandmarks(ctx, results.poseLandmarks, {color:'#ff0000', lineWidth:2, radius:4});
+  }
+  // MARCA DE AGUA
+  ctx.setTransform(1,0,0,1,0,0);
+  ctx.font = "12px monospace"; ctx.fillStyle="rgba(255,255,255,0.4)";
+  ctx.fillText("archiviax.com.ar", canvas.width-130, canvas.height-15);
+  ctx.restore();
+}
+
+function cambiarCamara(){
+  facing = facing=="environment"? "user" : "environment";
+  stream.getTracks().forEach(t=>t.stop()); iniciar();
+}
+function tomarFoto(){
+  const c = document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight;
+  const cx = c.getContext('2d');
+  cx.drawImage(video,0,0); cx.drawImage(canvas,0,0,c.width,c.height);
+  cx.fillStyle="rgba(255,255,255,0.5)"; cx.fillText("archiviax.com.ar", 20, c.height-20);
+  const a = document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.jpg`; a.href=c.toDataURL('image/jpeg',0.9); a.click();
+  evpText.innerHTML="📸 FOTO GUARDADA";
+}
+function grabar(){
+  if(recorder && recorder.state=="recording"){
+    recorder.stop(); document.getElementById('btnRec').innerHTML="●"; return;
+  }
+  chunks=[]; recorder = new MediaRecorder(stream, {mimeType:'video/webm'});
+  recorder.ondataavailable=e=>chunks.push(e.data);
+  recorder.onstop=()=>{
+    const blob = new Blob(chunks, {type:'video/webm'});
+    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ARCHIVAX_${Date.now()}.webm`; a.click();
+  };
+  recorder.start(); document.getElementById('btnRec').innerHTML="■";
+}
+function toggleAudio(){ audioContext.state=="running"? audioContext.suspend() : audioContext.resume(); }
+
+iniciar();
+
+// TIMER 10 MIN INVITADO (si no esta registrado)
+let tiempo=600;
+if(!localStorage.getItem('archiviax-user')){
+  setInterval(()=>{
+    tiempo--; let m=Math.floor(tiempo/60), s=tiempo%60;
+    document.getElementById('timer').innerHTML=`INVITADO ${m}:${s.toString().padStart(2,'0')}`;
+    if(tiempo<=0){ stream.getTracks().forEach(t=>t.stop()); location.href='/registro.html'; }
+  },1000);
+} else { document.getElementById('timer').innerHTML="REGISTRADO - ILIMITADO"; document.getElementById('timer').style.background="#00ff41"; document.getElementById('timer').style.color="black"; }
+</script>
+</body>
+  </html>
