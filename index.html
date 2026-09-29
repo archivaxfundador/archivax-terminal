@@ -1,18 +1,54 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>ARCHIVAX</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHIVAX - TERMINAL OFICIAL</title>
 <style>
-body { background: #000; color: #fff; font-family: Arial; text-align: center; padding: 60px; }
-h1 { letter-spacing: 15px; border: 1px solid #fff; padding: 30px; }
-p { color: #888; margin-top: 20px; }
-a { color: #fff; border: 1px solid #fff; padding: 12px 25px; text-decoration: none; display: inline-block; margin-top: 40px; }
-a:hover { background: #fff; color: #000; }
+body{margin:0;background:black;color:#00ff41;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{border:1px solid #00ff41;border-radius:16px;padding:28px;width:90%;max-width:360px;text-align:center;box-shadow:0 0 20px rgba(0,255,65,0.2)}
+h1{letter-spacing:4px;margin:0 0 8px}
+input{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#111;color:white;box-sizing:border-box}
+.btn{width:100%;padding:14px;border-radius:10px;border:none;font-weight:bold;margin-top:10px;cursor:pointer}
+.btn-green{background:#00ff41;color:black}
+.btn-outline{background:transparent;border:1px solid #00ff41;color:#00ff41}
+.btn-red{background:transparent;border:1px solid #ff0000;color:#ff0000;font-size:12px}
+small{color:#555;font-size:9px}
 </style>
 </head>
 <body>
-<h1>ARCHIVAX</h1>
-<p>SISTEMA SICOFONIA - TERMINAL OFICIAL</p>
-<a href="login.html">INGRESAR</a>
+<div class="box">
+  <h1>ARCHIVAX</h1>
+  <p style="font-size:10px;color:#888;margin-bottom:20px">TERMINAL OFICIAL - SICOFONIA REAL</p>
+  
+  <input id="email" placeholder="Email">
+  <input id="pass" type="password" placeholder="Contraseña">
+  <button class="btn btn-green" onclick="login()">INICIAR SESIÓN</button>
+  <button class="btn btn-outline" onclick="registro()">REGISTRARSE</button>
+  
+  <div style="margin:18px 0;border-top:1px dashed #333"></div>
+  
+  <button class="btn btn-red" onclick="location.href='/camara.html'">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
+  <p style="font-size:10px;color:#666;margin-top:8px">Cámara roja + Audio EVP real. Se guarda en tu celu.</p>
+  
+  <small>Copyright ARCHIVAX.COM.AR 2026</small>
+</div>
+
+<script>
+function registro(){
+  const e=document.getElementById('email').value, p=document.getElementById('pass').value;
+  if(!e||!p){alert('Completa email y contraseña');return}
+  localStorage.setItem('archiviax-user', JSON.stringify({email:e, pass:p, date:Date.now()}));
+  alert('Cuenta creada! Ahora inicia sesión');
+}
+function login(){
+  const e=document.getElementById('email').value, p=document.getElementById('pass').value;
+  const u=localStorage.getItem('archiviax-user');
+  if(!u){alert('No tenes cuenta, registrate primero');return}
+  const data=JSON.parse(u);
+  if(data.email==e && data.pass==p){ location.href='/camara.html'; }
+  else{ alert('Datos incorrectos'); }
+}
+</script>
 </body>
 </html>
