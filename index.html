@@ -1,62 +1,78 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVAX</title>
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ARCHIVAX - TERMINAL OFICIAL</title>
 <style>
-body{margin:0;background:black;color:#ff0000;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.container{width:90%;max-width:380px;border:1px solid #ff0000;border-radius:20px;padding:25px;text-align:center;box-shadow:0 0 25px rgba(255,0,0,0.25)}
-h1{letter-spacing:6px;margin:0 0 5px 0}
-.sub{font-size:9px;color:#666;margin-bottom:20px;letter-spacing:2px}
-input{width:100%;padding:12px;background:#0a0a0a;border:1px solid #330000;color:white;border-radius:10px;margin:8px 0;box-sizing:border-box}
-.btn-main{width:100%;padding:14px;background:#00ff00;color:black;font-weight:bold;border:none;border-radius:12px;cursor:pointer;margin-top:10px;letter-spacing:2px}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
-.card{border:1px solid #330000;background:rgba(255,0,0,0.05);border-radius:12px;padding:15px 10px;cursor:pointer;transition:0.2s}
-.card:hover{border-color:#ff0000;box-shadow:0 0 15px rgba(255,0,0,0.3);transform:scale(1.02)}
-.card b{display:block;font-size:12px;margin-top:5px}
-.card span{font-size:18px}
-.divisor{margin:20px 0;border:none;border-top:1px dashed #330000}
-.guest{font-size:10px;color:#666;margin-top:10px}
+body{margin:0;background:#050505;color:#00ff41;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.box{border:1px solid #00ff41;border-radius:16px;padding:28px;width:90%;max-width:380px;text-align:center;box-shadow:0 0 25px rgba(0,255,65,0.2)}
+h1{letter-spacing:6px;margin:0;font-size:28px}
+.sub{font-size:9px;letter-spacing:3px;color:#666;margin:8px 0 20px}
+.tabs{display:flex;gap:8px;margin-bottom:15px}
+.tab{flex:1;padding:10px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;cursor:pointer;font-weight:bold;font-size:12px}
+.tab.active{background:#00ff41;color:#000;border-color:#00ff41}
+input{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #333;background:#111;color:#fff;box-sizing:border-box}
+.btn{width:100%;padding:14px;border-radius:10px;border:none;font-weight:900;cursor:pointer;margin-top:8px}
+.btn-green{background:#00ff41;color:#000}
+.btn-red{background:transparent;border:1px solid #ff4444;color:#ff4444;font-size:11px}
+.msg{margin-top:12px;font-size:11px;color:#ff0;min-height:16px}
+small{color:#333;font-size:9px;display:block;margin-top:15px}
 </style>
 </head>
 <body>
-<div class="container">
-  <h1>ARCHIVAX</h1>
-  <div class="sub">TERMINAL DE EVIDENCIA PARANORMAL</div>
+<div class="box">
+<h1>ARCHIVAX</h1>
+<div class="sub">TERMINAL DE INVESTIGACIÓN - V2 BLINDADA</div>
 
-  <input type="email" id="email" placeholder="Email">
-  <input type="password" id="pass" placeholder="Contraseña">
-  <button class="btn-main" onclick="entrar()">ENTRAR [10:00]</button>
+<div class="tabs">
+<button id="tLogin" class="tab active" onclick="setMode('login')">LOGIN</button>
+<button id="tReg" class="tab" onclick="setMode('reg')">REGISTRO</button>
+</div>
 
-  <hr class="divisor">
+<input id="email" placeholder="Email">
+<input id="pass" type="password" placeholder="Contraseña (min 6)">
+<div id="msg" class="msg"></div>
 
-  <div style="font-size:10px;color:#ff0000;letter-spacing:3px;margin-bottom:10px">MODO INVITADO - SIN REGISTRO</div>
-  <div class="grid">
-    <div class="card" onclick="location.href='camara.html'">
-      <span>👁️</span><b>CAMARA ROJA</b><div style="font-size:9px;color:#666">Muñeco MediaPipe</div>
-    </div>
-    <div class="card" onclick="location.href='evp.html'">
-      <span>🎙️</span><b>EVP EXTREMO</b><div style="font-size:9px;color:#666">X8 Sin Eco</div>
-    </div>
-    <div class="card" onclick="location.href='llamada.html'">
-      <span>☎️</span><b>LA LINEA</b><div style="font-size:9px;color:#666">Llamada al otro lado</div>
-    </div>
-    <div class="card" onclick="location.href='ouija-evp.html'">
-      <span>👻</span><b>OUIJA EVP</b><div style="font-size:9px;color:#666">Movida por voz</div>
-    </div>
-  </div>
+<button class="btn btn-green" id="btnMain" onclick="doAuth()">ENTRAR A LA TERMINAL</button>
 
-  <div class="guest">Modo invitado 10 min • Todo se guarda en tu celular<br>archiviax.com.ar</div>
+<div style="margin:18px 0;border-top:1px dashed #222"></div>
+
+<button class="btn btn-red" onclick="doGuest()">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
+<p style="font-size:9px;color:#666">Cámara + Audio EVP extremo. Después se bloquea tu IP.</p>
+<small>archiviax.com.ar © 2026 - Sistema KV Seguro</small>
 </div>
 
 <script>
-function entrar(){
-  const e=document.getElementById('email').value;
-  const p=document.getElementById('pass').value;
-  if(!e||!p){ alert('Poné email y pass'); return; }
-  localStorage.setItem('archiviax_user', JSON.stringify({email:e, tiempo:600}));
-  location.href='camara.html';
+let mode='login';
+function setMode(m){
+ mode=m;
+ document.getElementById('tLogin').className=m=='login'?'tab active':'tab';
+ document.getElementById('tReg').className=m=='reg'?'tab active':'tab';
+ document.getElementById('btnMain').innerText=m=='login'?'ENTRAR A LA TERMINAL':'CREAR CUENTA GRATIS';
+}
+async function doAuth(){
+ const email=document.getElementById('email').value.trim();
+ const pass=document.getElementById('pass').value.trim();
+ const msg=document.getElementById('msg');
+ if(!email||pass.length<6){msg.innerText='Completa email y clave min 6';return}
+ msg.innerText='Conectando...';
+ const url=mode=='login'?'/api/login':'/api/register';
+ const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,pass, fp:getFP()})});
+ const j=await r.json();
+ if(j.ok){ location.href='/camara.html'; }
+ else{ msg.innerText=j.error||'Error'; }
+}
+async function doGuest(){
+ const r=await fetch('/api/guest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fp:getFP()})});
+ const j=await r.json();
+ if(j.ok) location.href='/camara.html';
+ else alert(j.error);
+}
+function getFP(){
+ let fp=localStorage.getItem('archiviax-fp');
+ if(!fp){ fp='fp_'+Math.random().toString(36).slice(2)+Date.now(); localStorage.setItem('archiviax-fp',fp); }
+ return fp;
 }
 </script>
 </body>
