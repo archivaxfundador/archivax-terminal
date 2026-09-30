@@ -1,125 +1,167 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-<title>CAMARA EVP - ARCHIVAX</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>CAMARA SLS - ARCHIVAX</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
 #wrap{position:relative;width:100vw;height:100vh}
 #video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-#overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
-.top{position:absolute;top:0;left:0;right:0;padding:10px;background:linear-gradient(#000,transparent);display:flex;justify-content:space-between;z-index:10;font-size:10px}
+#overlay{position:absolute;top:0;left:0;width:100%;height:100%}
+.top{position:absolute;top:0;left:0;right:0;padding:10px;background:#000c;display:flex;justify-content:space-between;z-index:10;font-size:10px}
 .btns{position:absolute;bottom:0;left:0;right:0;padding:12px;background:linear-gradient(transparent,#000);display:flex;gap:8px;z-index:10}
 .btn{flex:1;padding:14px;border-radius:10px;border:1px solid #00ff41;background:#000;color:#00ff41;font-weight:900;font-size:11px}
-.btn.rec{background:#f00;color:#fff;border-color:#f00}
-#evpBar{position:absolute;left:10px;top:60px;width:6px;height:200px;background:#111;border:1px solid #333;z-index:10}
-#evpFill{width:100%;background:#f00;position:absolute;bottom:0;height:0%;transition:0.1s}
-#msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#000a;border:1px solid #f00;color:#f00;padding:8px 14px;border-radius:20px;font-size:12px;display:none;z-index:20}
+.btn.active{background:#00ff41;color:#000}
+#evpPanel{position:absolute;left:10px;top:50px;width:80px;background:#000a;border:1px solid #333;padding:6px;border-radius:8px;z-index:10;text-align:center}
+#evpFill{width:100%;height:8px;background:#111;margin-top:4px;position:relative;overflow:hidden}
+#evpFill div{height:100%;background:#f00;width:0%;transition:0.05s}
+#slider{position:absolute;right:10px;top:50px;z-index:10;background:#000a;padding:8px;border-radius:8px;border:1px solid #333}
+#slider input{width:100px}
+#msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#f00;color:#fff;padding:10px 18px;border-radius:22px;font-size:13px;display:none;z-index:20;box-shadow:0 0 20px #f00}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
 </head>
 <body>
 <div id="wrap">
 <video id="video" autoplay playsinline muted></video>
 <canvas id="overlay"></canvas>
-<div id="evpBar"><div id="evpFill"></div></div>
-<div class="top">
-<div>👁️ CAMARA EVP - SLS RED MODE</div>
-<div><span id="audioDb">-∞ dB</span> | <span id="entity">ESCANEANDO...</span></div>
-</div>
+<div class="top"><div>👁️ SLS RED - SENSIBLE</div><div id="status">CARGANDO IA...</div></div>
+<div id="evpPanel"><div style="font-size:8px">EVP AUDIO</div><div id="db">-- dB</div><div id="evpFill"><div id="evpBar"></div></div><div id="voice" style="font-size:8px;color:#f00;margin-top:4px"></div></div>
+<div id="slider"><div style="font-size:8px">SENSIBILIDAD</div><input type="range" id="sens" min="0.05" max="0.5" step="0.05" value="0.15"><div id="sensVal" style="font-size:8px">0.15 BAJA= +ENTIDADES</div></div>
 <div id="msg">👻 ENTIDAD DETECTADA</div>
 <div class="btns">
 <button class="btn" onclick="location.href='/menu.html'">← MENU</button>
-<button class="btn" id="btnAudio" onclick="toggleAudio()">🎙️ AUDIO EVP ON</button>
-<button class="btn rec" id="btnRec" onclick="toggleRec()">● REC</button>
+<button class="btn active" id="btnClean" onclick="toggleClean()">🎧 LIMPIAR RUIDO: ON</button>
+<button class="btn" id="btnRec" onclick="toggleRec()">● REC</button>
 </div>
 </div>
-
 <script>
 let video=document.getElementById('video'), overlay=document.getElementById('overlay'), ctx=overlay.getContext('2d');
-let detector, raf, audioCtx, analyser, mic, gainNode, filterHigh, filterLow, isRec=false, mediaRecorder, chunks=[];
-let audioEnabled=true;
+let detector, audioCtx, analyser, gainNode, high, low, notch, compressor, clean=true;
+let lastPoses=[], lastDetection=0;
+let sensSlider=document.getElementById('sens');
 
 async function init(){
- overlay.width=window.innerWidth; overlay.height=window.innerHeight;
- // 1. CAMARA TRASERA con config pro
+ overlay.width=innerWidth; overlay.height=innerHeight;
  const stream=await navigator.mediaDevices.getUserMedia({
-  video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},
+  video:{facingMode:{ideal:'environment'}, width:{ideal:1280}},
   audio:{
-   echoCancellation:true,
-   noiseSuppression:true,
-   autoGainControl:false,
-   sampleRate:48000,
-   channelCount:1
+   echoCancellation:{ideal:true}, noiseSuppression:{ideal:true}, autoGainControl:{ideal:false},
+   sampleRate:48000, channelCount:1, noiseSuppression:true
   }
  });
  video.srcObject=stream;
-
- // 2. AUDIO EVP MEJORADO - quita eco y amplifica voces no audibles
- audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});
- let source=audioCtx.createMediaStreamSource(stream);
- filterHigh=audioCtx.createBiquadFilter(); filterHigh.type='highpass'; filterHigh.frequency.value=80; // quita zumbido
- filterLow=audioCtx.createBiquadFilter(); filterLow.type='lowpass'; filterLow.frequency.value=4000; // deja pasar voz espectral
- gainNode=audioCtx.createGain(); gainNode.gain.value=3.5; // sube 350% voces bajas
- analyser=audioCtx.createAnalyser(); analyser.fftSize=2048;
- source.connect(filterHigh); filterHigh.connect(filterLow); filterLow.connect(gainNode); gainNode.connect(analyser);
- // no conectamos a destino para evitar feedback
-
- // 3. SLS DETECTOR - Pose Detection
+ // AUDIO EVP PRO - sin eco y solo voces
+ audioCtx=new AudioContext({sampleRate:48000});
+ let src=audioCtx.createMediaStreamSource(stream);
+ notch=audioCtx.createBiquadFilter(); notch.type='notch'; notch.frequency.value=50; notch.Q.value=10; // quita zumbido luz
+ high=audioCtx.createBiquadFilter(); high.type='highpass'; high.frequency.value=120; // saca eco grave
+ low=audioCtx.createBiquadFilter(); low.type='bandpass'; low.frequency.value=1200; low.Q.value=0.7; // solo rango voz espectral 300-3000
+ compressor=audioCtx.createDynamicsCompressor(); compressor.threshold.value=-50; compressor.knee.value=40; compressor.ratio.value=12; compressor.attack.value=0; compressor.release.value=0.25;
+ gainNode=audioCtx.createGain(); gainNode.gain.value=4.5; // sube voces que no se oyen
+ analyser=audioCtx.createAnalyser(); analyser.fftSize=2048; analyser.smoothingTimeConstant=0.8;
+ src.connect(notch); notch.connect(high); high.connect(low); low.connect(compressor); compressor.connect(gainNode); gainNode.connect(analyser);
+ // IA SLS
  await tf.ready();
- const model=poseDetection.SupportedModels.BlazePose;
- detector=await poseDetection.createDetector(model,{runtime:'tfjs',modelType:'lite',enableSmoothing:true});
- detectLoop();
+ detector=await poseDetection.createDetector(poseDetection.SupportedModels.BlazePose,{runtime:'tfjs',modelType:'lite',enableSmoothing:true});
+ document.getElementById('status').innerText='IA LISTA - MOVÉ LA CÁMARA LENTO';
+ loop();
  audioLoop();
 }
 function audioLoop(){
  if(!analyser) return;
  let data=new Uint8Array(analyser.frequencyBinCount);
  analyser.getByteFrequencyData(data);
- let avg=data.slice(5,100).reduce((a,b)=>a+b,0)/95; // rango voz EVP
- document.getElementById('evpFill').style.height=Math.min(100, avg*1.5)+'%';
- document.getElementById('audioDb').innerText=(avg>30?'🔴 ':'⚫ ')+avg.toFixed(0)+' EVP';
- if(avg>65){ document.getElementById('entity').innerText='VOZ DETECTADA!'; document.getElementById('entity').style.color='#f00'; }
+ // solo mira rango EVP 300hz-3000hz
+ let evpRange=data.slice(12,120);
+ let avg=evpRange.reduce((a,b)=>a+b,0)/evpRange.length;
+ let peak=Math.max(...evpRange);
+ document.getElementById('db').innerText=avg.toFixed(0)+' EVP';
+ document.getElementById('evpBar').style.width=Math.min(100, avg*2)+'%';
+ // DETECCION DE VOZ NO AUDIBLE
+ if(peak>70 && avg>25){
+  document.getElementById('voice').innerText='👻 VOZ!! '+peak.toFixed(0);
+  document.getElementById('voice').style.color='#f00';
+  if(Date.now()-lastDetection>2000){
+   // vibra si hay EVP
+   if(navigator.vibrate) navigator.vibrate(200);
+   lastDetection=Date.now();
+  }
+ } else {
+  document.getElementById('voice').innerText=clean?'LIMPIO':'RUIDO';
+  document.getElementById('voice').style.color='#0f0';
+ }
  requestAnimationFrame(audioLoop);
 }
-async function detectLoop(){
+async function loop(){
  if(detector && video.readyState>=2){
-  const poses=await detector.estimatePoses(video,{flipHorizontal:false});
+  let threshold=parseFloat(sensSlider.value);
+  document.getElementById('sensVal').innerText=threshold+' - BAJA=+ENTIDADES';
+  const poses=await detector.estimatePoses(video,{flipHorizontal:false,maxPoses:4});
   ctx.clearRect(0,0,overlay.width,overlay.height);
+  let found=false;
   if(poses.length>0){
    poses.forEach(pose=>{
-    // DIBUJA MUÑECO ROJO ESTILO SLS REAL
-    ctx.strokeStyle='#ff0000'; ctx.lineWidth=4; ctx.fillStyle='#ff0000';
-    const k=pose.keypoints;
-    const drawLine=(a,b)=>{ if(a.score>0.3&&b.score>0.3){ ctx.beginPath(); ctx.moveTo(overlay.width - a.x*overlay.width/video.videoWidth, a.y*overlay.height/video.videoHeight); ctx.lineTo(overlay.width - b.x*overlay.width/video.videoWidth, b.y*overlay.height/video.videoHeight); ctx.stroke(); } };
-    // esqueleto
-    const map=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
-    map.forEach(([i,j])=>{ let a=k[i],b=k[j]; if(a&&b) drawLine(a,b); });
-    k.forEach(pt=>{ if(pt.score>0.4){ ctx.beginPath(); ctx.arc(overlay.width - pt.x*overlay.width/video.videoWidth, pt.y*overlay.height/video.videoHeight, 6,0,Math.PI*2); ctx.fill(); } });
-    document.getElementById('msg').style.display='block';
-    document.getElementById('entity').innerText='ENTIDAD SLS';
-    setTimeout(()=>document.getElementById('msg').style.display='none',1500);
+    if(pose.score<threshold-0.05) return; // ultra sensible
+    found=true;
+    lastPoses.push({pose, time:Date.now()});
+    drawRedSLS(pose, threshold);
    });
+  }
+  // MANTIENE EL MUÑECO 3 SEGUNDOS aunque se vaya, como las SLS reales
+  lastPoses=lastPoses.filter(p=>Date.now()-p.time<3000);
+  lastPoses.forEach(p=>{
+   if(!found) drawRedSLS(p.pose, threshold, 0.5);
+  });
+  if(found || lastPoses.length>0){
+   document.getElementById('status').innerText='👻 ENTIDAD '+poses.length;
+   document.getElementById('status').style.color='#f00';
+   document.getElementById('msg').style.display='block';
+   setTimeout(()=>document.getElementById('msg').style.display='none',1000);
   } else {
-   document.getElementById('entity').innerText='ESCANEANDO...';
-   document.getElementById('entity').style.color='#0f0';
+   document.getElementById('status').innerText='ESCANEANDO... MOVÉ LENTO';
+   document.getElementById('status').style.color='#0f0';
   }
  }
- raf=requestAnimationFrame(detectLoop);
+ requestAnimationFrame(loop);
 }
-function toggleAudio(){ audioEnabled=!audioEnabled; gainNode.gain.value=audioEnabled?3.5:0; document.getElementById('btnAudio').innerText=audioEnabled?'🎙️ AUDIO EVP ON':'🔇 AUDIO OFF'; }
+function drawRedSLS(pose, thr, alpha=1){
+ ctx.save(); ctx.globalAlpha=alpha;
+ ctx.strokeStyle='#ff0000'; ctx.lineWidth=4; ctx.shadowColor='#ff0000'; ctx.shadowBlur=12;
+ ctx.fillStyle='#ff0000';
+ let k=pose.keypoints3D || pose.keypoints;
+ // convierte coords
+ function toScreen(pt){ return {x: overlay.width - pt.x*overlay.width/video.videoWidth, y: pt.y*overlay.height/video.videoHeight}; }
+ const pairs=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[28,30]];
+ pairs.forEach(([i,j])=>{
+  let a=pose.keypoints[i], b=pose.keypoints[j];
+  if(a&&b&&a.score>thr&&b.score>thr){
+   let A=toScreen(a), B=toScreen(b);
+   ctx.beginPath(); ctx.moveTo(A.x,A.y); ctx.lineTo(B.x,B.y); ctx.stroke();
+  }
+ });
+ pose.keypoints.forEach(pt=>{
+  if(pt.score>thr){ let p=toScreen(pt); ctx.beginPath(); ctx.arc(p.x,p.y,7,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke(); }
+ });
+ ctx.restore();
+}
+function toggleClean(){
+ clean=!clean;
+ if(clean){ high.frequency.value=120; low.frequency.value=1200; gainNode.gain.value=4.5; document.getElementById('btnClean').innerText='🎧 LIMPIAR RUIDO: ON'; document.getElementById('btnClean').classList.add('active'); }
+ else { high.frequency.value=80; low.frequency.value=2000; gainNode.gain.value=1; document.getElementById('btnClean').innerText='🎧 RUIDO ORIGINAL: OFF'; document.getElementById('btnClean').classList.remove('active'); }
+}
+let rec, chunks=[], isRec=false;
 function toggleRec(){
  if(!isRec){
-  let stream=overlay.captureStream(30); let micStream=video.srcObject.getAudioTracks().length?new MediaStream([...video.srcObject.getAudioTracks()]):null;
-  let combined=new MediaStream([...stream.getVideoTracks(),...(micStream?micStream.getAudioTracks():[])]);
-  mediaRecorder=new MediaRecorder(combined,{mimeType:'video/webm'}); chunks=[];
-  mediaRecorder.ondataavailable=e=>chunks.push(e.data);
-  mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'video/webm'}); let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='evp-sls-'+Date.now()+'.webm'; a.click(); };
-  mediaRecorder.start(); isRec=true; document.getElementById('btnRec').innerText='■ STOP';
- } else { mediaRecorder.stop(); isRec=false; document.getElementById('btnRec').innerText='● REC'; }
+  let cStream=overlay.captureStream(25);
+  let aStream=video.srcObject;
+  let combined=new MediaStream([...cStream.getVideoTracks(),...aStream.getAudioTracks()]);
+  rec=new MediaRecorder(combined); chunks=[]; rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{ let blob=new Blob(chunks,{type:'video/webm'}); let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='SLS-ARCHIVAX-'+Date.now()+'.webm'; a.click(); };
+  rec.start(); isRec=true; document.getElementById('btnRec').innerText='■ STOP'; document.getElementById('btnRec').style.background='#f00';
+ } else { rec.stop(); isRec=false; document.getElementById('btnRec').innerText='● REC'; }
 }
 window.addEventListener('resize',()=>{ overlay.width=innerWidth; overlay.height=innerHeight; });
 init();
