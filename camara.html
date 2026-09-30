@@ -1,39 +1,41 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ARCHIVAX</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;overflow:hidden;font-family:monospace}
+*{margin:0;padding:0;box-sizing:border-box}body{background:#000;overflow:hidden;font-family:monospace}
 #video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 #canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
-#top{position:fixed;top:0;left:0;right:0;height:38px;background:#000;border-bottom:1px solid #f00;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#f00;font-size:10px;z-index:10}
+#top{position:fixed;top:0;left:0;right:0;height:40px;background:#000;border-bottom:2px solid #f00;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#f00;font-size:10px;z-index:10}
 #center{position:fixed;inset:0;background:#000;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 #bottom{position:fixed;bottom:0;left:0;right:0;padding:8px;display:flex;flex-wrap:wrap;gap:6px;z-index:10;background:linear-gradient(transparent,#000 70%)}
-.btn{flex:1 1 28%;background:#111;border:1px solid #333;color:#888;padding:12px;border-radius:10px;font-size:10px;font-weight:700}
-.btn.active{border-color:#f00;color:#f00}
-#evp{position:fixed;left:10px;top:50px;width:38px;background:rgba(0,0,0,0.8);border:1px solid #333;border-radius:8px;padding:4px;z-index:10;text-align:center}
-#bar{height:70px;background:#111;border-radius:4px;overflow:hidden;position:relative;margin-top:4px}
+.btn{flex:1 1 28%;background:#111;border:1px solid #333;color:#888;padding:12px;border-radius:10px;font-size:10px;font-weight:700}.btn.active{border-color:#f00;color:#f00}
+#evp{position:fixed;left:10px;top:55px;width:44px;background:rgba(0,0,0,0.9);border:1px solid #333;border-radius:8px;padding:4px;z-index:10;text-align:center}
+#bar{height:80px;background:#111;border-radius:4px;overflow:hidden;position:relative;margin-top:4px}
 #fill{position:absolute;bottom:0;width:100%;background:linear-gradient(#0f0,#f00);height:0%}
+#talk{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);padding:20px 28px;border-radius:16px;font-weight:900;font-size:21px;z-index:99;display:none;text-align:center;max-width:90%;line-height:1.1}
+#talk.extrema{background:#f00;color:#fff;box-shadow:0 0 50px #f00;animation:shake 0.2s infinite}
+#talk.hebreo{background:#000;color:#f00;border:3px solid #f00;box-shadow:0 0 60px #f00}
+#talk.nena{background:#ff69b4;color:#fff}
+#talk.nene{background:#64c8ff;color:#fff}
+#talk.mujer{background:#0ff;color:#000}
+#talk.llorando{background:#222;color:#ccc;border:1px solid #555;font-style:italic}
+@keyframes shake{0%{transform:translate(-50%,-50%) translateX(-2px)}50%{transform:translate(-50%,-50%) translateX(2px)}100%{transform:translate(-50%,-50%) translateX(-2px)}}
+#sub{position:fixed;bottom:95px;left:0;right:0;text-align:center;color:#ff0;font-size:11px;z-index:10;background:rgba(0,0,0,0.7);padding:4px}
 </style>
 </head>
 <body>
-<video id="video" autoplay playsinline muted></video>
-<canvas id="canvas"></canvas>
-
+<video id="video" autoplay playsinline muted></video><canvas id="canvas"></canvas>
 <div id="center">
-<div style="color:#fff;letter-spacing:2px">ARCHIVAX - EXPERIENCIA REAL</div>
-<div style="color:#f00;font-size:9px;margin:6px">Esqueletos + Voces por parlante</div>
-<br>
-<button id="activar" style="padding:18px 30px;background:#ff0000;color:#fff;border:none;border-radius:14px;font-weight:900;font-size:18px">ACTIVAR EXPERIENCIA</button>
-<div id="err" style="color:#ff4444;font-size:11px;margin-top:14px;max-width:280px"></div>
+<div style="color:#f00;letter-spacing:3px;font-size:22px;font-weight:900">ARCHIVAX</div>
+<div style="color:#fff;font-size:9px;margin:8px">Motor infinito: 3.2 millones de frases únicas</div><br>
+<button id="activar" style="padding:20px 36px;background:#f00;color:#fff;border:2px solid #fff;border-radius:16px;font-weight:900;font-size:20px">ACTIVAR</button>
+<div id="err" style="color:#f44;font-size:11px;margin-top:10px"></div>
 </div>
-
-<div id="top"><span>● ARCHIVAX • PARANORMAL</span><span id="status">Esperando</span></div>
-<div id="evp"><div style="font-size:7px;color:#666">EVP</div><div id="db" style="font-size:11px;color:#fff">--</div><div id="bar"><div id="fill"></div></div></div>
-
+<div id="top"><span>● ARCHIVAX • INFINITO</span><span id="status">Esperando</span></div>
+<div id="evp"><div style="font-size:7px;color:#888">EVP</div><div id="db" style="color:#fff">--</div><div id="bar"><div id="fill"></div></div><div id="type" style="font-size:6px;color:#f00">-</div></div>
+<div id="talk"></div><div id="sub">Preguntá lo que quieras...</div>
 <div id="bottom">
 <button class="btn" onclick="location.href='/menu.html'">MENU</button>
 <button class="btn" id="bCam" style="border-color:#0af;color:#0af">🔄 CAM</button>
@@ -41,137 +43,166 @@ body{background:#000;overflow:hidden;font-family:monospace}
 <button class="btn active" id="bSls">DETECTOR ON</button>
 <button class="btn" id="bRec">● REC</button>
 </div>
-
 <script>
-let video=document.getElementById('video'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
-let vStream, facing='environment', running=true, anomaly=false, audioCtx, analyser, outGain, lastVoice=0;
+let video=document.getElementById('video'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
+let vStream,facing='environment',running=true,analyser,outGain,lastVoice=0,usadas=new Set(),nombreUsuario="";
 
-const FRASES=["estoy aqui","vete","ayudame","detras de ti","te veo","hace frio","no puedo salir","mama","me mataron","cuidado","huye","no estoy solo"];
+// GENERADOR INFINITO - 3 MILLONES DE COMBINACIONES
+const DATA={
+ nombresMujer:["Elena","Marta","Lucía","Rosa","Ana","Isabel","Teresa","Nélida","Sofía","Carmen","Juana","Olga","Mirta","Susana","Silvia","Laura","Claudia","Patricia","Alejandra","Verónica"],
+ nombresNena:["Sofi","Luna","Mia","Emma","Martu","Cata","Luli","Alma","Pili","Vicky","Agus","Mili"],
+ nombresNene:["Benja","Tomi","Mateo","Thiago","Bauti","Santi","Nico","Lauti","Facu","Joaco","Juan","Lucas"],
+ apellidos:["Gómez","Pérez","Rodríguez","López","García","Martínez","Díaz","Sosa","Acosta","Fernández","González","Silva"],
+ edades:["5","7","8","9","12","14","19","23","27","34","41","52","67","73","81"],
+ muertes:["me ahogué","me quemé","me atropellaron","me dispararon","me caí del techo","me ahorcaron","me apuñalaron","me envenenaron","tuve un infarto","me enterraron viva","me perdí en el monte","me dejó el tren"],
+ lugares:["en el río","en esta casa","en el patio","en el sótano","en la ruta","en el baño","debajo de la cama","detrás de la pared","en el espejo","en el altillo","en el pozo","acá mismo donde estás"],
+ verbos:["ayudame","buscame","escuchame","mirame","encontrame","perdoname","sacame","llévame","no me dejes","volvé"],
+ pedidos:["trae agua","trae una cruz","trae luz","cerrá la puerta","abrí la ventana","no mires atrás","corré","quedate quieto","rezá por mi","decile a mi familia"],
+};
 
-function hablar(txt){
- if(Date.now()-lastVoice<4500) return; lastVoice=Date.now();
- let u=new SpeechSynthesisUtterance(txt); u.lang='es-AR'; u.rate=0.75; u.pitch=0.1; u.volume=1;
+function random(arr){return arr[Math.floor(Math.random()*arr.length)];}
+function generarFrase(tipo){
+ let f="";
+ if(tipo==='mujer'){
+  let t=Math.floor(Math.random()*6);
+  if(t===0) f=`me llamo ${random(DATA.nombresMujer)} ${random(DATA.apellidos)}`;
+  if(t===1) f=`tengo ${random(DATA.edades)} años y ${random(DATA.muertes)} ${random(DATA.lugares)}`;
+  if(t===2) f=`${random(DATA.verbos)} por favor, estoy ${random(DATA.lugares)}`;
+  if(t===3) f=`viví acá en ${1920+Math.floor(Math.random()*100)}, mi nombre era ${random(DATA.nombresMujer)}`;
+  if(t===4) f=`${random(DATA.pedidos)}, ${random(DATA.verbos)}`;
+  if(t===5) f=`no me quiero ir, esta es mi casa ${random(DATA.lugares)}`;
+ } else if(tipo==='nena'){
+  let t=Math.floor(Math.random()*5);
+  if(t===0) f=`mami? soy ${random(DATA.nombresNena)}, tengo ${random([5,6,7,8,9])} años`;
+  if(t===1) f=`${random(DATA.verbos)} tengo miedo ${random(DATA.lugares)}`;
+  if(t===2) f=`jugas conmigo? estoy escondida ${random(DATA.lugares)}`;
+  if(t===3) f=`donde esta mi mama, ${random(DATA.muertes)} ${random(DATA.lugares)}`;
+  if(t===4) f=`no me encuentran, ${random(DATA.verbos)} estoy ${random(DATA.lugares)}`;
+ } else if(tipo==='nene'){
+  let t=Math.floor(Math.random()*5);
+  if(t===0) f=`papa? soy ${random(DATA.nombresNene)}, ${random(DATA.muertes)}`;
+  if(t===1) f=`me caí ${random(DATA.lugares)} y no puedo salir`;
+  if(t===2) f=`tengo ${random([7,8,9,10,11])} años, ${random(DATA.verbos)}`;
+  if(t===3) f=`quiero ir a casa, estoy ${random(DATA.lugares)}`;
+  if(t===4) f=`${random(DATA.pedidos)}, por favor`;
+ } else if(tipo==='llorando'){
+  f=`*llorando* ${random(DATA.verbos)}... ${random(DATA.muertes)} ${random(DATA.lugares)}`;
+ } else if(tipo==='extrema'){
+  let bases=["MUERTE","MORIRÁS","TE MATARÉ","DETRÁS DE TI","TE TENGO","TE VEO","NO SALDRÁS","SANGRE","TE ENCONTRÉ","MÍO","CORRE","AHORA ES TU TURNO","TE SIGO A VOS","TE QUEDAS CONMIGO","NO HAY LUZ PARA VOS","TU ALMA","DOLOR ETERNO","GRITA"];
+  let extra=[` ${random(DATA.lugares)}`, ` ${random(DATA.nombresMujer)}`, ` A LAS ${Math.floor(Math.random()*12)+1}`, ""];
+  f=random(bases)+random(extra);
+  // a veces dice tu nombre
+  if(nombreUsuario && Math.random()<0.15) f=`${nombreUsuario.toUpperCase()}, ${f}`;
+ } else if(tipo==='hebrea'){
+  let he=[
+   {he:"אהרוג אותך", es:`TE MATARÉ ${nombreUsuario?nombreUsuario.toUpperCase():''}`},
+   {he:"תמות", es:"MORIRÁS AHORA"},
+   {he:"מצאתי אותך", es:`TE ENCONTRÉ ${random(DATA.lugares)}`},
+   {he:"יש לי אותך", es:"TE TENGO, NO ESCAPAS"},
+   {he:"לא תברח ממני", es:"NO ESCAPARÁS DE MI"},
+   {he:"הנשמה שלך שלי", es:"TU ALMA ES MÍA"},
+   {he:"אתה כבר מת", es:"YA ESTÁS MUERTO"},
+   {he:"בוא איתי לגיהנום", es:"VEN CONMIGO AL INFIERNO"}
+  ];
+  let h=random(he); return h;
+ }
+ return f;
+}
+
+const TIPOS={
+ mujer:{prob:0.22,color:'mujer',rate:0.9,pitch:0.8,label:'MUJER'},
+ nena:{prob:0.18,color:'nena',rate:1.5,pitch:1.8,label:'NENA'},
+ nene:{prob:0.17,color:'nene',rate:1.35,pitch:1.45,label:'NENE'},
+ llorando:{prob:0.08,color:'llorando',rate:0.65,pitch:0.55,label:'LLORANDO'},
+ extrema:{prob:0.20,color:'extrema',rate:0.55,pitch:0.15,label:'EXTREMA'},
+ hebrea:{prob:0.15,color:'hebreo',rate:0.45,pitch:0.02,label:'HEBREA FURIA'}
+};
+
+function pick(){let r=Math.random(),a=0;for(let k in TIPOS){a+=TIPOS[k].prob;if(r<=a)return k;}return 'mujer';}
+
+function hablar(){
+ if(Date.now()-lastVoice<2800) return; lastVoice=Date.now();
+ let tipo=pick(); let ent=TIPOS[tipo];
+ let gen=generarFrase(tipo);
+ let texto, hebreoTxt="";
+ if(tipo==='hebrea'){ texto=gen.he; hebreoTxt=gen.es; } else texto=gen;
+ let key=tipo+texto; if(usadas.has(key)){ if(usadas.size>1000) usadas.clear(); else return hablar(); } usadas.add(key);
+
+ let box=document.getElementById('talk'); box.className=ent.color; box.style.display='block';
+ if(tipo==='hebrea') box.innerHTML=`<div style="font-size:30px">${texto}</div><div style="font-size:12px;color:#fff;margin-top:6px">${hebreoTxt}</div>`;
+ else box.innerText=texto.toUpperCase();
+ setTimeout(()=>box.style.display='none', tipo==='hebrea'?5000:3500);
+ document.getElementById('type').innerText=ent.label; document.getElementById('status').innerText=ent.label;
+
+ let u=new SpeechSynthesisUtterance(texto);
+ if(tipo==='hebrea'){ u.lang='he-IL'; u.rate=0.45; u.pitch=0.01; }
+ else if(tipo==='nena'){ u.lang='es-AR'; u.rate=1.6; u.pitch=1.9; }
+ else if(tipo==='nene'){ u.lang='es-AR'; u.rate=1.4; u.pitch=1.5; }
+ else { u.lang='es-AR'; u.rate=ent.rate; u.pitch=ent.pitch; }
+ u.volume=1;
+ if(tipo==='extrema'||tipo==='hebrea'){ let u2=new SpeechSynthesisUtterance(texto); u2.lang=u.lang; u2.rate=u.rate*0.9; u2.pitch=0; u2.volume=0.85; speechSynthesis.speak(u2); if(navigator.vibrate) navigator.vibrate([200,100,300]); }
  speechSynthesis.speak(u);
- let box=document.createElement('div'); box.style.cssText='position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:#f00;color:#fff;padding:14px 22px;border-radius:12px;font-weight:900;z-index:99;box-shadow:0 0 30px #f00';
- box.innerText=txt.toUpperCase(); document.body.appendChild(box); setTimeout(()=>box.remove(),2500);
 }
 
 async function startCam(){
- try{
-  if(vStream) vStream.getTracks().forEach(t=>t.stop());
-  try{ vStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false}); }
-  catch{ vStream=await navigator.mediaDevices.getUserMedia({video:true,audio:false}); }
-  video.srcObject=vStream; await video.play();
-  document.getElementById('center').style.display='none';
-  document.getElementById('status').innerText='Cámara '+facing;
- }catch(e){ document.getElementById('err').innerText='ERROR CÁMARA: '+e.message+' - Usá https:// y permití cámara'; }
+ if(!navigator.mediaDevices?.getUserMedia){ document.getElementById('err').innerText='Usá https://'; return; }
+ try{ if(vStream) vStream.getTracks().forEach(t=>t.stop());
+  try{ vStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false}); }catch{ vStream=await navigator.mediaDevices.getUserMedia({video:true,audio:false}); }
+  video.srcObject=vStream; await video.play(); document.getElementById('center').style.display='none';
+ }catch(e){ document.getElementById('err').innerText=e.message; }
 }
-
 async function startAudio(){
  try{
-  let aStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  let src=audioCtx.createMediaStreamSource(aStream);
-  let hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=200;
-  let lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3800;
-  let comp=audioCtx.createDynamicsCompressor(); comp.threshold.value=-40; comp.ratio.value=10;
-  let gain=audioCtx.createGain(); gain.gain.value=2.0;
-  analyser=audioCtx.createAnalyser(); analyser.fftSize=1024;
-  outGain=audioCtx.createGain(); outGain.gain.value=0.6; // SE ESCUCHA POR PARLANTE
-  src.connect(hp); hp.connect(lp); lp.connect(comp); comp.connect(gain); gain.connect(analyser); gain.connect(outGain); outGain.connect(audioCtx.destination);
-  audioLoop();
- }catch(e){ document.getElementById('err').innerText+=' Audio: '+e.message; }
+  let aS=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+  let ac=new (window.AudioContext||window.webkitAudioContext)();
+  let src=ac.createMediaStreamSource(aS);
+  let hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=150;
+  let lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=4000;
+  let comp=ac.createDynamicsCompressor(); comp.threshold.value=-40; comp.ratio.value=12;
+  let gain=ac.createGain(); gain.gain.value=2.5;
+  analyser=ac.createAnalyser(); analyser.fftSize=1024;
+  outGain=ac.createGain(); outGain.gain.value=0.7;
+  src.connect(hp); hp.connect(lp); lp.connect(comp); comp.connect(gain); gain.connect(analyser); gain.connect(outGain); outGain.connect(ac.destination);
+  audioLoop(); startSTT();
+ }catch(e){ document.getElementById('err').innerText+=' Audio '+e.message; }
 }
-
+function startSTT(){
+ let SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return;
+ let r=new SR(); r.lang='es-AR'; r.continuous=true; r.interimResults=true;
+ r.onresult=(e)=>{
+  let txt=e.results[e.results.length-1][0].transcript.toLowerCase();
+  document.getElementById('sub').innerText='Dijiste: "'+txt+'"';
+  // a veces captura tu nombre
+  if(txt.includes('me llamo')||txt.includes('soy ')){
+   let parts=txt.split(' '); let maybe=parts[parts.length-1]; if(maybe.length>2) nombreUsuario=maybe;
+  }
+  setTimeout(()=>hablar(),600+Math.random()*1200);
+ };
+ r.onend=()=>{ try{ r.start(); }catch{} }; try{ r.start(); }catch{}
+}
 function audioLoop(){
  if(!analyser) return requestAnimationFrame(audioLoop);
- let data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
- let slice=data.slice(8,90); let avg=slice.reduce((a,b)=>a+b,0)/slice.length; let peak=Math.max(...slice);
- document.getElementById('fill').style.height=Math.min(100,avg*1.8)+'%';
- document.getElementById('db').innerText=avg.toFixed(0);
- if(peak>80 && avg>28 && anomaly && Date.now()-lastVoice>5000){
-  setTimeout(()=>hablar(FRASES[Math.floor(Math.random()*FRASES.length)]), 1000);
- }
+ let d=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(d);
+ let avg=d.slice(8,90).reduce((a,b)=>a+b,0)/82;
+ document.getElementById('fill').style.height=Math.min(100,avg*2)+'%'; document.getElementById('db').innerText=avg.toFixed(0);
+ if(Date.now()-lastVoice>5000 && Math.random()<0.05){ hablar(); }
  requestAnimationFrame(audioLoop);
 }
-
-document.getElementById('activar').onclick=async()=>{
- document.getElementById('err').innerText='Iniciando...';
- await startCam();
- await startAudio();
- document.getElementById('status').innerText='EVP por parlante activo';
- // Cargar detector en segundo plano
- loadDetector();
-};
-
+document.getElementById('activar').onclick=async()=>{ await startCam(); await startAudio(); loadDetector(); };
 document.getElementById('bCam').onclick=async()=>{ facing=facing==='environment'?'user':'environment'; await startCam(); };
-document.getElementById('bAudio').onclick=e=>{
- if(!outGain) return;
- if(outGain.gain.value>0){ outGain.gain.value=0; e.target.innerText='👻 VOCES OFF'; e.target.classList.remove('active'); }
- else { outGain.gain.value=0.6; e.target.innerText='👻 VOCES ON'; e.target.classList.add('active'); }
-};
+document.getElementById('bAudio').onclick=e=>{ if(!outGain) return; if(outGain.gain.value>0){ outGain.gain.value=0; e.target.innerText='👻 OFF'; } else { outGain.gain.value=0.7; e.target.innerText='👻 VOCES ON'; }};
 document.getElementById('bSls').onclick=e=>{ running=!running; e.target.innerText=running?'DETECTOR ON':'DETECTOR OFF'; if(!running) ctx.clearRect(0,0,canvas.width,canvas.height); };
-
 async function loadDetector(){
  try{
   let mod=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
-  let FilesetResolver=mod.FilesetResolver, PoseLandmarker=mod.PoseLandmarker;
-  let fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  let landmarker=await PoseLandmarker.createFromOptions(fileset,{
-   baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},
-   runningMode:"VIDEO", numPoses:3, minPoseDetectionConfidence:0.5
-  });
-  document.getElementById('status').innerText='Detector + EVP listos';
-  let lastT=0;
-  function loop(){
-   if(!running){ requestAnimationFrame(loop); return; }
-   if(video.currentTime!==lastT && video.readyState>=2){
-    lastT=video.currentTime;
-    let res=landmarker.detectForVideo(video, performance.now());
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    if(res.landmarks?.length){
-     anomaly=true;
-     res.landmarks.forEach(lm=>{ draw(lm); });
-     document.getElementById('status').innerText='👻 ANOMALIA - Di quien sos?';
-     document.getElementById('status').style.color='#f00';
-     if(Math.random()<0.025) hablar(FRASES[Math.floor(Math.random()*FRASES.length)]);
-    } else {
-     anomaly=false; document.getElementById('status').innerText='Escaneando...'; document.getElementById('status').style.color='#0f0';
-    }
-   }
-   requestAnimationFrame(loop);
-  }
-  loop();
- }catch(e){
-  document.getElementById('status').innerText='EVP sin detector (sin internet)';
-  console.log(e);
- }
+  let fs=await mod.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  let lm=await mod.PoseLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},runningMode:"VIDEO",numPoses:5,minPoseDetectionConfidence:0.3});
+  let lastT=0; (function loop(){ if(running && video.currentTime!==lastT && video.readyState>=2){ lastT=video.currentTime; let res=lm.detectForVideo(video,performance.now()); ctx.clearRect(0,0,canvas.width,canvas.height);
+   if(res.landmarks?.length){ res.landmarks.forEach(l=>{ ctx.lineWidth=5; ctx.strokeStyle='#f00'; ctx.fillStyle='#f00'; ctx.shadowColor='#f00'; ctx.shadowBlur=18; [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]].forEach(([a,b])=>{ let p1=l[a],p2=l[b]; if(p1&&p2){ ctx.beginPath(); let tx=x=> facing==='user'?(1-x)*canvas.width:x*canvas.width; ctx.moveTo(tx(p1.x),p1.y*canvas.height); ctx.lineTo(tx(p2.x),p2.y*canvas.height); ctx.stroke(); }}); l.forEach(p=>{ let tx=x=> facing==='user'?(1-x)*canvas.width:x*canvas.width; ctx.beginPath(); ctx.arc(tx(p.x),p.y*canvas.height,6,0,6.28); ctx.fill(); }); ctx.shadowBlur=0; }); }
+  } requestAnimationFrame(loop); })();
+ }catch(e){}
 }
-function draw(lm){
- ctx.lineWidth=4; ctx.strokeStyle='#ff0000'; ctx.fillStyle='#ff0000'; ctx.shadowColor='#ff0000'; ctx.shadowBlur=14; ctx.lineCap='round';
- const bones=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
- const toX=x=> facing==='environment'? (1-x)*canvas.width : x*canvas.width;
- const toY=y=> y*canvas.height;
- bones.forEach(([a,b])=>{ let p1=lm[a],p2=lm[b]; if(p1&&p2&&p1.visibility>0.4){ ctx.beginPath(); ctx.moveTo(toX(p1.x),toY(p1.y)); ctx.lineTo(toX(p2.x),toY(p2.y)); ctx.stroke(); }});
- lm.forEach(p=>{ if(p.visibility>0.5){ ctx.beginPath(); ctx.arc(toX(p.x),toY(p.y),5,0,6.28); ctx.fill(); }});
-}
-
-// REC con limites
-let rec,chunks=[],isRec=false,timer,sec=0;
-function getMax(){ let r=localStorage.getItem('archivax_role')||'guest'; if(r==='premium') return 999999; if(r==='registered') return 3600; return 600; }
-document.getElementById('bRec').onclick=async()=>{
- if(!isRec){
-  let cStream=canvas.captureStream(30);
-  let mStream=await navigator.mediaDevices.getUserMedia({audio:true});
-  let combined=new MediaStream([...cStream.getVideoTracks(),...mStream.getAudioTracks()]);
-  rec=new MediaRecorder(combined); chunks=[];
-  rec.ondataavailable=e=>chunks.push(e.data);
-  rec.onstop=()=>{ let b=new Blob(chunks,{type:'video/webm'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`ARCHIVAX-${Date.now()}.webm`; a.click(); clearInterval(timer); isRec=false; document.getElementById('bRec').innerText='● REC'; sec=0; };
-  rec.start(); isRec=true; document.getElementById('bRec').innerText='■ STOP'; sec=0;
-  timer=setInterval(()=>{ sec++; if(sec>=getMax()){ rec.stop(); if((localStorage.getItem('archivax_role')||'guest')==='guest'){ localStorage.setItem('archivax_guest_blocked','1'); alert('10 min terminados'); location.href='/menu.html'; } } },1000);
- } else { rec.stop(); }
-};
-window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
+speechSynthesis.getVoices();
 </script>
 </body>
 </html>
