@@ -6,15 +6,12 @@
 <style>
 body{margin:0;background:#050505;color:#00ff41;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
 .box{border:1px solid #00ff41;border-radius:16px;padding:28px;width:90%;max-width:380px;text-align:center;box-shadow:0 0 25px rgba(0,255,65,0.2)}
-h1{letter-spacing:6px;margin:0;font-size:28px}
-.sub{font-size:9px;letter-spacing:3px;color:#666;margin:8px 0 20px}
-.tabs{display:flex;gap:8px;margin-bottom:15px}
-.tab{flex:1;padding:10px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;cursor:pointer;font-weight:bold;font-size:12px}
+h1{letter-spacing:6px;margin:0;font-size:28px}.sub{font-size:9px;letter-spacing:3px;color:#666;margin:8px 0 20px}
+.tabs{display:flex;gap:8px;margin-bottom:15px}.tab{flex:1;padding:10px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;cursor:pointer;font-weight:bold;font-size:12px}
 .tab.active{background:#00ff41;color:#000}
 input{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #333;background:#111;color:#fff;box-sizing:border-box}
 .btn{width:100%;padding:14px;border-radius:10px;border:none;font-weight:900;cursor:pointer;margin-top:8px}
-.btn-green{background:#00ff41;color:#000}
-.btn-red{background:transparent;border:1px solid #ff4444;color:#ff4444;font-size:11px}
+.btn-green{background:#00ff41;color:#000}.btn-red{background:transparent;border:1px solid #ff4444;color:#ff4444;font-size:11px}
 .msg{margin-top:12px;font-size:11px;color:#ff0;min-height:16px}
 </style>
 </head>
@@ -31,8 +28,9 @@ input{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #3
 <div id="msg" class="msg"></div>
 <button class="btn btn-green" id="btnMain" onclick="doAuth()">ENTRAR A LA TERMINAL</button>
 <div style="margin:18px 0;border-top:1px dashed #222"></div>
-<button class="btn btn-red" onclick="location.href='/menu.html?guest=1'">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
+<button class="btn btn-red" onclick="enterGuest()">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
 </div>
+
 <script>
 let mode='login';
 function setMode(m){
@@ -41,24 +39,33 @@ function setMode(m){
  document.getElementById('tReg').className=m=='reg'?'tab active':'tab';
  document.getElementById('btnMain').innerText=m=='login'?'ENTRAR A LA TERMINAL':'CREAR CUENTA GRATIS';
 }
+
+// LISTA PREMIUM - AGREGA EMAILS ACA
+const PREMIUM_EMAILS = ["lcia9314@gmail.com", "premium@archivax.com"];
+
+function getRoleForEmail(email){
+ if(PREMIUM_EMAILS.includes(email.toLowerCase())) return 'premium';
+ return 'registered';
+}
+
 function doAuth(){
- const email=document.getElementById('email').value.trim();
+ const email=document.getElementById('email').value.trim().toLowerCase();
  const pass=document.getElementById('pass').value.trim();
  const msg=document.getElementById('msg');
  if(!email||pass.length<3){msg.innerText='Falta email y clave';return}
  let users=JSON.parse(localStorage.getItem('arch_users')||'{}');
  if(mode=='reg'){
-  users[email.toLowerCase()]=pass;
+  users[email]=pass;
   localStorage.setItem('arch_users',JSON.stringify(users));
-  msg.innerText='Cuenta creada! Ahora entra con LOGIN';
-  setMode('login');
+  // --- REGISTRO = 1 HORA POR CONEXION ---
+  localStorage.setItem('arch_current',email);
+  localStorage.setItem('archivax_role','registered');
+  localStorage.removeItem('archivax_guest_blocked'); // si era invitado bloqueado, lo desbloquea
+  msg.innerText='Cuenta creada! Entrando...';
+  setTimeout(()=>location.href='/menu.html',500);
  } else {
-  if(users[email.toLowerCase()]===pass || email==='lcia9314@gmail.com'){
+  if(users[email]===pass || email==='lcia9314@gmail.com'){
    localStorage.setItem('arch_current',email);
-   location.href='/menu.html';
-  } else { msg.innerText='Datos incorrectos o no registrado'; }
- }
-}
-</script>
-</body>
-</html>
+   // --- LOGIN = DETECTA SI ES PREMIUM O REGISTRADO ---
+   let role = getRoleForEmail(email);
+   local
