@@ -1,0 +1,14 @@
+{
+  "name": "archivax-terminal",
+  "compatibility_date": "2024-01-01",
+  "main": "./worker.js",
+  "assets": {
+    "directory": "./"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "ARCHIVAX_USERS",
+      "id": "c391467833cb4567ab6004d3b24c98c1"
+    }
+  ]
+}
