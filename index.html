@@ -30,8 +30,8 @@ small{color:#333;font-size:9px;display:block;margin-top:15px}
 <button id="tReg" class="tab" onclick="setMode('reg')">REGISTRO</button>
 </div>
 
-<input id="email" placeholder="Email">
-<input id="pass" type="password" placeholder="Contraseña (min 6)">
+<input id="email" placeholder="Email" autocomplete="email">
+<input id="pass" type="password" placeholder="Contraseña (min 6)" autocomplete="current-password">
 <div id="msg" class="msg"></div>
 
 <button class="btn btn-green" id="btnMain" onclick="doAuth()">ENTRAR A LA TERMINAL</button>
@@ -39,7 +39,7 @@ small{color:#333;font-size:9px;display:block;margin-top:15px}
 <div style="margin:18px 0;border-top:1px dashed #222"></div>
 
 <button class="btn btn-red" onclick="doGuest()">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
-<p style="font-size:9px;color:#666">Cámara + Audio EVP extremo. Después se bloquea tu IP.</p>
+<p style="font-size:9px;color:#666;margin-top:8px">Cámara + Audio EVP extremo. Después se bloquea tu IP.</p>
 <small>archiviax.com.ar © 2026 - Sistema KV Seguro</small>
 </div>
 
@@ -51,29 +51,13 @@ function setMode(m){
  document.getElementById('tReg').className=m=='reg'?'tab active':'tab';
  document.getElementById('btnMain').innerText=m=='login'?'ENTRAR A LA TERMINAL':'CREAR CUENTA GRATIS';
 }
-async function doAuth(){
- const email=document.getElementById('email').value.trim();
- const pass=document.getElementById('pass').value.trim();
- const msg=document.getElementById('msg');
- if(!email||pass.length<6){msg.innerText='Completa email y clave min 6';return}
- msg.innerText='Conectando...';
- const url=mode=='login'?'/api/login':'/api/register';
- const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email,pass, fp:getFP()})});
- const j=await r.json();
- if(j.ok){ location.href='/camara.html'; }
- else{ msg.innerText=j.error||'Error'; }
-}
-async function doGuest(){
- const r=await fetch('/api/guest',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({fp:getFP()})});
- const j=await r.json();
- if(j.ok) location.href='/camara.html';
- else alert(j.error);
-}
 function getFP(){
  let fp=localStorage.getItem('archiviax-fp');
  if(!fp){ fp='fp_'+Math.random().toString(36).slice(2)+Date.now(); localStorage.setItem('archiviax-fp',fp); }
  return fp;
 }
-</script>
-</body>
-</html>
+async function doAuth(){
+ const email=document.getElementById('email').value.trim();
+ const pass=document.getElementById('pass').value.trim();
+ const msg=document.getElementById('msg');
+ if(!email||pass.length<6){msg.innerText='Completa
