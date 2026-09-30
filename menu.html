@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ARCHIVAX - MENÚ</title>
+<style>
+body{margin:0;background:#050505;color:#e0e0e0;font-family:monospace;min-height:100vh;padding:20px}
+.box{max-width:480px;margin:0 auto}
+h1{color:#00ff41;text-align:center;letter-spacing:5px;margin:0}
+.sub{font-size:9px;text-align:center;letter-spacing:3px;opacity:.5;margin:6px 0 20px}
+.card{display:flex;align-items:center;gap:15px;border:1px solid #333;background:#111;border-radius:12px;padding:18px;margin:12px 0;text-decoration:none;color:#fff}
+.card b{display:block}
+.card span{font-size:11px;opacity:.6}
+.card.premium{border-color:#ffaa00;background:#1a1500;color:#ffdd88}
+.btn{width:100%;padding:14px;border-radius:10px;border:none;font-weight:900;cursor:pointer}
+.btn-gold{background:#ffaa00;color:#000}
+.timer{color:#ff4444;text-align:center;font-weight:bold;margin-bottom:12px;display:none}
+</style>
+</head>
+<body>
+<div class="box">
+<h1>ARCHIVAX</h1>
+<div class="sub">TERMINAL DE INVESTIGACIÓN - ELIGE MODO</div>
+<div id="timer" class="timer">INVITADO - TIEMPO RESTANTE: <span id="t">10:00</span></div>
+<div id="user" style="text-align:center;font-size:10px;opacity:.6;margin-bottom:15px"></div>
+
+<a class="card" href="/camara.html">📹<div><b>CÁMARA + AUDIO</b><span>Video real a color + ambiente 100% extremo</span></div></a>
+<a class="card" href="/audio.html">🎙️<div><b>AUDIO SOLO - EXTREMO</b><span>Micrófono al 100% sin filtros para psicofonías</span></div></a>
+<a class="card" href="/videoaudio.html">🎬<div><b>VIDEO + AUDIO</b><span>Grabación combinada total</span></div></a>
+<a class="card premium" href="/sicofonia.html">👻<div style="flex:1"><b>SICOFONÍA TIEMPO REAL</b><span>Solo ORO / DORADO - Detecta voces en vivo</span></div>🔒</a>
+
+<div style="margin-top:22px;border:1px solid #ffaa00;border-radius:12px;padding:16px;text-align:center">
+<div style="font-size:12px;color:#ffaa00;font-weight:bold;margin-bottom:8px">¿QUERÉS TODO ILIMITADO?</div>
+<p style="font-size:10px;color:#888">Desbloquea Sicofonía + grabación sin límite + sin IP block</p>
+<a href="https://mpago.la/ARCHIVAX-PREMIUM" target="_blank" class="btn btn-gold" style="display:block;text-decoration:none;margin-top:10px">💳 HACETE PREMIUM - MERCADOPAGO</a>
+<p style="font-size:9px;color:#555;margin-top:8px">Después de pagar mandá comprobante a archiviax@gmail.com</p>
+</div>
+
+<button onclick="logout()" style="margin-top:20px;width:100%;background:#222;color:#fff;border-radius:8px;padding:10px;border:1px solid #333">CERRAR SESIÓN</button>
+</div>
+
+<script>
+(async()=>{
+ const r=await fetch('/api/me'); const j=await r.json();
+ document.getElementById('user').innerText=j.email?j.email:(j.type=='guest'?'MODO INVITADO':'MODO FUNDADOR');
+ if(j.type=='guest'){
+  document.getElementById('timer').style.display='block';
+  let sec=600;
+  setInterval(()=>{
+   sec--; let m=Math.floor(sec/60); let s=sec%60;
+   document.getElementById('t').innerText=`${m}:${s.toString().padStart(2,'0')}`;
+   if(sec<=0){ alert('TIEMPO AGOTADO - Registrate para seguir'); location.href='/index.html?expired=1'; }
+  },1000);
+ }
+})();
+function logout(){ fetch('/api/logout',{method:'POST'}).then(()=>location.href='/index.html'); }
+</script>
+</body>
+</html>
