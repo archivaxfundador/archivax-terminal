@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHIVAX - EVP EXTREMO</title>
+<style>
+body{margin:0;background:black;color:#ff0000;font-family:monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+.box{width:90%;max-width:380px;border:1px solid #ff0000;border-radius:16px;padding:20px;text-align:center;box-shadow:0 0 20px rgba(255,0,0,0.3)}
+#wave{width:100%;height:100px;background:#0a0a0a;border:1px solid #330000;border-radius:10px;margin:15px 0}
+.btn{padding:14px 20px;border-radius:50px;border:1px solid #ff0000;background:black;color:#ff0000;font-weight:bold;margin:5px;cursor:pointer}
+.btn-rec{background:#ff0000;color:black}
+#transcript{min-height:60px;background:rgba(255,0,0,0.1);border-radius:10px;padding:10px;font-size:13px;margin-top:15px;color:white}
+</style>
+</head>
+<body>
+<div class="box">
+  <h2 style="margin:0">ARCHIVAX EVP</h2>
+  <p style="font-size:10px;color:#666">MODO EXTREMO - SIN ECO - SIN LIGHT</p>
+  <canvas id="wave"></canvas>
+  <div id="transcript">🎙️ Esperando... Silencio total</div>
+  <div style="margin-top:15px">
+    <button class="btn" onclick="location.href='/'">← SALIR</button>
+    <button class="btn btn-rec" id="btnRec" onclick="toggleRec()">● REC</button>
+    <button class="btn" onclick="toggleGanancia()">⚡ X5</button>
+  </div>
+  <p style="font-size:9px;color:#333;margin-top:15px">archiviax.com.ar - Todo se guarda en tu celular</p>
+</div>
+
+<script>
+let audioContext, analyser, gainNode, recorder, chunks=[];
+let grabando = false;
+let ganancia = 5.5;
+
+async function iniciarEVP(){
+  const stream = await navigator.mediaDevices.getUserMedia({
+    audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false, sampleRate:48000, channelCount:1 }
+  });
+
+  audioContext = new AudioContext({sampleRate:48000});
+  const src = audioContext.createMediaStreamSource(stream);
+
+  const highpass = audioContext.createBiquadFilter(); highpass.type="highpass"; highpass.frequency.value=120;
+  const bandpass = audioContext.createBiquadFilter(); bandpass.type="bandpass"; bandpass.frequency.value=1100; bandpass.Q.value=0.8;
+  const compressor = audioContext.createDynamicsCompressor(); compressor.threshold.value=-48; compressor.ratio.value=20; compressor.attack.value=0; compressor.release.value=0.25;
+
+  gainNode = audioContext.createGain(); gainNode.gain.value=ganancia;
+  analyser = audioContext.createAnalyser(); analyser.fftSize=2048;
+
+  src.connect(highpass); highpass.connect(bandpass); bandpass.connect(compressor); compressor.connect(gainNode); gainNode.connect(analyser);
+
+  // Visual
+  const canvas = document.getElementById('wave'); const ctx = canvas.getContext('2d');
+  canvas.width=340; canvas.height=100;
+  function draw(){
+    requestAnimationFrame(draw);
+    const data = new Uint8Array(analyser.frequencyBinCount); analyser.getByteTimeDomainData(data);
+    ctx.fillStyle="#0a0a0a"; ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.strokeStyle="#ff0000"; ctx.lineWidth=2; ctx.beginPath();
+    let x=0; for(let i=0;i<data.length;i++){ let y=data[i]/128*canvas.height/2; if(i==0)ctx.moveTo(x,y); else ctx.lineTo(x,y); x+=canvas.width/data.length; } ctx.stroke();
+  } draw();
+
+  // Transcripcion EVP
+  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(Speech){
+    const rec = new Speech(); rec.lang="es-AR"; rec.continuous=true; rec.interimResults=true;
+    rec.onresult = e => {
+      let t = e.results[e.results.length-1][0].transcript;
+      let conf = e.results[e.results.length-1][0].confidence;
+      if(conf > 0.55){
+        document.getElementById('transcript').innerHTML = `👻 <b>VOZ DETECTADA:</b> "${t.toUpperCase()}" <br><span style="font-size:9px;color:#ff0000">Conf: ${(conf*100).toFixed(0)}%</span>`;
+        // Guarda log
+        let logs = JSON.parse(localStorage.getItem('archiviax-evp')||"[]");
+        logs.push({texto:t, fecha:Date.now()}); localStorage.setItem('archiviax-evp', JSON.stringify(logs));
+      }
+    };
+    rec.start();
+  }
+
+  recorder = new MediaRecorder(stream);
+  recorder.ondataavailable=e=>chunks.push(e.data);
+  recorder.onstop=()=>{
+    const blob = new Blob(chunks, {type:'audio/webm'});
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`EVP_ARCHIVAX_${Date.now()}.webm`; a.click();
+    chunks=[];
+  }
+}
+
+function toggleRec(){
+  if(!grabando){ recorder.start(); document.getElementById('btnRec').innerHTML="■ STOP"; grabando=true; }
+  else{ recorder.stop(); document.getElementById('btnRec').innerHTML="● REC"; grabando=false; }
+}
+function toggleGanancia(){
+  ganancia = ganancia==5.5? 8 : 5.5;
+  gainNode.gain.value=ganancia;
+  alert(`Ganancia EVP: X${ganancia} EXTREMO`);
+}
+
+iniciarEVP();
+</script>
+</body>
+</html>
