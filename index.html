@@ -1,53 +1,62 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVAX - TERMINAL OFICIAL</title>
+<title>ARCHIVAX</title>
 <style>
-body{margin:0;background:black;color:#00ff41;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
-.box{border:1px solid #00ff41;border-radius:16px;padding:28px;width:90%;max-width:360px;text-align:center;box-shadow:0 0 20px rgba(0,255,65,0.2)}
-h1{letter-spacing:4px;margin:0 0 8px}
-input{width:100%;padding:12px;margin:8px 0;border-radius:8px;border:1px solid #333;background:#111;color:white;box-sizing:border-box}
-.btn{width:100%;padding:14px;border-radius:10px;border:none;font-weight:bold;margin-top:10px;cursor:pointer}
-.btn-green{background:#00ff41;color:black}
-.btn-outline{background:transparent;border:1px solid #00ff41;color:#00ff41}
-.btn-red{background:transparent;border:1px solid #ff0000;color:#ff0000;font-size:12px}
-small{color:#555;font-size:9px}
+body{margin:0;background:black;color:#ff0000;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
+.container{width:90%;max-width:380px;border:1px solid #ff0000;border-radius:20px;padding:25px;text-align:center;box-shadow:0 0 25px rgba(255,0,0,0.25)}
+h1{letter-spacing:6px;margin:0 0 5px 0}
+.sub{font-size:9px;color:#666;margin-bottom:20px;letter-spacing:2px}
+input{width:100%;padding:12px;background:#0a0a0a;border:1px solid #330000;color:white;border-radius:10px;margin:8px 0;box-sizing:border-box}
+.btn-main{width:100%;padding:14px;background:#00ff00;color:black;font-weight:bold;border:none;border-radius:12px;cursor:pointer;margin-top:10px;letter-spacing:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:20px}
+.card{border:1px solid #330000;background:rgba(255,0,0,0.05);border-radius:12px;padding:15px 10px;cursor:pointer;transition:0.2s}
+.card:hover{border-color:#ff0000;box-shadow:0 0 15px rgba(255,0,0,0.3);transform:scale(1.02)}
+.card b{display:block;font-size:12px;margin-top:5px}
+.card span{font-size:18px}
+.divisor{margin:20px 0;border:none;border-top:1px dashed #330000}
+.guest{font-size:10px;color:#666;margin-top:10px}
 </style>
 </head>
 <body>
-<div class="box">
+<div class="container">
   <h1>ARCHIVAX</h1>
-  <p style="font-size:10px;color:#888;margin-bottom:20px">TERMINAL OFICIAL - SICOFONIA REAL</p>
-  
-  <input id="email" placeholder="Email">
-  <input id="pass" type="password" placeholder="Contraseña">
-  <button class="btn btn-green" onclick="login()">INICIAR SESIÓN</button>
-  <button class="btn btn-outline" onclick="registro()">REGISTRARSE</button>
-  
-  <div style="margin:18px 0;border-top:1px dashed #333"></div>
-  
-  <button class="btn btn-red" onclick="location.href='/camara.html'">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
-  <p style="font-size:10px;color:#666;margin-top:8px">Cámara roja + Audio EVP real. Se guarda en tu celu.</p>
-  
-  <small>Copyright ARCHIVAX.COM.AR 2026</small>
+  <div class="sub">TERMINAL DE EVIDENCIA PARANORMAL</div>
+
+  <input type="email" id="email" placeholder="Email">
+  <input type="password" id="pass" placeholder="Contraseña">
+  <button class="btn-main" onclick="entrar()">ENTRAR [10:00]</button>
+
+  <hr class="divisor">
+
+  <div style="font-size:10px;color:#ff0000;letter-spacing:3px;margin-bottom:10px">MODO INVITADO - SIN REGISTRO</div>
+  <div class="grid">
+    <div class="card" onclick="location.href='camara.html'">
+      <span>👁️</span><b>CAMARA ROJA</b><div style="font-size:9px;color:#666">Muñeco MediaPipe</div>
+    </div>
+    <div class="card" onclick="location.href='evp.html'">
+      <span>🎙️</span><b>EVP EXTREMO</b><div style="font-size:9px;color:#666">X8 Sin Eco</div>
+    </div>
+    <div class="card" onclick="location.href='llamada.html'">
+      <span>☎️</span><b>LA LINEA</b><div style="font-size:9px;color:#666">Llamada al otro lado</div>
+    </div>
+    <div class="card" onclick="location.href='ouija.html'">
+      <span>👻</span><b>OUIJA EVP</b><div style="font-size:9px;color:#666">Movida por voz</div>
+    </div>
+  </div>
+
+  <div class="guest">Modo invitado 10 min • Todo se guarda en tu celular<br>archiviax.com.ar</div>
 </div>
 
 <script>
-function registro(){
-  const e=document.getElementById('email').value, p=document.getElementById('pass').value;
-  if(!e||!p){alert('Completa email y contraseña');return}
-  localStorage.setItem('archiviax-user', JSON.stringify({email:e, pass:p, date:Date.now()}));
-  alert('Cuenta creada! Ahora inicia sesión');
-}
-function login(){
-  const e=document.getElementById('email').value, p=document.getElementById('pass').value;
-  const u=localStorage.getItem('archiviax-user');
-  if(!u){alert('No tenes cuenta, registrate primero');return}
-  const data=JSON.parse(u);
-  if(data.email==e && data.pass==p){ location.href='/camara.html'; }
-  else{ alert('Datos incorrectos'); }
+function entrar(){
+  const e=document.getElementById('email').value;
+  const p=document.getElementById('pass').value;
+  if(!e||!p){ alert('Poné email y pass'); return; }
+  localStorage.setItem('archiviax_user', JSON.stringify({email:e, tiempo:600}));
+  location.href='camara.html';
 }
 </script>
 </body>
