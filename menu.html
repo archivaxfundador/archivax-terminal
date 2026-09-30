@@ -1,22 +1,84 @@
-<div style="margin-top:22px;border:1px solid #ffaa00;border-radius:12px;padding:16px;text-align:center;background:#1a1500">
-<div style="font-size:12px;color:#ffaa00;font-weight:bold;margin-bottom:12px">💎 HACETE PREMIUM</div>
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ARCHIVAX - MENU</title>
+<style>
+body{margin:0;background:#050505;color:#fff;font-family:monospace;padding:16px}
+.top{border:1px solid #00ff41;border-radius:14px;padding:14px;text-align:center;margin-bottom:16px}
+h1{color:#00ff41;margin:0;letter-spacing:5px}
+.status{font-size:11px;color:#aaa;margin-top:6px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:18px}
+.card{border:1px solid #222;border-radius:12px;padding:18px;text-align:center;background:#0a0a0a;cursor:pointer}
+.card b{display:block;margin-top:8px;font-size:12px}
+.card small{color:#666;font-size:9px}
+.card:hover{border-color:#00ff41}
+.guest-bar{background:#1a0a00;border:1px solid #ff6600;border-radius:10px;padding:10px;text-align:center;color:#ffaa00;font-size:11px;margin-bottom:14px;display:none}
+.premium-box{border:1px solid #ffaa00;border-radius:12px;padding:16px;text-align:center;background:#1a1500;margin-top:10px}
+.btn{width:100%;padding:14px;border-radius:10px;font-weight:900;border:none;cursor:pointer;margin-bottom:10px}
+.btn-mensual{background:#ffaa00;color:#000}
+.btn-anual{background:#00ff41;color:#000}
+.btn-logout{background:transparent;border:1px solid #333;color:#666;margin-top:10px;font-size:10px}
+</style>
+</head>
+<body>
 
-<button onclick="pagarPremium('mensual')" style="width:100%;padding:14px;border-radius:10px;background:#ffaa00;color:#000;font-weight:900;border:none;cursor:pointer;margin-bottom:10px">
-💳 MENSUAL $6.999 / mes
-</button>
-
-<button onclick="pagarPremium('anual')" style="width:100%;padding:14px;border-radius:10px;background:#00ff41;color:#000;font-weight:900;border:none;cursor:pointer">
-💳 ANUAL $71.389 - 15% OFF (ahorras $12.599)
-</button>
-
-<p style="font-size:9px;color:#888;margin-top:10px">Pago automático con MercadoPago. Se activa al instante.</p>
+<div class="top">
+<h1>ARCHIVAX</h1>
+<div id="status" class="status">Cargando sesión...</div>
+<div id="timer" style="color:#ff6600;font-weight:bold;margin-top:6px"></div>
 </div>
 
+<div id="guestBar" class="guest-bar">👻 MODO INVITADO - 10 MIN - Luego debes registrarte</div>
+
+<div class="grid">
+<div class="card" onclick="location.href='/camara.html'"><div>👁️</div><b>CAMARA EVP</b><small>Detección espectral</small></div>
+<div class="card" onclick="location.href='/audio.html'"><div>🎙️</div><b>AUDIO EVP</b><small>Psicofonías extremo</small></div>
+<div class="card" onclick="location.href='/archivos.html'"><div>📁</div><b>MIS ARCHIVOS</b><small>Evidencias</small></div>
+<div class="card" onclick="location.href='/radar.html'"><div>📡</div><b>RADAR SLS</b><small>Premium</small></div>
+</div>
+
+<div class="premium-box">
+<div style="font-size:12px;color:#ffaa00;font-weight:bold;margin-bottom:12px">💎 HACETE PREMIUM</div>
+<button onclick="pagarPremium('mensual')" class="btn btn-mensual">💳 MENSUAL $6.999 / mes</button>
+<button onclick="pagarPremium('anual')" class="btn btn-anual">💳 ANUAL $71.389 - 15% OFF (ahorras $12.599)</button>
+<p style="font-size:9px;color:#888;margin:8px 0 0">Pago automático con MercadoPago. Se activa al instante.</p>
+<div id="premiumMsg" style="font-size:11px;color:#0f0;margin-top:8px"></div>
+</div>
+
+<button class="btn btn-logout" onclick="logout()">Cerrar sesión</button>
+
 <script>
+let guestInterval;
+async function check(){
+ const r=await fetch('/api/me'); const j=await r.json();
+ const status=document.getElementById('status');
+ const guestBar=document.getElementById('guestBar');
+ if(!j || j.type==='none'){ location.href='/index.html'; return; }
+ if(j.type==='guest'){
+  status.innerText='👻 Invitado - Acceso 10 min';
+  guestBar.style.display='block';
+  let left=Math.max(0, Math.floor((j.exp-Date.now())/1000));
+  const timerEl=document.getElementById('timer');
+  guestInterval=setInterval(()=>{
+   left--; 
+   if(left<=0){ clearInterval(guestInterval); alert('Se acabaron tus 10 min. Registrate para seguir.'); location.href='/index.html?expired=1'; }
+   else { timerEl.innerText='⏳ Quedan '+Math.floor(left/60)+':'+String(left%60).padStart(2,'0'); }
+  },1000);
+ } else if(j.type==='founder'){
+  status.innerText='👑 FUNDADOR - Acceso ilimitado';
+ } else if(j.email){
+  if(j.premium){ status.innerText='💎 PREMIUM '+j.premium.toUpperCase()+' - '+j.email; document.getElementById('premiumMsg').innerText='✅ Premium activo'; }
+  else { status.innerText='✅ '+j.email; }
+ }
+ const urlParams=new URLSearchParams(location.search);
+ if(urlParams.get('premium')==='ok'){ alert('¡Pago aprobado! Premium activado.'); history.replaceState({},'', '/menu.html'); }
+}
 async function pagarPremium(plan){
  const me=await fetch('/api/me').then(r=>r.json());
- if(!me.email || me.type==='guest' || me.type==='none'){
-  alert('⚠️ Tenés que REGISTRARTE para pagar PREMIUM.\nAsí no perdés tu acceso.');
+ if(!me.email || me.type==='guest'){
+  alert('⚠️ Tenés que REGISTRARTE para pagar PREMIUM.\nAsí guardamos tu acceso con tu email.');
   location.href='/index.html';
   return;
  }
@@ -24,6 +86,10 @@ async function pagarPremium(plan){
  const r=await fetch(`/api/create-payment?plan=${plan}&fp=${fp}`);
  const j=await r.json();
  if(j.ok && j.init_point) location.href=j.init_point;
- else alert('Error MP: '+(j.error||'reintentá'));
+ else alert('Error MP: '+(j.error||JSON.stringify(j)));
 }
+async function logout(){ await fetch('/api/logout'); localStorage.removeItem('arch_current'); location.href='/index.html'; }
+check();
 </script>
+</body>
+</html>
