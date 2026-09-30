@@ -4,53 +4,102 @@
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ARCHIVAX - OUIJA</title>
 <style>
-body{margin:0;background:#0a0a0a;color:#ff0000;font-family:serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
-#tabla{width:95%;max-width:400px;aspect-ratio:1.2;background:radial-gradient(#222,#000);border:3px solid #ff0000;border-radius:12px;position:relative;padding:10px;box-sizing:border-box}
-.letra{position:absolute;color:#ff0000;font-weight:bold;cursor:pointer;font-size:18px}
-#ficha{position:absolute;width:40px;height:40px;border:1px solid #ff0000;border-radius:50%;background:rgba(255,0,0,0.2);left:50%;top:50%;transform:translate(-50%,-50%);transition:all 1.2s ease-in-out;box-shadow:0 0 10px red}
-#palabra{color:white;margin:10px;min-height:20px;letter-spacing:5px}
+body{margin:0;background:#0a0a0a;color:#ff0000;font-family:serif;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:15px;box-sizing:border-box}
+#tabla{width:95%;max-width:420px;background:radial-gradient(#222,#000);border:3px solid #ff0000;border-radius:12px;position:relative;padding:18px 12px 12px;box-sizing:border-box;display:flex;flex-direction:column;gap:18px}
+.fila{display:grid;justify-items:center;gap:8px}
+#filaABC{grid-template-columns:repeat(7, 1fr);}
+#filaNUM{grid-template-columns:repeat(10, 1fr);}
+#filaPalabras{grid-template-columns:repeat(3, 1fr);margin-top:10px;border-top:1px solid #330000;padding-top:12px}
+.letra{color:#ff0000;font-weight:bold;cursor:pointer;font-size:19px;text-align:center;padding:4px;position:relative;transition:all 0.3s}
+#palabra{color:white;margin:10px;min-height:26px;letter-spacing:6px;font-size:20px;text-align:center;font-family:monospace}
+#ficha{position:absolute;width:44px;height:44px;border:1px solid #ff0000;border-radius:50%;background:rgba(255,0,0,0.25);left:50%;top:50%;transform:translate(-50%,-50%);transition:all 1.2s ease-in-out;box-shadow:0 0 15px red;pointer-events:none;z-index:10}
 </style>
 </head>
 <body>
-<h3>ARCHIVAX OUIJA - EVP</h3>
+<h3 style="letter-spacing:4px">ARCHIVAX OUIJA - EVP</h3>
 <div id="palabra"></div>
 <div id="tabla">
-  <div id="ficha"></div>
+<div id="ficha"></div>
+<div id="filaABC" class="fila"></div>
+<div id="filaNUM" class="fila"></div>
+<div id="filaPalabras" class="fila"></div>
 </div>
-<button onclick="iniciarOuija()" style="margin-top:15px;padding:10px 20px;border:1px solid red;background:black;color:red;border-radius:20px">ACTIVAR OUIJA POR AUDIO</button>
-<button onclick="location.href='/'" style="margin:10px;padding:8px 15px;background:transparent;border:1px solid #333;color:#333;border-radius:20px">SALIR</button>
-
+<button onclick="iniciarOuija()" style="margin-top:18px;padding:12px 22px;border:1px solid red;background:black;color:red;border-radius:20px;letter-spacing:2px">ACTIVAR OUIJA POR AUDIO</button>
+<button onclick="location.href='/'" style="margin:10px;padding:8px 15px;background:transparent;border:1px solid #333;color:#555;border-radius:20px">SALIR</button>
 <script>
-const letras = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789SI NO ADIOS".split("");
-const tabla = document.getElementById('tabla');
-letras.forEach((l,i)=>{
-  let d=document.createElement('div'); d.className='letra'; d.innerText=l;
-  d.style.left= (5 + (i%7)*14) +'%'; d.style.top= (5 + Math.floor(i/7)*12)+'%';
-  d.id='L-'+l; tabla.appendChild(d);
+const ABC = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ".split("");
+const NUM = "0123456789".split("");
+const PALABRAS = ["SI","NO","ADIOS"];
+
+const filaABC = document.getElementById('filaABC');
+const filaNUM = document.getElementById('filaNUM');
+const filaPAL = document.getElementById('filaPalabras');
+
+function crearLetra(l, contenedor){
+  let d=document.createElement('div');
+  d.className='letra';
+  d.innerText=l;
+  d.id='L-'+l;
+  contenedor.appendChild(d);
+  return d;
+}
+
+ABC.forEach(l=>crearLetra(l, filaABC));
+NUM.forEach(l=>crearLetra(l, filaNUM));
+PALABRAS.forEach(l=>{
+  let d=crearLetra(l, filaPAL);
+  d.id='L-'+l; // SI, NO, ADIOS
+  d.style.fontSize='16px';
+  d.style.letterSpacing='3px';
 });
 
 let palabraActual="";
 async function iniciarOuija(){
-  const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
-  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(SR){
-    const r = new SR(); r.lang="es-AR"; r.continuous=true; r.interimResults=true;
-    r.onresult=e=>{
-      let txt = e.results[e.results.length-1][0].transcript.toUpperCase().replace(/[^A-ZÑ ]/g,"");
-      if(txt.length>0){
-        let ultimaLetra = txt.trim().slice(-1);
-        let el = document.getElementById('L-'+ultimaLetra);
-        if(el){
-          document.getElementById('ficha').style.left = el.style.left;
-          document.getElementById('ficha').style.top = el.style.top;
-          palabraActual+=ultimaLetra;
-          document.getElementById('palabra').innerHTML = palabraActual.slice(-15);
+  try{
+    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+    const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+    if(SR){
+      const r = new SR();
+      r.lang="es-AR";
+      r.continuous=true;
+      r.interimResults=true;
+      r.onresult=e=>{
+        let txt = e.results[e.results.length-1][0].transcript.toUpperCase();
+        // Si dijo SI, NO, ADIOS completo
+        if(txt.includes("SI") || txt.includes("NO") || txt.includes("ADIOS")){
+          let palabra = txt.includes("ADIOS")? "ADIOS" : (txt.includes("SI")? "SI" : "NO");
+          let el = document.getElementById('L-'+palabra);
+          if(el){
+            let rectTabla = document.getElementById('tabla').getBoundingClientRect();
+            let rectEl = el.getBoundingClientRect();
+            document.getElementById('ficha').style.left = (rectEl.left - rectTabla.left + rectEl.width/2) + 'px';
+            document.getElementById('ficha').style.top = (rectEl.top - rectTabla.top + rectEl.height/2) + 'px';
+            palabraActual+= " ["+palabra+"] ";
+            document.getElementById('palabra').innerHTML = palabraActual.slice(-30);
+          }
+          return;
         }
-      }
-    };
-    r.start();
-    alert("OUIJA ACTIVADA: Habla en voz alta. Pregunta algo. La ficha se moverá por tu EVP real.");
-  }
+        // Si no, ultima letra
+        let limpia = txt.replace(/[^A-ZÑ0-9]/g,"");
+        if(limpia.length>0){
+          let ultimaLetra = limpia.slice(-1);
+          let el = document.getElementById('L-'+ultimaLetra);
+          if(el){
+            let rectTabla = document.getElementById('tabla').getBoundingClientRect();
+            let rectEl = el.getBoundingClientRect();
+            document.getElementById('ficha').style.left = (rectEl.left - rectTabla.left + rectEl.width/2) + 'px';
+            document.getElementById('ficha').style.top = (rectEl.top - rectTabla.top + rectEl.height/2) + 'px';
+            palabraActual+=ultimaLetra;
+            document.getElementById('palabra').innerHTML = palabraActual.slice(-20);
+          }
+        }
+      };
+      r.start();
+      alert("OUIJA ACTIVADA: Habla en voz alta. La ficha se mueve por tu EVP real.");
+    } else {
+      alert("Tu navegador no soporta SpeechRecognition. Usá Chrome en Android.");
+    }
+  }catch(err){ alert("Tenés que dar permiso de micrófono"); }
 }
 </script>
 </body>
