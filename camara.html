@@ -1,114 +1,134 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ARCHIVAX - DETECTOR EVP</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ARCHIVAX - EXPERIENCIA PARANORMAL</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;font-family:monospace}
-#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
-#canvas{position:fixed;inset:0;width:100%;height:100%}
-#top{position:fixed;top:0;left:0;right:0;height:40px;background:rgba(0,0,0,0.9);border-bottom:1px solid #00ff41;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#00ff41;font-size:10px;z-index:10}
+#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#top{position:fixed;top:0;left:0;right:0;height:40px;background:rgba(0,0,0,0.9);border-bottom:1px solid #ff0000;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#ff0000;font-size:10px;z-index:10}
 #evpBar{position:fixed;left:10px;top:50px;width:36px;background:rgba(0,0,0,0.75);border:1px solid #222;border-radius:8px;padding:4px;z-index:10;text-align:center}
 #evpBar span{font-size:7px;color:#666;display:block}
 #evpFill{width:100%;height:70px;background:#111;border-radius:4px;position:relative;overflow:hidden;margin-top:4px}
 #evpFill div{position:absolute;bottom:0;width:100%;background:linear-gradient(#0f0,#f00);height:0%;transition:0.08s}
+#ghostTalk{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(255,0,0,0.9);color:#fff;padding:12px 20px;border-radius:12px;font-size:16px;font-weight:900;z-index:20;display:none;letter-spacing:2px;text-align:center;box-shadow:0 0 30px #f00}
 #timer{position:fixed;top:50px;right:10px;background:rgba(0,0,0,0.85);border:1px solid #f00;color:#f00;padding:6px 10px;border-radius:20px;font-size:10px;z-index:10;display:none}
 #block{position:fixed;inset:0;background:#000;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px;text-align:center}
+#centerMsg{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;z-index:5;color:#fff;text-align:center;padding:20px;flex-direction:column;background:#000}
 #bottom{position:fixed;bottom:0;left:0;right:0;padding:8px;display:flex;flex-wrap:wrap;gap:6px;z-index:10;background:linear-gradient(transparent,#000 40%)}
 .btn{flex:1 1 28%;background:#111;border:1px solid #333;color:#888;padding:11px;border-radius:10px;font-size:9px;font-weight:700;min-width:78px}
-.btn.active{border-color:#00ff41;color:#00ff41;background:#000}
+.btn.active{border-color:#ff0000;color:#ff0000;background:#000}
 .btn.cam{border-color:#00aaff;color:#00aaff}
-#dot{width:8px;height:8px;border-radius:50%;background:#f00;display:inline-block;margin-right:6px;box-shadow:0 0 8px #f00}
+#dot{width:8px;height:8px;border-radius:50%;background:#f00;display:inline-block;margin-right:6px;box-shadow:0 0 8px #f00;animation:blink 1s infinite}
+@keyframes blink{50%{opacity:0}}
 </style>
 </head>
 <body>
-<video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
-<div id="top"><span><span id="dot"></span>ARCHIVAX • DETECTOR</span><span id="status">Iniciando...</span></div>
+<div id="centerMsg"><div>ARCHIVAX - EXPERIENCIA REAL</div><div style="font-size:9px;color:#f00;margin-top:6px">Esqueletos + Voces que no están ahí</div><br><button onclick="init()" style="padding:14px 24px;background:#f00;color:#fff;border:none;border-radius:10px;font-weight:900">ACTIVAR EXPERIENCIA</button><div id="err" style="color:#f44;font-size:10px;margin-top:12px"></div></div>
+<div id="top"><span><span id="dot"></span>ARCHIVAX • PARANORMAL</span><span id="status">Esperando...</span></div>
 <div id="evpBar"><span>EVP</span><span id="db">--</span><div id="evpFill"><div id="bar"></div></div><span id="voice" style="color:#f00;font-size:6px"></span></div>
+<div id="ghostTalk"></div>
 <div id="timer">● REC <span id="t">00:00</span> / <span id="limit"></span></div>
-<div id="block"><h2 style="color:#f00;font-size:22px;margin-bottom:10px">ACCESO BLOQUEADO</h2><p style="color:#fff;font-size:12px;line-height:18px">Usaste tus 10 minutos gratis como invitado.<br><br>Para seguir usando la cámara debes registrarte.<br><br><span style="color:#00ff41">Invitado: 10 min y se bloquea para siempre<br>Registrado: 1 hora por conexión<br>Premium: Ilimitado, para cuando quiere</span></p><button onclick="location.href='/menu.html'" style="margin-top:20px;padding:12px 20px;background:#00ff41;color:#000;border:none;border-radius:10px;font-weight:900">REGISTRARME</button></div>
+<div id="block"><h2 style="color:#f00;font-size:22px;margin-bottom:10px">ACCESO BLOQUEADO</h2><p style="color:#fff;font-size:12px">Usaste tus 10 min gratis. Registrate.</p><button onclick="location.href='/'" style="margin-top:20px;padding:12px 20px;background:#00ff41;color:#000;border:none;border-radius:10px;font-weight:900">REGISTRARME</button></div>
 <div id="bottom">
 <button class="btn" onclick="location.href='/menu.html'">MENU</button>
-<button class="btn cam" id="bCam">🔄 CAM: TRASERA</button>
-<button class="btn active" id="bAudio">🎧 EVP ON</button>
+<button class="btn cam" id="bCam">🔄 CAM</button>
+<button class="btn active" id="bAudio">👻 VOCES ON</button>
 <button class="btn active" id="bSls">DETECTOR ON</button>
 <button class="btn" id="bRec">● REC</button>
 </div>
 
 <script type="module">
-import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
-const video=document.getElementById('video'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d'), status=document.getElementById('status');
-let landmarker, running=true, audioCtx, analyser, hp, notch, lp, gain, comp, audioOn=true;
-let facing='environment', vStream;
-
-// --- ROLES Y TIEMPOS ---
-function getRole(){ return localStorage.getItem('archivax_role') || 'guest'; }
-function getMaxSeconds(){
- let r=getRole();
- if(r==='premium') return 999999999; // ilimitado
- if(r==='registered') return 3600; // 1 hora conectado
- return 600; // invitado 10 minutos
-}
-function getRoleText(){
- let r=getRole();
- if(r==='premium') return 'PREMIUM ∞';
- if(r==='registered') return 'REG 60:00';
- return 'INVITADO 10:00';
-}
-function checkGuestBlocked(){
- if(getRole()==='guest' && localStorage.getItem('archivax_guest_blocked')==='1'){
-  document.getElementById('block').style.display='flex'; return true;
- }
- return false;
-}
+import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm";
+const video=document.getElementById('video'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d'), status=document.getElementById('status'), ghostTalk=document.getElementById('ghostTalk');
+let landmarker, running=true, audioCtx, analyser, hp, notch, lp, gain, comp, facing='environment', vStream, anomalyNow=false, lastVoiceTime=0;
+const PHRASES=["estoy aqui","quien eres tu","vete","ayudame","no me mires","detras de ti","te veo","sal de aqui","me duele","no estoy solo","cuidado","mama","hace frio","me mataron","no puedo salir","el esta aqui","muerte","sangre","no te vayas","por que viniste","me ves?","silencio","esta cerca","huye","tocame","estoy muerto","ayuda","no","si","dejame"];
+function getRole(){return localStorage.getItem('archivax_role')||'guest';}
+function getMaxSeconds(){let r=getRole(); if(r==='premium')return 999999999; if(r==='registered')return 3600; return 600;}
+function getRoleText(){let r=getRole(); if(r==='premium')return 'PREMIUM ∞'; if(r==='registered')return 'REG 60:00'; return 'INVITADO 10:00';}
+function checkGuestBlocked(){ if(getRole()==='guest'&&localStorage.getItem('archivax_guest_blocked')==='1'){document.getElementById('block').style.display='flex';return true;} return false;}
 
 async function startCamera(){
- if(checkGuestBlocked()) return;
- if(vStream) vStream.getTracks().forEach(t=>t.stop());
- canvas.width=innerWidth; canvas.height=innerHeight;
- vStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920}},audio:false});
- video.srcObject=vStream; await video.play();
- document.getElementById('bCam').innerText = facing==='environment'? '🔄 CAM: TRASERA' : '🔄 CAM: FRONTAL';
- document.getElementById('limit').innerText=getRoleText();
+ try{
+  if(vStream) vStream.getTracks().forEach(t=>t.stop());
+  canvas.width=innerWidth; canvas.height=innerHeight;
+  try{ vStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false}); }
+  catch(e){ facing=facing==='environment'?'user':'environment'; vStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:false}); }
+  video.srcObject=vStream; await video.play();
+  document.getElementById('centerMsg').style.display='none';
+  document.getElementById('bCam').innerText='🔄 '+(facing==='environment'?'TRASERA':'FRONTAL');
+  document.getElementById('limit').innerText=getRoleText();
+ }catch(err){ document.getElementById('err').innerText='ERROR: '+err.message; }
 }
 
-async function init(){
+window.init=async function(){
  if(checkGuestBlocked()) return;
  await startCamera();
- let aStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1,sampleRate:48000}});
- audioCtx=new AudioContext();
- const src=audioCtx.createMediaStreamSource(aStream);
- notch=audioCtx.createBiquadFilter(); notch.type='notch'; notch.frequency.value=50; notch.Q.value=15;
- hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=180;
- lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500;
- comp=audioCtx.createDynamicsCompressor(); comp.threshold.value=-45; comp.ratio.value=8;
- gain=audioCtx.createGain(); gain.gain.value=1.8;
- analyser=audioCtx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=0.85;
- src.connect(notch); notch.connect(hp); hp.connect(lp); lp.connect(comp); comp.connect(gain); gain.connect(analyser);
- let out=audioCtx.createGain(); out.gain.value=0; gain.connect(out); out.connect(audioCtx.destination); window._evpOut=out;
+ try{
+  let aStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1}});
+  audioCtx=new AudioContext();
+  const src=audioCtx.createMediaStreamSource(aStream);
+  notch=audioCtx.createBiquadFilter(); notch.type='notch'; notch.frequency.value=50; notch.Q.value=15;
+  hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=200;
+  lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3800;
+  comp=audioCtx.createDynamicsCompressor(); comp.threshold.value=-40; comp.ratio.value=12;
+  gain=audioCtx.createGain(); gain.gain.value=2.2;
+  analyser=audioCtx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=0.85;
+  src.connect(notch); notch.connect(hp); hp.connect(lp); lp.connect(comp); comp.connect(gain); gain.connect(analyser);
+  let out=audioCtx.createGain(); out.gain.value=0.55; gain.connect(out); out.connect(audioCtx.destination); window._evpOut=out;
+ }catch(e){ document.getElementById('err').innerText+=' | Audio: '+e.message; }
+ try{
+  status.textContent='Cargando IA paranormal...';
+  const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker=await PoseLandmarker.createFromOptions(fileset,{
+   baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,delegate:"GPU"},
+   runningMode:"VIDEO", numPoses:3, minPoseDetectionConfidence:0.5, minTrackingConfidence:0.5
+  });
+  status.textContent='Experiencia activa - Habla: quien sos?';
+  loop(); audioMeter();
+ }catch(e){ status.textContent='Error IA: '+e.message; }
+};
 
- status.textContent='Cargando IA...';
- const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
- landmarker=await PoseLandmarker.createFromOptions(fileset,{
-  baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,delegate:"GPU"},
-  runningMode:"VIDEO", numPoses:3, minPoseDetectionConfidence:0.5, minTrackingConfidence:0.5
- });
- status.textContent='Listo - ARCHIVAX';
- loop(); audioMeter();
+function speakEntity(text){
+ if(Date.now()-lastVoiceTime < 4000) return; // no spamear
+ lastVoiceTime=Date.now();
+ ghostTalk.innerText=text.toUpperCase();
+ ghostTalk.style.display='block';
+ setTimeout(()=>ghostTalk.style.display='none',2500);
+
+ // VOZ TETRICA REAL
+ let u=new SpeechSynthesisUtterance(text);
+ u.lang='es-AR'; u.rate=0.7; u.pitch=0.3; u.volume=1;
+ // busca voz grave masculina
+ let voices=speechSynthesis.getVoices();
+ let grave=voices.find(v=>v.name.toLowerCase().includes('google')&&v.lang.includes('es'))||voices[0];
+ if(grave) u.voice=grave;
+
+ // efecto EVP: baja velocidad + filtro ya lo hace audioCtx
+ speechSynthesis.speak(u);
 }
 
-let lastT=0;
+let lastT=0, lastAnomaly=0;
 async function loop(){
- if(!running ||!landmarker){ requestAnimationFrame(loop); return; }
+ if(!running||!landmarker){requestAnimationFrame(loop);return;}
  if(video.currentTime!==lastT){
   lastT=video.currentTime;
   const r=landmarker.detectForVideo(video, performance.now());
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(r.landmarks?.length){ r.landmarks.forEach(lm=>drawArchivax(lm)); status.textContent='👻 ANOMALIA'; status.style.color='#f00'; }
-  else { status.textContent='Escaneando...'; status.style.color='#0f0'; }
+  if(r.landmarks?.length){
+   r.landmarks.forEach(lm=>drawArchivax(lm));
+   status.textContent='👻 ANOMALIA DETECTADA'; status.style.color='#f00';
+   anomalyNow=true; lastAnomaly=Date.now();
+   // SI HAY ANOMALIA, 30% CHANCE DE VOZ SOLA
+   if(Math.random()<0.02){ speakEntity(PHRASES[Math.floor(Math.random()*PHRASES.length)]); }
+  } else {
+   anomalyNow=false;
+   if(Date.now()-lastAnomaly>3000){ status.textContent='Escaneando... habla fuerte: quien sos?'; status.style.color='#0f0'; }
+  }
  }
  requestAnimationFrame(loop);
 }
@@ -119,7 +139,7 @@ function drawArchivax(lm){
  const toY=y=> y*canvas.height;
  bones.forEach(([a,b])=>{ const p1=lm[a],p2=lm[b]; if(p1&&p2&&p1.visibility>0.4&&p2.visibility>0.4){ ctx.beginPath(); ctx.moveTo(toX(p1.x),toY(p1.y)); ctx.lineTo(toX(p2.x),toY(p2.y)); ctx.stroke(); } });
  lm.forEach(p=>{ if(p.visibility>0.5){ ctx.beginPath(); ctx.arc(toX(p.x),toY(p.y),6,0,6.28); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(toX(p.x),toY(p.y),2,0,6.28); ctx.fill(); ctx.fillStyle='#f00'; } });
- ctx.shadowBlur=0; if(lm[0]){ ctx.fillStyle='#f00'; ctx.font='bold 11px monospace'; ctx.fillText('ANOMALIA', toX(lm[0].x)-28, toY(lm[0].y)-20); }
+ ctx.shadowBlur=0; if(lm[0]){ ctx.fillStyle='#f00'; ctx.font='bold 11px monospace'; ctx.fillText('ENTIDAD', toX(lm[0].x)-28, toY(lm[0].y)-20); }
 }
 function audioMeter(){
  if(!analyser) return requestAnimationFrame(audioMeter);
@@ -127,63 +147,43 @@ function audioMeter(){
  let slice=d.slice(8,90); let avg=slice.reduce((a,b)=>a+b,0)/slice.length; let peak=Math.max(...slice);
  document.getElementById('bar').style.height=Math.min(100,avg*1.8)+'%';
  document.getElementById('db').innerText=avg.toFixed(0);
- document.getElementById('voice').innerText=(peak>75&&avg>22)?'VOZ!':(audioOn?'LIMPIO':'');
+ // DETECTA CUANDO EL USUARIO HABLA FUERTE Y HAY ANOMALIA = RESPONDE
+ if(peak>80 && avg>30 && anomalyNow && Date.now()-lastVoiceTime>5000){
+  setTimeout(()=>{
+   let resp=PHRASES[Math.floor(Math.random()*PHRASES.length)];
+   speakEntity(resp);
+  },1200+Math.random()*1500); // espera como si pensara
+  document.getElementById('voice').innerText='RESPONDIENDO!';
+ } else {
+  document.getElementById('voice').innerText=peak>75&&avg>22?'VOZ!':'';
+ }
  requestAnimationFrame(audioMeter);
 }
-
-// --- GRABACION MANUAL CON LIMITES ---
-let rec=null, chunks=[], isRec=false, recTimer=null, recSec=0;
-document.getElementById('bCam').onclick=async()=>{ facing = facing==='environment'? 'user' : 'environment'; await startCamera(); };
-document.getElementById('bSls').onclick=e=>{ running=!running; e.target.textContent=running?'DETECTOR ON':'DETECTOR OFF'; e.target.classList.toggle('active',running); if(!running) ctx.clearRect(0,0,canvas.width,canvas.height); if(running) loop(); };
+let rec=null,chunks=[],isRec=false,recTimer=null,recSec=0;
+document.getElementById('bCam').onclick=async()=>{ facing=facing==='environment'?'user':'environment'; await startCamera(); };
+document.getElementById('bSls').onclick=e=>{running=!running; e.target.textContent=running?'DETECTOR ON':'DETECTOR OFF'; e.target.classList.toggle('active',running); if(!running)ctx.clearRect(0,0,canvas.width,canvas.height); if(running)loop();};
 document.getElementById('bAudio').onclick=e=>{
- audioOn=!audioOn;
- if(audioOn){ hp.frequency.value=180; lp.frequency.value=3500; gain.gain.value=1.8; e.target.textContent='🎧 EVP ON'; e.target.classList.add('active'); window._evpOut.gain.value=0; }
- else { hp.frequency.value=20; lp.frequency.value=20000; gain.gain.value=1; e.target.textContent='🎧 OFF'; e.target.classList.remove('active'); }
+ if(window._evpOut.gain.value>0){ window._evpOut.gain.value=0; e.target.textContent='👻 VOCES OFF'; }
+ else { window._evpOut.gain.value=0.55; e.target.textContent='👻 VOCES ON'; }
 };
 document.getElementById('bRec').onclick=async()=>{
- if(checkGuestBlocked()) return;
+ if(checkGuestBlocked())return;
  if(!isRec){
-  // INICIA - PARA CUANDO QUIERE EL USUARIO
   let maxSec=getMaxSeconds();
   let cStream=canvas.captureStream(30);
   let mStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
   let combined=new MediaStream([...cStream.getVideoTracks(),...mStream.getAudioTracks()]);
   rec=new MediaRecorder(combined); chunks=[];
   rec.ondataavailable=e=>chunks.push(e.data);
-  rec.onstop=()=>{
-   let blob=new Blob(chunks,{type:'video/webm'});
-   let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ARCHIVAX-${Date.now()}.webm`; a.click();
-   clearInterval(recTimer); isRec=false;
-   document.getElementById('bRec').textContent='● REC'; document.getElementById('bRec').style.background='#111';
-   document.getElementById('timer').style.display='none'; recSec=0;
-  };
+  rec.onstop=()=>{let blob=new Blob(chunks,{type:'video/webm'});let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`ARCHIVAX-${Date.now()}.webm`;a.click();clearInterval(recTimer);isRec=false;document.getElementById('bRec').textContent='● REC';document.getElementById('bRec').style.background='#111';document.getElementById('timer').style.display='none';recSec=0;};
   rec.start(); isRec=true; recSec=0;
-  document.getElementById('bRec').textContent='■ STOP (TOCA PARA PARAR)'; document.getElementById('bRec').style.background='#f00'; document.getElementById('bRec').style.color='#fff';
-  document.getElementById('timer').style.display='block';
-  document.getElementById('limit').innerText=getRoleText();
-  recTimer=setInterval(()=>{
-   recSec++;
-   let m=String(Math.floor(recSec/60)).padStart(2,'0'); let s=String(recSec%60).padStart(2,'0');
-   document.getElementById('t').innerText=`${m}:${s}`;
-   // BLOQUEO INVITADO 10 MIN
-   if(recSec>=maxSec){
-    rec.stop();
-    if(getRole()==='guest'){
-     localStorage.setItem('archivax_guest_blocked','1');
-     alert('Se acabaron tus 10 minutos gratis. Te bloqueamos. Debes registrarte para seguir.');
-     document.getElementById('block').style.display='flex';
-    } else {
-     alert(`Limite de ${getRoleText()} alcanzado.`);
-    }
-   }
-  },1000);
- } else {
-  // PARA CUANDO QUIERE - MANUAL
-  rec.stop();
- }
+  document.getElementById('bRec').textContent='■ STOP';document.getElementById('bRec').style.background='#f00';
+  document.getElementById('timer').style.display='block';document.getElementById('limit').innerText=getRoleText();
+  recTimer=setInterval(()=>{recSec++;let m=String(Math.floor(recSec/60)).padStart(2,'0');let s=String(recSec%60).padStart(2,'0');document.getElementById('t').innerText=`${m}:${s}`; if(recSec>=maxSec){rec.stop(); if(getRole()==='guest'){localStorage.setItem('archivax_guest_blocked','1');document.getElementById('block').style.display='flex';}}},1000);
+ }else{rec.stop();}
 };
-window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
-init();
+window.addEventListener('resize',()=>{canvas.width=innerWidth;canvas.height=innerHeight;});
+speechSynthesis.getVoices();
 </script>
 </body>
 </html>
