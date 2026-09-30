@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHIVAX - OUIJA</title>
+<style>
+body{margin:0;background:#0a0a0a;color:#ff0000;font-family:serif;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
+#tabla{width:95%;max-width:400px;aspect-ratio:1.2;background:radial-gradient(#222,#000);border:3px solid #ff0000;border-radius:12px;position:relative;padding:10px;box-sizing:border-box}
+.letra{position:absolute;color:#ff0000;font-weight:bold;cursor:pointer;font-size:18px}
+#ficha{position:absolute;width:40px;height:40px;border:1px solid #ff0000;border-radius:50%;background:rgba(255,0,0,0.2);left:50%;top:50%;transform:translate(-50%,-50%);transition:all 1.2s ease-in-out;box-shadow:0 0 10px red}
+#palabra{color:white;margin:10px;min-height:20px;letter-spacing:5px}
+</style>
+</head>
+<body>
+<h3>ARCHIVAX OUIJA - EVP</h3>
+<div id="palabra"></div>
+<div id="tabla">
+  <div id="ficha"></div>
+</div>
+<button onclick="iniciarOuija()" style="margin-top:15px;padding:10px 20px;border:1px solid red;background:black;color:red;border-radius:20px">ACTIVAR OUIJA POR AUDIO</button>
+<button onclick="location.href='/'" style="margin:10px;padding:8px 15px;background:transparent;border:1px solid #333;color:#333;border-radius:20px">SALIR</button>
+
+<script>
+const letras = "ABCDEFGHIJKLMNÑOPQRSTUVWXYZ0123456789SI NO ADIOS".split("");
+const tabla = document.getElementById('tabla');
+letras.forEach((l,i)=>{
+  let d=document.createElement('div'); d.className='letra'; d.innerText=l;
+  d.style.left= (5 + (i%7)*14) +'%'; d.style.top= (5 + Math.floor(i/7)*12)+'%';
+  d.id='L-'+l; tabla.appendChild(d);
+});
+
+let palabraActual="";
+async function iniciarOuija(){
+  const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+  const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(SR){
+    const r = new SR(); r.lang="es-AR"; r.continuous=true; r.interimResults=true;
+    r.onresult=e=>{
+      let txt = e.results[e.results.length-1][0].transcript.toUpperCase().replace(/[^A-ZÑ ]/g,"");
+      if(txt.length>0){
+        let ultimaLetra = txt.trim().slice(-1);
+        let el = document.getElementById('L-'+ultimaLetra);
+        if(el){
+          document.getElementById('ficha').style.left = el.style.left;
+          document.getElementById('ficha').style.top = el.style.top;
+          palabraActual+=ultimaLetra;
+          document.getElementById('palabra').innerHTML = palabraActual.slice(-15);
+        }
+      }
+    };
+    r.start();
+    alert("OUIJA ACTIVADA: Habla en voz alta. Pregunta algo. La ficha se moverá por tu EVP real.");
+  }
+}
+</script>
+</body>
+</html>
