@@ -3,32 +3,38 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ARCHIVAX SLS + EVP</title>
+<title>ARCHIVAX - DETECTOR EVP</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;font-family:monospace}
-#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
-#canvas{position:fixed;top:0;left:0;width:100%;height:100%}
-#top{position:fixed;top:0;left:0;right:0;height:38px;background:rgba(0,0,0,0.85);border-bottom:1px solid #00ff41;display:flex;align-items:center;justify-content:space-between;padding:0 12px;color:#00ff41;font-size:11px;z-index:10}
-#evpBar{position:fixed;left:10px;top:48px;width:36px;background:rgba(0,0,0,0.7);border:1px solid #222;border-radius:8px;padding:4px;z-index:10;text-align:center}
+#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
+#canvas{position:fixed;inset:0;width:100%;height:100%}
+#top{position:fixed;top:0;left:0;right:0;height:40px;background:rgba(0,0,0,0.9);border-bottom:1px solid #00ff41;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#00ff41;font-size:10px;z-index:10}
+#evpBar{position:fixed;left:10px;top:50px;width:36px;background:rgba(0,0,0,0.75);border:1px solid #222;border-radius:8px;padding:4px;z-index:10;text-align:center}
 #evpBar span{font-size:7px;color:#666;display:block}
 #evpFill{width:100%;height:70px;background:#111;border-radius:4px;position:relative;overflow:hidden;margin-top:4px}
 #evpFill div{position:absolute;bottom:0;width:100%;background:linear-gradient(#0f0,#f00);height:0%;transition:0.08s}
-#bottom{position:fixed;bottom:0;left:0;right:0;padding:10px;display:flex;gap:8px;z-index:10;background:linear-gradient(transparent,#000)}
-.btn{flex:1;background:#111;border:1px solid #333;color:#888;padding:12px;border-radius:12px;font-size:10px;font-weight:700}
+#timer{position:fixed;top:50px;right:10px;background:rgba(0,0,0,0.85);border:1px solid #f00;color:#f00;padding:6px 10px;border-radius:20px;font-size:10px;z-index:10;display:none}
+#block{position:fixed;inset:0;background:#000;z-index:100;display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px;text-align:center}
+#bottom{position:fixed;bottom:0;left:0;right:0;padding:8px;display:flex;flex-wrap:wrap;gap:6px;z-index:10;background:linear-gradient(transparent,#000 40%)}
+.btn{flex:1 1 28%;background:#111;border:1px solid #333;color:#888;padding:11px;border-radius:10px;font-size:9px;font-weight:700;min-width:78px}
 .btn.active{border-color:#00ff41;color:#00ff41;background:#000}
+.btn.cam{border-color:#00aaff;color:#00aaff}
 #dot{width:8px;height:8px;border-radius:50%;background:#f00;display:inline-block;margin-right:6px;box-shadow:0 0 8px #f00}
 </style>
 </head>
 <body>
 <video id="video" autoplay playsinline></video>
 <canvas id="canvas"></canvas>
-<div id="top"><span><span id="dot"></span>SLS + EVP CLEAN</span><span id="status">Iniciando...</span></div>
+<div id="top"><span><span id="dot"></span>ARCHIVAX • DETECTOR</span><span id="status">Iniciando...</span></div>
 <div id="evpBar"><span>EVP</span><span id="db">--</span><div id="evpFill"><div id="bar"></div></div><span id="voice" style="color:#f00;font-size:6px"></span></div>
+<div id="timer">● REC <span id="t">00:00</span> / <span id="limit"></span></div>
+<div id="block"><h2 style="color:#f00;font-size:22px;margin-bottom:10px">ACCESO BLOQUEADO</h2><p style="color:#fff;font-size:12px;line-height:18px">Usaste tus 10 minutos gratis como invitado.<br><br>Para seguir usando la cámara debes registrarte.<br><br><span style="color:#00ff41">Invitado: 10 min y se bloquea para siempre<br>Registrado: 1 hora por conexión<br>Premium: Ilimitado, para cuando quiere</span></p><button onclick="location.href='/menu.html'" style="margin-top:20px;padding:12px 20px;background:#00ff41;color:#000;border:none;border-radius:10px;font-weight:900">REGISTRARME</button></div>
 <div id="bottom">
 <button class="btn" onclick="location.href='/menu.html'">MENU</button>
+<button class="btn cam" id="bCam">🔄 CAM: TRASERA</button>
 <button class="btn active" id="bAudio">🎧 EVP ON</button>
-<button class="btn active" id="bSls">SLS ON</button>
+<button class="btn active" id="bSls">DETECTOR ON</button>
 <button class="btn" id="bRec">● REC</button>
 </div>
 
@@ -36,33 +42,53 @@ body{background:#000;overflow:hidden;font-family:monospace}
 import {PoseLandmarker, FilesetResolver} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs";
 const video=document.getElementById('video'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d'), status=document.getElementById('status');
 let landmarker, running=true, audioCtx, analyser, hp, notch, lp, gain, comp, audioOn=true;
+let facing='environment', vStream;
+
+// --- ROLES Y TIEMPOS ---
+function getRole(){ return localStorage.getItem('archivax_role') || 'guest'; }
+function getMaxSeconds(){
+ let r=getRole();
+ if(r==='premium') return 999999999; // ilimitado
+ if(r==='registered') return 3600; // 1 hora conectado
+ return 600; // invitado 10 minutos
+}
+function getRoleText(){
+ let r=getRole();
+ if(r==='premium') return 'PREMIUM ∞';
+ if(r==='registered') return 'REG 60:00';
+ return 'INVITADO 10:00';
+}
+function checkGuestBlocked(){
+ if(getRole()==='guest' && localStorage.getItem('archivax_guest_blocked')==='1'){
+  document.getElementById('block').style.display='flex'; return true;
+ }
+ return false;
+}
+
+async function startCamera(){
+ if(checkGuestBlocked()) return;
+ if(vStream) vStream.getTracks().forEach(t=>t.stop());
+ canvas.width=innerWidth; canvas.height=innerHeight;
+ vStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1920}},audio:false});
+ video.srcObject=vStream; await video.play();
+ document.getElementById('bCam').innerText = facing==='environment'? '🔄 CAM: TRASERA' : '🔄 CAM: FRONTAL';
+ document.getElementById('limit').innerText=getRoleText();
+}
 
 async function init(){
- canvas.width=innerWidth; canvas.height=innerHeight;
- // 1. VIDEO SIN AUDIO (para no acoplar)
- const vStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1920}},audio:false});
- video.srcObject=vStream; await video.play();
-
- // 2. AUDIO EVP LIMPIO - CAPTURA SEPARADA
- const aStream=await navigator.mediaDevices.getUserMedia({
-  audio:{
-   echoCancellation:true, noiseSuppression:true, autoGainControl:true,
-   channelCount:1, sampleRate:48000
-  }
- });
- audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+ if(checkGuestBlocked()) return;
+ await startCamera();
+ let aStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true,channelCount:1,sampleRate:48000}});
+ audioCtx=new AudioContext();
  const src=audioCtx.createMediaStreamSource(aStream);
- // CADENA ANTI-RUIDO
- notch=audioCtx.createBiquadFilter(); notch.type='notch'; notch.frequency.value=50; notch.Q.value=15; // mata zumbido luz
- hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=180; // saca eco grave y pasos
- lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500; // deja solo voz
- comp=audioCtx.createDynamicsCompressor(); comp.threshold.value=-45; comp.ratio.value=8; comp.attack.value=0.003; comp.release.value=0.25;
- gain=audioCtx.createGain(); gain.gain.value=1.8; // sube voces bajas sin hacer LIGT
+ notch=audioCtx.createBiquadFilter(); notch.type='notch'; notch.frequency.value=50; notch.Q.value=15;
+ hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=180;
+ lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500;
+ comp=audioCtx.createDynamicsCompressor(); comp.threshold.value=-45; comp.ratio.value=8;
+ gain=audioCtx.createGain(); gain.gain.value=1.8;
  analyser=audioCtx.createAnalyser(); analyser.fftSize=1024; analyser.smoothingTimeConstant=0.85;
  src.connect(notch); notch.connect(hp); hp.connect(lp); lp.connect(comp); comp.connect(gain); gain.connect(analyser);
- // NO CONECTA A PARLANTES = 0 eco, 0 acople. Solo si usas auriculares podes escuchar
- let out=audioCtx.createGain(); out.gain.value=0; gain.connect(out); out.connect(audioCtx.destination);
- window._evpOut=out;
+ let out=audioCtx.createGain(); out.gain.value=0; gain.connect(out); out.connect(audioCtx.destination); window._evpOut=out;
 
  status.textContent='Cargando IA...';
  const fileset=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
@@ -70,9 +96,8 @@ async function init(){
   baseOptions:{modelAssetPath:`https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task`,delegate:"GPU"},
   runningMode:"VIDEO", numPoses:3, minPoseDetectionConfidence:0.5, minTrackingConfidence:0.5
  });
- status.textContent='SLS + EVP Listo';
- requestAnimationFrame(loop);
- audioMeter();
+ status.textContent='Listo - ARCHIVAX';
+ loop(); audioMeter();
 }
 
 let lastT=0;
@@ -82,18 +107,19 @@ async function loop(){
   lastT=video.currentTime;
   const r=landmarker.detectForVideo(video, performance.now());
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  if(r.landmarks?.length){ r.landmarks.forEach(lm=>{ drawGhostTube(lm); }); status.textContent='👻 ENTIDAD'; status.style.color='#f00'; }
+  if(r.landmarks?.length){ r.landmarks.forEach(lm=>drawArchivax(lm)); status.textContent='👻 ANOMALIA'; status.style.color='#f00'; }
   else { status.textContent='Escaneando...'; status.style.color='#0f0'; }
  }
  requestAnimationFrame(loop);
 }
-function drawGhostTube(lm){
+function drawArchivax(lm){
  ctx.lineWidth=4; ctx.strokeStyle='#ff0000'; ctx.fillStyle='#ff0000'; ctx.shadowColor='#ff0000'; ctx.shadowBlur=14; ctx.lineCap='round';
  const bones=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
- const toX=x=>(1-x)*canvas.width, toY=y=>y*canvas.height;
+ const toX=x=> facing==='environment'? (1-x)*canvas.width : x*canvas.width;
+ const toY=y=> y*canvas.height;
  bones.forEach(([a,b])=>{ const p1=lm[a],p2=lm[b]; if(p1&&p2&&p1.visibility>0.4&&p2.visibility>0.4){ ctx.beginPath(); ctx.moveTo(toX(p1.x),toY(p1.y)); ctx.lineTo(toX(p2.x),toY(p2.y)); ctx.stroke(); } });
  lm.forEach(p=>{ if(p.visibility>0.5){ ctx.beginPath(); ctx.arc(toX(p.x),toY(p.y),6,0,6.28); ctx.fill(); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(toX(p.x),toY(p.y),2,0,6.28); ctx.fill(); ctx.fillStyle='#f00'; } });
- ctx.shadowBlur=0; if(lm[0]){ ctx.fillStyle='#f00'; ctx.font='bold 12px monospace'; ctx.fillText('ANOMALY', toX(lm[0].x)-28, toY(lm[0].y)-20); }
+ ctx.shadowBlur=0; if(lm[0]){ ctx.fillStyle='#f00'; ctx.font='bold 11px monospace'; ctx.fillText('ANOMALIA', toX(lm[0].x)-28, toY(lm[0].y)-20); }
 }
 function audioMeter(){
  if(!analyser) return requestAnimationFrame(audioMeter);
@@ -101,13 +127,63 @@ function audioMeter(){
  let slice=d.slice(8,90); let avg=slice.reduce((a,b)=>a+b,0)/slice.length; let peak=Math.max(...slice);
  document.getElementById('bar').style.height=Math.min(100,avg*1.8)+'%';
  document.getElementById('db').innerText=avg.toFixed(0);
- if(peak>75 && avg>22){ document.getElementById('voice').innerText='VOZ!'; document.getElementById('voice').style.color='#f00'; }
- else { document.getElementById('voice').innerText=audioOn?'LIMPIO':''; document.getElementById('voice').style.color='#0f0'; }
+ document.getElementById('voice').innerText=(peak>75&&avg>22)?'VOZ!':(audioOn?'LIMPIO':'');
  requestAnimationFrame(audioMeter);
 }
-// BOTONES
-document.getElementById('bSls').onclick=e=>{ running=!running; e.target.textContent=running?'SLS ON':'SLS OFF'; e.target.classList.toggle('active',running); if(!running) ctx.clearRect(0,0,canvas.width,canvas.height); if(running) loop(); };
+
+// --- GRABACION MANUAL CON LIMITES ---
+let rec=null, chunks=[], isRec=false, recTimer=null, recSec=0;
+document.getElementById('bCam').onclick=async()=>{ facing = facing==='environment'? 'user' : 'environment'; await startCamera(); };
+document.getElementById('bSls').onclick=e=>{ running=!running; e.target.textContent=running?'DETECTOR ON':'DETECTOR OFF'; e.target.classList.toggle('active',running); if(!running) ctx.clearRect(0,0,canvas.width,canvas.height); if(running) loop(); };
 document.getElementById('bAudio').onclick=e=>{
  audioOn=!audioOn;
  if(audioOn){ hp.frequency.value=180; lp.frequency.value=3500; gain.gain.value=1.8; e.target.textContent='🎧 EVP ON'; e.target.classList.add('active'); window._evpOut.gain.value=0; }
- else { hp.frequency.value=20; lp.frequency.value=20000; gain.gain.value=1
+ else { hp.frequency.value=20; lp.frequency.value=20000; gain.gain.value=1; e.target.textContent='🎧 OFF'; e.target.classList.remove('active'); }
+};
+document.getElementById('bRec').onclick=async()=>{
+ if(checkGuestBlocked()) return;
+ if(!isRec){
+  // INICIA - PARA CUANDO QUIERE EL USUARIO
+  let maxSec=getMaxSeconds();
+  let cStream=canvas.captureStream(30);
+  let mStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true}});
+  let combined=new MediaStream([...cStream.getVideoTracks(),...mStream.getAudioTracks()]);
+  rec=new MediaRecorder(combined); chunks=[];
+  rec.ondataavailable=e=>chunks.push(e.data);
+  rec.onstop=()=>{
+   let blob=new Blob(chunks,{type:'video/webm'});
+   let a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ARCHIVAX-${Date.now()}.webm`; a.click();
+   clearInterval(recTimer); isRec=false;
+   document.getElementById('bRec').textContent='● REC'; document.getElementById('bRec').style.background='#111';
+   document.getElementById('timer').style.display='none'; recSec=0;
+  };
+  rec.start(); isRec=true; recSec=0;
+  document.getElementById('bRec').textContent='■ STOP (TOCA PARA PARAR)'; document.getElementById('bRec').style.background='#f00'; document.getElementById('bRec').style.color='#fff';
+  document.getElementById('timer').style.display='block';
+  document.getElementById('limit').innerText=getRoleText();
+  recTimer=setInterval(()=>{
+   recSec++;
+   let m=String(Math.floor(recSec/60)).padStart(2,'0'); let s=String(recSec%60).padStart(2,'0');
+   document.getElementById('t').innerText=`${m}:${s}`;
+   // BLOQUEO INVITADO 10 MIN
+   if(recSec>=maxSec){
+    rec.stop();
+    if(getRole()==='guest'){
+     localStorage.setItem('archivax_guest_blocked','1');
+     alert('Se acabaron tus 10 minutos gratis. Te bloqueamos. Debes registrarte para seguir.');
+     document.getElementById('block').style.display='flex';
+    } else {
+     alert(`Limite de ${getRoleText()} alcanzado.`);
+    }
+   }
+  },1000);
+ } else {
+  // PARA CUANDO QUIERE - MANUAL
+  rec.stop();
+ }
+};
+window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
+init();
+</script>
+</body>
+</html>
