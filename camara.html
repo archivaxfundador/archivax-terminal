@@ -1,146 +1,128 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX - CAMARA</title>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils@0.3/drawing_utils.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js"></script>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+<title>CAMARA EVP - ARCHIVAX</title>
 <style>
-  body { margin:0; background:black; color:white; font-family:monospace; overflow:hidden }
-  #video { position:absolute; width:100%; height:100%; object-fit:cover; transform: scaleX(-1); }
-  #canvas { position:absolute; width:100%; height:100%; }
-  #ui { position:absolute; top:0; width:100%; padding:10px; box-sizing:border-box; display:flex; justify-content:space-between; z-index:10 }
-  #evp { position:absolute; bottom:90px; width:100%; text-align:center; z-index:10; }
-  #evp-text { background:rgba(255,0,0,0.8); color:white; display:inline-block; padding:6px 12px; border-radius:20px; font-size:13px; min-width:200px; }
-  #controls { position:absolute; bottom:15px; width:100%; display:flex; justify-content:center; gap:20px; z-index:10 }
- .btn { width:60px; height:60px; border-radius:50%; border:2px solid #ff0000; background:black; color:white; font-size:20px; }
- .btn-rec { background:#ff0000; }
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
+#wrap{position:relative;width:100vw;height:100vh}
+#video{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1)}
+#overlay{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+.top{position:absolute;top:0;left:0;right:0;padding:10px;background:linear-gradient(#000,transparent);display:flex;justify-content:space-between;z-index:10;font-size:10px}
+.btns{position:absolute;bottom:0;left:0;right:0;padding:12px;background:linear-gradient(transparent,#000);display:flex;gap:8px;z-index:10}
+.btn{flex:1;padding:14px;border-radius:10px;border:1px solid #00ff41;background:#000;color:#00ff41;font-weight:900;font-size:11px}
+.btn.rec{background:#f00;color:#fff;border-color:#f00}
+#evpBar{position:absolute;left:10px;top:60px;width:6px;height:200px;background:#111;border:1px solid #333;z-index:10}
+#evpFill{width:100%;background:#f00;position:absolute;bottom:0;height:0%;transition:0.1s}
+#msg{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#000a;border:1px solid #f00;color:#f00;padding:8px 14px;border-radius:20px;font-size:12px;display:none;z-index:20}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose"></script>
 </head>
 <body>
-<video id="video" autoplay playsinline></video>
-<canvas id="canvas"></canvas>
-
-<div id="ui">
-  <button onclick="location.href='/'" style="background:black; border:1px solid #ff0000; color:#ff0000; padding:6px 10px;">← SALIR</button>
-  <button onclick="cambiarCamara()" style="background:black; border:1px solid white; color:white; padding:6px 10px;">↻ CAMARA</button>
-  <span id="timer" style="background:#ff0000; padding:4px 8px; border-radius:6px; font-size:11px;">INVITADO 10:00</span>
+<div id="wrap">
+<video id="video" autoplay playsinline muted></video>
+<canvas id="overlay"></canvas>
+<div id="evpBar"><div id="evpFill"></div></div>
+<div class="top">
+<div>👁️ CAMARA EVP - SLS RED MODE</div>
+<div><span id="audioDb">-∞ dB</span> | <span id="entity">ESCANEANDO...</span></div>
 </div>
-
-<div id="evp"><span id="evp-text">🎙️ Escaneando EVP... Silencio total</span></div>
-
-<div id="controls">
-  <button class="btn" onclick="tomarFoto()">📸</button>
-  <button class="btn btn-rec" id="btnRec" onclick="grabar()">●</button>
-  <button class="btn" onclick="toggleAudio()">🎧</button>
+<div id="msg">👻 ENTIDAD DETECTADA</div>
+<div class="btns">
+<button class="btn" onclick="location.href='/menu.html'">← MENU</button>
+<button class="btn" id="btnAudio" onclick="toggleAudio()">🎙️ AUDIO EVP ON</button>
+<button class="btn rec" id="btnRec" onclick="toggleRec()">● REC</button>
+</div>
 </div>
 
 <script>
-let facing = "environment";
-let stream, recorder, chunks=[];
-let audioContext, analyser;
-const video = document.getElementById('video');
-const canvas = document.getElementById('canvas');
-const ctx = canvas.getContext('2d');
-const evpText = document.getElementById('evp-text');
+let video=document.getElementById('video'), overlay=document.getElementById('overlay'), ctx=overlay.getContext('2d');
+let detector, raf, audioCtx, analyser, mic, gainNode, filterHigh, filterLow, isRec=false, mediaRecorder, chunks=[];
+let audioEnabled=true;
 
-async function iniciar() {
-  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
-  stream = await navigator.mediaDevices.getUserMedia({
-    video: { facingMode: facing, width:1280, height:720 },
-    audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:true }
-  });
-  video.srcObject = stream;
-
-  // AUDIO EVP SIN ECO
-  audioContext = new AudioContext();
-  const src = audioContext.createMediaStreamSource(stream);
-  analyser = audioContext.createAnalyser();
-  const gain = audioContext.createGain();
-  gain.gain.value = 3.5; // amplifica lo que no se escucha
-  const filter = audioContext.createBiquadFilter();
-  filter.type = "highpass"; filter.frequency.value = 80; // saca eco grave
-  src.connect(filter); filter.connect(gain); gain.connect(analyser);
-
-  // TRANSCRIPCION VOZ REAL (EVP)
-  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(Speech){
-    const rec = new Speech(); rec.lang="es-AR"; rec.continuous=true; rec.interimResults=true;
-    rec.onresult = e => {
-      let t = e.results[e.results.length-1][0].transcript;
-      if(e.results[e.results.length-1][0].confidence > 0.6){
-        evpText.innerHTML = `👻 VOZ DETECTADA: "${t.toUpperCase()}"`;
-        evpText.style.background = "#ff0000";
-      }
-    };
-    rec.start();
+async function init(){
+ overlay.width=window.innerWidth; overlay.height=window.innerHeight;
+ // 1. CAMARA TRASERA con config pro
+ const stream=await navigator.mediaDevices.getUserMedia({
+  video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720}},
+  audio:{
+   echoCancellation:true,
+   noiseSuppression:true,
+   autoGainControl:false,
+   sampleRate:48000,
+   channelCount:1
   }
+ });
+ video.srcObject=stream;
 
-  // POSE ROJO - MUÑECO REAL EN MOVIMIENTO
-  const pose = new Pose({locateFile: f => `https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});
-  pose.setOptions({modelComplexity:1, smoothLandmarks:true, minDetectionConfidence:0.6, minTrackingConfidence:0.6});
-  pose.onResults(onResults);
-  const camera = new Camera(video, {
-    onFrame: async () => { await pose.send({image: video}); },
-    width:1280, height:720
-  });
-  camera.start();
+ // 2. AUDIO EVP MEJORADO - quita eco y amplifica voces no audibles
+ audioCtx=new (window.AudioContext||window.webkitAudioContext)({sampleRate:48000});
+ let source=audioCtx.createMediaStreamSource(stream);
+ filterHigh=audioCtx.createBiquadFilter(); filterHigh.type='highpass'; filterHigh.frequency.value=80; // quita zumbido
+ filterLow=audioCtx.createBiquadFilter(); filterLow.type='lowpass'; filterLow.frequency.value=4000; // deja pasar voz espectral
+ gainNode=audioCtx.createGain(); gainNode.gain.value=3.5; // sube 350% voces bajas
+ analyser=audioCtx.createAnalyser(); analyser.fftSize=2048;
+ source.connect(filterHigh); filterHigh.connect(filterLow); filterLow.connect(gainNode); gainNode.connect(analyser);
+ // no conectamos a destino para evitar feedback
+
+ // 3. SLS DETECTOR - Pose Detection
+ await tf.ready();
+ const model=poseDetection.SupportedModels.BlazePose;
+ detector=await poseDetection.createDetector(model,{runtime:'tfjs',modelType:'lite',enableSmoothing:true});
+ detectLoop();
+ audioLoop();
 }
-
-function onResults(results){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  ctx.save();
-  ctx.scale(-1,1); ctx.translate(-canvas.width,0);
-  // DIBUJA SOLO SI HAY PERSONA
-  if(results.poseLandmarks){
-    drawConnectors(ctx, results.poseLandmarks, POSE_CONNECTIONS, {color:'#ff0000', lineWidth:4});
-    drawLandmarks(ctx, results.poseLandmarks, {color:'#ff0000', lineWidth:2, radius:4});
+function audioLoop(){
+ if(!analyser) return;
+ let data=new Uint8Array(analyser.frequencyBinCount);
+ analyser.getByteFrequencyData(data);
+ let avg=data.slice(5,100).reduce((a,b)=>a+b,0)/95; // rango voz EVP
+ document.getElementById('evpFill').style.height=Math.min(100, avg*1.5)+'%';
+ document.getElementById('audioDb').innerText=(avg>30?'🔴 ':'⚫ ')+avg.toFixed(0)+' EVP';
+ if(avg>65){ document.getElementById('entity').innerText='VOZ DETECTADA!'; document.getElementById('entity').style.color='#f00'; }
+ requestAnimationFrame(audioLoop);
+}
+async function detectLoop(){
+ if(detector && video.readyState>=2){
+  const poses=await detector.estimatePoses(video,{flipHorizontal:false});
+  ctx.clearRect(0,0,overlay.width,overlay.height);
+  if(poses.length>0){
+   poses.forEach(pose=>{
+    // DIBUJA MUÑECO ROJO ESTILO SLS REAL
+    ctx.strokeStyle='#ff0000'; ctx.lineWidth=4; ctx.fillStyle='#ff0000';
+    const k=pose.keypoints;
+    const drawLine=(a,b)=>{ if(a.score>0.3&&b.score>0.3){ ctx.beginPath(); ctx.moveTo(overlay.width - a.x*overlay.width/video.videoWidth, a.y*overlay.height/video.videoHeight); ctx.lineTo(overlay.width - b.x*overlay.width/video.videoWidth, b.y*overlay.height/video.videoHeight); ctx.stroke(); } };
+    // esqueleto
+    const map=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+    map.forEach(([i,j])=>{ let a=k[i],b=k[j]; if(a&&b) drawLine(a,b); });
+    k.forEach(pt=>{ if(pt.score>0.4){ ctx.beginPath(); ctx.arc(overlay.width - pt.x*overlay.width/video.videoWidth, pt.y*overlay.height/video.videoHeight, 6,0,Math.PI*2); ctx.fill(); } });
+    document.getElementById('msg').style.display='block';
+    document.getElementById('entity').innerText='ENTIDAD SLS';
+    setTimeout(()=>document.getElementById('msg').style.display='none',1500);
+   });
+  } else {
+   document.getElementById('entity').innerText='ESCANEANDO...';
+   document.getElementById('entity').style.color='#0f0';
   }
-  // MARCA DE AGUA
-  ctx.setTransform(1,0,0,1,0,0);
-  ctx.font = "12px monospace"; ctx.fillStyle="rgba(255,255,255,0.4)";
-  ctx.fillText("archiviax.com.ar", canvas.width-130, canvas.height-15);
-  ctx.restore();
+ }
+ raf=requestAnimationFrame(detectLoop);
 }
-
-function cambiarCamara(){
-  facing = facing=="environment"? "user" : "environment";
-  stream.getTracks().forEach(t=>t.stop()); iniciar();
+function toggleAudio(){ audioEnabled=!audioEnabled; gainNode.gain.value=audioEnabled?3.5:0; document.getElementById('btnAudio').innerText=audioEnabled?'🎙️ AUDIO EVP ON':'🔇 AUDIO OFF'; }
+function toggleRec(){
+ if(!isRec){
+  let stream=overlay.captureStream(30); let micStream=video.srcObject.getAudioTracks().length?new MediaStream([...video.srcObject.getAudioTracks()]):null;
+  let combined=new MediaStream([...stream.getVideoTracks(),...(micStream?micStream.getAudioTracks():[])]);
+  mediaRecorder=new MediaRecorder(combined,{mimeType:'video/webm'}); chunks=[];
+  mediaRecorder.ondataavailable=e=>chunks.push(e.data);
+  mediaRecorder.onstop=()=>{ let blob=new Blob(chunks,{type:'video/webm'}); let url=URL.createObjectURL(blob); let a=document.createElement('a'); a.href=url; a.download='evp-sls-'+Date.now()+'.webm'; a.click(); };
+  mediaRecorder.start(); isRec=true; document.getElementById('btnRec').innerText='■ STOP';
+ } else { mediaRecorder.stop(); isRec=false; document.getElementById('btnRec').innerText='● REC'; }
 }
-function tomarFoto(){
-  const c = document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight;
-  const cx = c.getContext('2d');
-  cx.drawImage(video,0,0); cx.drawImage(canvas,0,0,c.width,c.height);
-  cx.fillStyle="rgba(255,255,255,0.5)"; cx.fillText("archiviax.com.ar", 20, c.height-20);
-  const a = document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.jpg`; a.href=c.toDataURL('image/jpeg',0.9); a.click();
-  evpText.innerHTML="📸 FOTO GUARDADA";
-}
-function grabar(){
-  if(recorder && recorder.state=="recording"){
-    recorder.stop(); document.getElementById('btnRec').innerHTML="●"; return;
-  }
-  chunks=[]; recorder = new MediaRecorder(stream, {mimeType:'video/webm'});
-  recorder.ondataavailable=e=>chunks.push(e.data);
-  recorder.onstop=()=>{
-    const blob = new Blob(chunks, {type:'video/webm'});
-    const a = document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ARCHIVAX_${Date.now()}.webm`; a.click();
-  };
-  recorder.start(); document.getElementById('btnRec').innerHTML="■";
-}
-function toggleAudio(){ audioContext.state=="running"? audioContext.suspend() : audioContext.resume(); }
-
-iniciar();
-
-// TIMER 10 MIN INVITADO (si no esta registrado)
-let tiempo=600;
-if(!localStorage.getItem('archiviax-user')){
-  setInterval(()=>{
-    tiempo--; let m=Math.floor(tiempo/60), s=tiempo%60;
-    document.getElementById('timer').innerHTML=`INVITADO ${m}:${s.toString().padStart(2,'0')}`;
-    if(tiempo<=0){ stream.getTracks().forEach(t=>t.stop()); location.href='/registro.html'; }
-  },1000);
-} else { document.getElementById('timer').innerHTML="REGISTRADO - ILIMITADO"; document.getElementById('timer').style.background="#00ff41"; document.getElementById('timer').style.color="black"; }
+window.addEventListener('resize',()=>{ overlay.width=innerWidth; overlay.height=innerHeight; });
+init();
 </script>
 </body>
-  </html>
+</html>
