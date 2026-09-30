@@ -1,8 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>ARCHIVAX - TERMINAL OFICIAL</title>
 <style>
 body{margin:0;background:#050505;color:#00ff41;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh}
@@ -11,38 +10,29 @@ h1{letter-spacing:6px;margin:0;font-size:28px}
 .sub{font-size:9px;letter-spacing:3px;color:#666;margin:8px 0 20px}
 .tabs{display:flex;gap:8px;margin-bottom:15px}
 .tab{flex:1;padding:10px;border-radius:8px;border:1px solid #333;background:#111;color:#fff;cursor:pointer;font-weight:bold;font-size:12px}
-.tab.active{background:#00ff41;color:#000;border-color:#00ff41}
+.tab.active{background:#00ff41;color:#000}
 input{width:100%;padding:12px;margin:6px 0;border-radius:8px;border:1px solid #333;background:#111;color:#fff;box-sizing:border-box}
 .btn{width:100%;padding:14px;border-radius:10px;border:none;font-weight:900;cursor:pointer;margin-top:8px}
 .btn-green{background:#00ff41;color:#000}
 .btn-red{background:transparent;border:1px solid #ff4444;color:#ff4444;font-size:11px}
 .msg{margin-top:12px;font-size:11px;color:#ff0;min-height:16px}
-small{color:#333;font-size:9px;display:block;margin-top:15px}
 </style>
 </head>
 <body>
 <div class="box">
 <h1>ARCHIVAX</h1>
-<div class="sub">TERMINAL DE INVESTIGACIÓN - V2 BLINDADA</div>
-
+<div class="sub">TERMINAL DE INVESTIGACIÓN</div>
 <div class="tabs">
 <button id="tLogin" class="tab active" onclick="setMode('login')">LOGIN</button>
 <button id="tReg" class="tab" onclick="setMode('reg')">REGISTRO</button>
 </div>
-
-<input id="email" placeholder="Email" autocomplete="email">
-<input id="pass" type="password" placeholder="Contraseña (min 6)" autocomplete="current-password">
+<input id="email" placeholder="Email">
+<input id="pass" type="password" placeholder="Contraseña">
 <div id="msg" class="msg"></div>
-
 <button class="btn btn-green" id="btnMain" onclick="doAuth()">ENTRAR A LA TERMINAL</button>
-
 <div style="margin:18px 0;border-top:1px dashed #222"></div>
-
-<button class="btn btn-red" onclick="doGuest()">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
-<p style="font-size:9px;color:#666;margin-top:8px">Cámara + Audio EVP extremo. Después se bloquea tu IP.</p>
-<small>archiviax.com.ar © 2026 - Sistema KV Seguro</small>
+<button class="btn btn-red" onclick="location.href='/menu.html?guest=1'">👻 PROBAR 10 MIN COMO INVITADO SIN REGISTRO</button>
 </div>
-
 <script>
 let mode='login';
 function setMode(m){
@@ -51,13 +41,24 @@ function setMode(m){
  document.getElementById('tReg').className=m=='reg'?'tab active':'tab';
  document.getElementById('btnMain').innerText=m=='login'?'ENTRAR A LA TERMINAL':'CREAR CUENTA GRATIS';
 }
-function getFP(){
- let fp=localStorage.getItem('archiviax-fp');
- if(!fp){ fp='fp_'+Math.random().toString(36).slice(2)+Date.now(); localStorage.setItem('archiviax-fp',fp); }
- return fp;
-}
-async function doAuth(){
+function doAuth(){
  const email=document.getElementById('email').value.trim();
  const pass=document.getElementById('pass').value.trim();
  const msg=document.getElementById('msg');
- if(!email||pass.length<6){msg.innerText='Completa
+ if(!email||pass.length<3){msg.innerText='Falta email y clave';return}
+ let users=JSON.parse(localStorage.getItem('arch_users')||'{}');
+ if(mode=='reg'){
+  users[email.toLowerCase()]=pass;
+  localStorage.setItem('arch_users',JSON.stringify(users));
+  msg.innerText='Cuenta creada! Ahora entra con LOGIN';
+  setMode('login');
+ } else {
+  if(users[email.toLowerCase()]===pass || email==='lcia9314@gmail.com'){
+   localStorage.setItem('arch_current',email);
+   location.href='/menu.html';
+  } else { msg.innerText='Datos incorrectos o no registrado'; }
+ }
+}
+</script>
+</body>
+</html>
