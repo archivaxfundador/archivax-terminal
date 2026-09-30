@@ -1,151 +1,106 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>CAMARA SLS V3</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+<title>CAMARA SLS - REAL</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
-#wrap{position:relative;width:100vw;height:100vh}
-#video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-#canvas{position:absolute;inset:0;width:100%;height:100%}
-.top{position:absolute;top:0;left:0;right:0;background:#000e;padding:10px;display:flex;justify-content:space-between;z-index:10;font-size:11px}
-.bottom{position:absolute;bottom:0;left:0;right:0;background:#000e;padding:10px;display:flex;gap:8px;z-index:10}
-.btn{flex:1;padding:12px;border-radius:10px;border:1px solid #00ff41;background:#000;color:#00ff41;font-weight:900}
-.btn.on{background:#00ff41;color:#000}
-#bar{position:absolute;left:10px;top:60px;width:10px;height:150px;background:#111;border:1px solid #333;z-index:10}
-#fill{width:100%;background:#f00;position:absolute;bottom:0;height:0%}
+body{background:#000;overflow:hidden;font-family:monospace}
+#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
+#canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
+#top{position:fixed;top:0;left:0;right:0;padding:8px 12px;background:linear-gradient(#000 60%,transparent);color:#00ff41;font-size:11px;display:flex;justify-content:space-between;z-index:10}
+#bottom{position:fixed;bottom:12px;left:12px;right:12px;display:flex;gap:8px;z-index:10}
+.btn{flex:1;padding:12px;border-radius:12px;border:1px solid #333;background:#111c;color:#aaa;font-size:11px;font-weight:bold}
+.btn.on{border-color:#00ff41;color:#00ff41;background:#000}
+#meter{position:fixed;left:12px;top:48px;width:4px;height:80px;background:#222;border-radius:10px;overflow:hidden;z-index:10}
+#meter div{position:absolute;bottom:0;width:100%;background:#ff0000;height:0%}
 </style>
+<script type="importmap">
+{"imports":{"@mediapipe/tasks-vision":"https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm/vision_bundle.mjs"}}
+</script>
 </head>
 <body>
-<div id="wrap">
-<video id="video" autoplay playsinline></video>
+<video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
-<canvas id="motion" style="display:none"></canvas>
-<div class="top"><div>👁️ SLS RED - MODO REAL</div><div id="info">Mueve lento...</div></div>
-<div id="bar"><div id="fill"></div></div>
-<div class="bottom">
+<div id="top"><span>👁️ GHOST SLS - RED</span><span id="status" style="color:#666">Cargando...</span></div>
+<div id="meter"><div id="fill"></div></div>
+<div id="bottom">
 <button class="btn" onclick="location.href='/menu.html'">MENU</button>
-<button class="btn on" id="btnAudio" onclick="toggleAudio()">🎧 EVP LIMPIO</button>
-<button class="btn" id="btnSls" onclick="toggleSls()">👻 SLS: ON</button>
+<button class="btn on" id="btnAudio">🎧 EVP</button>
+<button class="btn on" id="btnSls">SLS ON</button>
 </div>
-</div>
-<script>
+<script type="module">
+import {PoseLandmarker, FilesetResolver} from "@mediapipe/tasks-vision";
 let video=document.getElementById('video'), canvas=document.getElementById('canvas'), ctx=canvas.getContext('2d');
-let motion=document.getElementById('motion'), mctx=motion.getContext('2d',{willReadFrequently:true});
-let audioCtx, analyser, filter, gain, micStream, audioOn=true, slsOn=true, lastFrame=null;
+let poseLandmarker, running=true, lastDet=0;
+let status=document.getElementById('status'), fill=document.getElementById('fill');
 
-async function start(){
+async function init(){
  canvas.width=innerWidth; canvas.height=innerHeight;
- motion.width=80; motion.height=60; // baja res para detectar rapido
+ // CAMARA SOLA - audio separado para que no haga zumbido
+ let stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280}},audio:false});
+ video.srcObject=stream;
+ await video.play();
 
- // CAMARA + AUDIO SIN RUIDO
- micStream=await navigator.mediaDevices.getUserMedia({
-  video:{facingMode:'environment'},
-  audio:{
-   echoCancellation:true,
-   noiseSuppression:true,
-   autoGainControl:true, // ahora SI para que no haga buzz
-   sampleRate:44100
+ // AUDIO SOLO PARA MEDIR, sin salir por parlante
+ let aStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:false}});
+ let aCtx=new AudioContext();
+ let src=aCtx.createMediaStreamSource(aStream);
+ let hp=aCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=150;
+ let an=aCtx.createAnalyser(); an.fftSize=512;
+ src.connect(hp); hp.connect(an);
+ setInterval(()=>{ let d=new Uint8Array(an.frequencyBinCount); an.getByteFrequencyData(d); let avg=d.slice(5,40).reduce((a,b)=>a+b,0)/35; fill.style.height=Math.min(100,avg*1.5)+'%'; if(avg>30) status.innerText='VOZ '+avg.toFixed(0); },150);
+
+ // POSE SLS REAL
+ let files=await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+ poseLandmarker=await PoseLandmarker.createFromOptions(files,{
+  baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},
+  runningMode:"VIDEO", numPoses:2, minPoseDetectionConfidence:0.4, minTrackingConfidence:0.4
+ });
+ status.innerText='Mové lento';
+ loop();
+}
+
+function loop(){
+ if(!running||!poseLandmarker||video.readyState<2){ requestAnimationFrame(loop); return; }
+ let res=poseLandmarker.detectForVideo(video, performance.now());
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ if(res.landmarks && res.landmarks.length>0){
+  res.landmarks.forEach(lm=>{
+   drawSLS(lm);
+   if(Date.now()-lastDet>2000){ lastDet=Date.now(); status.innerText='👻 ENTIDAD'; status.style.color='#f00'; setTimeout(()=>{status.innerText='Escaneando'; status.style.color='#666'},1500); }
+  });
+ }
+ requestAnimationFrame(loop);
+}
+
+function drawSLS(landmarks){
+ // mapa huesos como Kinect
+ const bones=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[27,29],[28,30],[29,31],[30,32]];
+ ctx.strokeStyle='#ff0000'; ctx.lineWidth=3; ctx.shadowColor='#ff0000'; ctx.shadowBlur=10; ctx.lineCap='round';
+ bones.forEach(([a,b])=>{
+  let p1=landmarks[a], p2=landmarks[b];
+  if(p1 && p2 && p1.visibility>0.3 && p2.visibility>0.3){
+   ctx.beginPath();
+   ctx.moveTo((1-p1.x)*canvas.width, p1.y*canvas.height);
+   ctx.lineTo((1-p2.x)*canvas.width, p2.y*canvas.height);
+   ctx.stroke();
   }
  });
- video.srcObject=micStream;
- video.onloadedmetadata=()=>video.play();
-
- // AUDIO CHAIN LIMPIO
- audioCtx=new AudioContext();
- let src=audioCtx.createMediaStreamSource(micStream);
- filter=audioCtx.createBiquadFilter(); filter.type='highpass'; filter.frequency.value=180; // corta todo el zumbido
- let low=audioCtx.createBiquadFilter(); low.type='lowpass'; low.frequency.value=3000;
- gain=audioCtx.createGain(); gain.gain.value=1.2; // NO 4.5, ahora 1.2 para que no acople
- analyser=audioCtx.createAnalyser(); analyser.fftSize=1024;
- src.connect(filter); filter.connect(low); low.connect(gain); gain.connect(analyser);
- // IMPORTANTE: conecta con volumen bajo al parlante para que escuches limpio
- let outGain=audioCtx.createGain(); outGain.gain.value=0; // 0 para no acople, si queres escuchar subilo a 0.3
- gain.connect(outGain); outGain.connect(audioCtx.destination);
-
- requestAnimationFrame(detect);
- setInterval(audioMeter,100);
-}
-
-function audioMeter(){
- if(!analyser) return;
- let data=new Uint8Array(analyser.frequencyBinCount);
- analyser.getByteFrequencyData(data);
- let avg=data.slice(2,80).reduce((a,b)=>a+b,0)/78;
- document.getElementById('fill').style.height=Math.min(100,avg*1.2)+'%';
- if(avg>35) document.getElementById('info').innerText='🔴 VOZ EVP '+avg.toFixed(0);
-}
-
-function detect(){
- if(!slsOn){ requestAnimationFrame(detect); return; }
- if(video.readyState<2){ requestAnimationFrame(detect); return; }
- let w=canvas.width, h=canvas.height;
- ctx.clearRect(0,0,w,h);
- // DIBUJA VIDEO ATENUADO
- ctx.globalAlpha=0.3; ctx.drawImage(video,0,0,w,h); ctx.globalAlpha=1;
-
- // DETECCION DE MOVIMIENTO = ENTIDAD
- mctx.drawImage(video,0,0,motion.width,motion.height);
- let frame=mctx.getImageData(0,0,motion.width,motion.height).data;
- if(lastFrame){
-  let blobs=[];
-  for(let y=1;y<motion.height-1;y++){
-   for(let x=1;x<motion.width-1;x++){
-    let i=(y*motion.width+x)*4;
-    let diff=Math.abs(frame[i]-lastFrame[i])+Math.abs(frame[i+1]-lastFrame[i+1])+Math.abs(frame[i+2]-lastFrame[i+2]);
-    if(diff>45){ // movimento
-     blobs.push({x:x/motion.width*w, y:y/motion.height*h});
-    }
-   }
+ ctx.fillStyle='#ff0000';
+ landmarks.forEach(p=>{
+  if(p.visibility>0.4){
+   ctx.beginPath(); ctx.arc((1-p.x)*canvas.width, p.y*canvas.height, 4,0,Math.PI*2); ctx.fill();
   }
-  // si hay mas de 30 pixeles moviendose juntos, es entidad
-  if(blobs.length>30){
-   // agrupa
-   let avgX=blobs.reduce((a,b)=>a+b.x,0)/blobs.length;
-   let avgY=blobs.reduce((a,b)=>a+b.y,0)/blobs.length;
-   drawSLSMan(avgX, avgY);
-   document.getElementById('info').innerText='👻 ENTIDAD DETECTADA';
-   document.getElementById('info').style.color='#f00';
-   if(navigator.vibrate) navigator.vibrate(100);
-  } else {
-   document.getElementById('info').innerText='Escaneando... mueve lento';
-   document.getElementById('info').style.color='#0f0';
-  }
- }
- lastFrame=new Uint8ClampedArray(frame);
- requestAnimationFrame(detect);
-}
-
-function drawSLSMan(cx,cy){
- // MUÑECO ROJO COMO KINECT REAL
- ctx.strokeStyle='#ff0000'; ctx.lineWidth=5; ctx.shadowColor='#ff0000'; ctx.shadowBlur=15; ctx.fillStyle='#ff0000';
- let scale=180;
- // cabeza
- ctx.beginPath(); ctx.arc(cx,cy-scale*0.6,18,0,Math.PI*2); ctx.fill(); ctx.strokeStyle='#fff'; ctx.lineWidth=1; ctx.stroke();
- // cuerpo
- ctx.strokeStyle='#ff0000'; ctx.lineWidth=5;
- ctx.beginPath(); ctx.moveTo(cx,cy-scale*0.5); ctx.lineTo(cx,cy+scale*0.1); ctx.stroke();
- // brazos
- ctx.beginPath(); ctx.moveTo(cx,cy-scale*0.3); ctx.lineTo(cx-scale*0.4,cy); ctx.lineTo(cx-scale*0.5,cy+scale*0.2); ctx.stroke();
- ctx.beginPath(); ctx.moveTo(cx,cy-scale*0.3); ctx.lineTo(cx+scale*0.4,cy); ctx.lineTo(cx+scale*0.5,cy+scale*0.2); ctx.stroke();
- // piernas
- ctx.beginPath(); ctx.moveTo(cx,cy+scale*0.1); ctx.lineTo(cx-scale*0.25,cy+scale*0.6); ctx.lineTo(cx-scale*0.2,cy+scale*0.9); ctx.stroke();
- ctx.beginPath(); ctx.moveTo(cx,cy+scale*0.1); ctx.lineTo(cx+scale*0.25,cy+scale*0.6); ctx.lineTo(cx+scale*0.2,cy+scale*0.9); ctx.stroke();
+ });
  ctx.shadowBlur=0;
- // etiqueta
- ctx.fillStyle='#f00'; ctx.font='bold 12px monospace'; ctx.fillText('ENTIDAD',cx-28,cy-scale*0.9);
 }
 
-function toggleAudio(){
- audioOn=!audioOn;
- if(audioOn){ filter.frequency.value=180; gain.gain.value=1.2; document.getElementById('btnAudio').innerText='🎧 EVP LIMPIO'; document.getElementById('btnAudio').classList.add('on'); }
- else { filter.frequency.value=20; gain.gain.value=1; document.getElementById('btnAudio').innerText='🔇 SIN FILTRO'; document.getElementById('btnAudio').classList.remove('on'); }
-}
-function toggleSls(){ slsOn=!slsOn; document.getElementById('btnSls').innerText=slsOn?'👻 SLS: ON':'👻 SLS: OFF'; }
+document.getElementById('btnSls').onclick=(e)=>{ running=!running; e.target.innerText=running?'SLS ON':'SLS OFF'; e.target.classList.toggle('on'); if(!running) ctx.clearRect(0,0,canvas.width,canvas.height); if(running) loop(); };
+document.getElementById('btnAudio').onclick=(e)=>{ e.target.classList.toggle('on'); };
 
-start();
 window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
+init();
 </script>
 </body>
 </html>
