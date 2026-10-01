@@ -2,43 +2,172 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVAX CAM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>ARCHIVAX SLS BLACK</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden}
-#v{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#111}
-#sombra{position:fixed;bottom:-20px;left:50%;transform:translateX(-50%);width:75%;max-width:380px;height:92%;z-index:5;pointer-events:none;animation:float 3.5s ease-in-out infinite}
-#sombra img{width:100%;height:100%;object-fit:contain;filter:drop-shadow(0 0 25px #000) brightness(0.9)}
-@keyframes float{0%,100%{transform:translateX(-50%) translateY(0)}50%{transform:translateX(-50%) translateY(-18px)}}
-#ui{position:fixed;top:0;left:0;width:100%;z-index:20;padding:15px}
-#btn{width:100%;padding:20px;background:#000;color:#0f0;border:2px solid #0f0;font-size:22px;font-weight:bold}
-#msg{color:#0f0;margin-top:12px;text-align:center;font-family:monospace;font-size:13px;background:rgba(0,0,0,.6);padding:6px}
+#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);filter:contrast(1.1) brightness(0.9)}
+#canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none}
+#ui{position:fixed;top:0;left:0;width:100%;z-index:10;padding:12px;display:flex;flex-direction:column;gap:8px}
+#btn{width:100%;padding:16px;background:#000;color:#0f0;border:2px solid #0f0;font-size:18px;font-weight:bold;letter-spacing:2px}
+#status{color:#0f0;background:rgba(0,0,0,.75);padding:8px;text-align:center;font-family:monospace;font-size:12px;border:1px solid #0f0}
+#evp{position:fixed;bottom:0;left:0;width:100%;z-index:10;padding:10px;background:rgba(0,0,0,.85);border-top:1px solid #0f0;display:flex;gap:8px}
+#evp button{flex:1;padding:12px;background:#111;color:#0f0;border:1px solid #0f0;font-family:monospace}
+#freq{color:#0f0;font-family:monospace;font-size:11px;margin-top:4px;text-align:center}
 </style>
 </head>
 <body>
-<video id="v" autoplay playsinline muted></video>
-<!-- ACA ESTA LA CLAVE: usa tu nombre largo sin renombrar -->
-<div id="sombra"><img src="831166917_1727456055150015_1578838182527702381_n.webp.webp?v=3" onerror="this.src='shadow.png'"></div>
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
 <div id="ui">
-<button id="btn">ACTIVAR CAMARA</button>
-<div id="msg">Listo. Tocá ACTIVAR.</div>
+<button id="btn">ACTIVAR SLS BLACK + EVP</button>
+<div id="status">SLS: OFF | EVP: OFF</div>
+<div id="freq">88.0 MHz - SCAN...</div>
+</div>
+<div id="evp">
+<button id="evpBtn">EVP ON/OFF</button>
+<button id="scanBtn">SCAN</button>
 </div>
 <script>
-const v=document.getElementById('v');
-const b=document.getElementById('btn');
-const m=document.getElementById('msg');
-b.onclick=async()=>{
-m.textContent='Pidiendo permiso...';
-try{
-const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'},audio:false});
-v.srcObject=stream;
-await v.play();
-m.textContent='CAMARA OK';
-b.style.display='none';
-}catch(err){
-m.textContent='ERROR: '+err.name+' - Tocá el candadito 🔒 arriba > Permisos > Cámara > Permitir. Y abrí en Chrome, no en Instagram.';
+const video=document.getElementById('video');
+const canvas=document.getElementById('canvas');
+const ctx=canvas.getContext('2d');
+const btn=document.getElementById('btn');
+const statusEl=document.getElementById('status');
+const freqEl=document.getElementById('freq');
+const evpBtn=document.getElementById('evpBtn');
+const scanBtn=document.getElementById('scanBtn');
+let W,H, ghost=null, evpOn=false, audioCtx, noiseNode, filter, isScanning=false;
+
+// SLS BLACK - Esqueleto negro que camina solo
+class BlackSkeleton{
+  constructor(){this.reset();}
+  reset(){
+    this.x=Math.random()*0.6+0.2;
+    this.y=Math.random()*0.4+0.3;
+    this.vx=(Math.random()-0.5)*0.003;
+    this.vy=(Math.random()-0.5)*0.002;
+    this.phase=Math.random()*Math.PI*2;
+    this.visible=Math.random()>0.3;
+    this.timer=0;
+  }
+  update(){
+    this.timer++;
+    this.phase+=0.08;
+    if(this.visible){
+      this.x+=this.vx;
+      this.y+=this.vy;
+      if(this.x<0.1||this.x>0.9) this.vx*=-1;
+      if(this.y<0.15||this.y>0.85) this.vy*=-1;
+      // desaparecer y reaparecer como SLS real
+      if(Math.random()<0.008) this.visible=false;
+    }else{
+      if(Math.random()<0.015){this.visible=true; this.x=Math.random()*0.6+0.2; this.y=Math.random()*0.5+0.2;}
+    }
+  }
+  draw(){
+    if(!this.visible) return;
+    const cx=this.x*W;
+    const cy=this.y*H;
+    const s=H*0.32;
+    const walk=Math.sin(this.phase)*12;
+    const legWalk=Math.sin(this.phase)*18;
+
+    ctx.save();
+    ctx.strokeStyle='rgba(0,0,0,0.95)';
+    ctx.lineWidth=4;
+    ctx.lineCap='round';
+    ctx.shadowColor='rgba(0,255,0,0.3)';
+    ctx.shadowBlur=8;
+
+    // Cabeza
+    ctx.beginPath(); ctx.arc(cx, cy-s*0.45, s*0.09,0,Math.PI*2); ctx.stroke();
+    // Tronco
+    ctx.beginPath(); ctx.moveTo(cx, cy-s*0.35); ctx.lineTo(cx, cy+s*0.05); ctx.stroke();
+    // Brazos con movimiento
+    ctx.beginPath();
+    ctx.moveTo(cx, cy-s*0.25); ctx.lineTo(cx-s*0.18+walk, cy-s*0.05);
+    ctx.moveTo(cx, cy-s*0.25); ctx.lineTo(cx+s*0.18-walk, cy-s*0.05);
+    ctx.stroke();
+    // Antebrazos
+    ctx.beginPath();
+    ctx.moveTo(cx-s*0.18+walk, cy-s*0.05); ctx.lineTo(cx-s*0.22+walk, cy+s*0.08);
+    ctx.moveTo(cx+s*0.18-walk, cy-s*0.05); ctx.lineTo(cx+s*0.22-walk, cy+s*0.08);
+    ctx.stroke();
+    // Piernas caminando - NO pegadas a la cámara
+    ctx.beginPath();
+    ctx.moveTo(cx, cy+s*0.05); ctx.lineTo(cx-s*0.12+legWalk, cy+s*0.38);
+    ctx.moveTo(cx, cy+s*0.05); ctx.lineTo(cx+s*0.12-legWalk, cy+s*0.38);
+    ctx.stroke();
+    // Conexiones SLS (puntos)
+    ctx.fillStyle='#0f0';
+    const points=[[0,-0.45],[0,-0.25],[-0.18, -0.05],[0.18,-0.05],[-0.22,0.08],[0.22,0.08],[0,0.05],[-0.12,0.38],[0.12,0.38]];
+    points.forEach(p=>{
+      ctx.beginPath(); ctx.arc(cx+p[0]*s, cy+p[1]*s, 3,0,Math.PI*2); ctx.fill();
+    });
+    ctx.restore();
+  }
 }
+
+function resize(){W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight;}
+window.addEventListener('resize',resize); resize();
+
+function loop(){
+  ctx.clearRect(0,0,W,H);
+  if(ghost){ghost.update(); ghost.draw();}
+  requestAnimationFrame(loop);
+}
+loop();
+
+// EVP REAL - Radio escaneando
+function initAudio(){
+  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+}
+function playEVP(){
+  if(!audioCtx) initAudio();
+  if(noiseNode) noiseNode.stop();
+  const bufferSize=audioCtx.sampleRate*2;
+  const buffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++){data[i]=(Math.random()*2-1)*0.5 + Math.sin(i*0.01+Math.random())*0.2;}
+  noiseNode=audioCtx.createBufferSource(); noiseNode.buffer=buffer; noiseNode.loop=true;
+  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=800; filter.Q.value=5;
+  const gain=audioCtx.createGain(); gain.gain.value=0.7;
+  noiseNode.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+  noiseNode.start();
+  // Voces extrañas aleatorias
+  setInterval(()=>{if(evpOn && Math.random()<0.3){filter.frequency.value=200+Math.random()*2000; freqEl.textContent=(88+Math.random()*20).toFixed(1)+' MHz - VOZ DETECTADA'; setTimeout(()=>{freqEl.textContent=(88+Math.random()*20).toFixed(1)+' MHz - SCAN...'},800);}},300);
+}
+function stopEVP(){if(noiseNode){noiseNode.stop(); noiseNode=null;} }
+
+btn.onclick=async()=>{
+  try{
+    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'},audio:true});
+    video.srcObject=s; await video.play();
+    ghost=new BlackSkeleton();
+    statusEl.textContent='SLS BLACK: ACTIVO - Buscando... | EVP: OFF';
+    btn.style.display='none';
+  }catch(e){statusEl.textContent='ERROR: '+e.message+' - Permití cámara en el candado 🔒';}
+};
+
+evpBtn.onclick=()=>{
+  if(!audioCtx) initAudio();
+  evpOn=!evpOn;
+  if(evpOn){playEVP(); evpBtn.textContent='EVP OFF'; statusEl.textContent='SLS BLACK: ACTIVO | EVP: SCAN RADIO';}
+  else{stopEVP(); evpBtn.textContent='EVP ON'; statusEl.textContent='SLS BLACK: ACTIVO | EVP: OFF';}
+};
+scanBtn.onclick=()=>{
+  if(!evpOn) evpBtn.onclick();
+  isScanning=true;
+  let f=88;
+  const int=setInterval(()=>{
+    f+=0.8+Math.random()*1.5; if(f>108) f=88;
+    freqEl.textContent=f.toFixed(1)+' MHz - SCAN...';
+    if(filter) filter.frequency.value=300+Math.random()*2500;
+    if(Math.random()<0.1){freqEl.textContent=f.toFixed(1)+' MHz - [VOZ]'; if(audioCtx) audioCtx.createOscillator();}
+  },120);
+  setTimeout(()=>{clearInterval(int); isScanning=false;},4000);
 };
 </script>
 </body>
