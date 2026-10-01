@@ -1,189 +1,275 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>ARCHIVAX</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ARCHIVAX - CAMARA</title>
+<script src="/entidades.js?v=5"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#000;overflow:hidden;font-family:monospace}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:monospace}
 #video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
 #canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
-#top{position:fixed;top:0;left:0;right:0;height:40px;background:#000;border-bottom:2px solid #f00;display:flex;align-items:center;justify-content:space-between;padding:0 10px;color:#f00;font-size:10px;z-index:10}
-#center{position:fixed;inset:0;background:#000;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
-#bottom{position:fixed;bottom:0;left:0;right:0;padding:8px;display:flex;flex-wrap:wrap;gap:6px;z-index:10;background:linear-gradient(transparent,#000 70%)}
-.btn{flex:1 1 28%;background:#111;border:1px solid #333;color:#888;padding:12px;border-radius:10px;font-size:10px;font-weight:700}.btn.active{border-color:#f00;color:#f00}
-#evp{position:fixed;left:10px;top:55px;width:44px;background:rgba(0,0,0,0.9);border:1px solid #333;border-radius:8px;padding:4px;z-index:10;text-align:center}
-#bar{height:80px;background:#111;border-radius:4px;overflow:hidden;position:relative;margin-top:4px}
+#top{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(0,0,0,0.9);border-bottom:2px solid #f00;display:flex;align-items:center;justify-content:space-between;padding:0 12px;color:#f00;font-size:11px;z-index:10}
+#center{position:fixed;inset:0;background:#000;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:20px}
+#bottom{position:fixed;bottom:0;left:0;right:0;padding:10px;display:flex;gap:8px;z-index:20;background:linear-gradient(transparent,#000 80%)}
+.btn{flex:1;background:#111;border:1px solid #333;color:#888;padding:14px 6px;border-radius:12px;font-size:10px;font-weight:800;cursor:pointer;text-align:center}
+.btn:active{transform:scale(0.96)}
+.btn-red{border-color:#f00;color:#f00}
+.btn-blue{border-color:#0af;color:#0af}
+#talk{position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);padding:22px 28px;border-radius:16px;font-weight:900;font-size:22px;z-index:99;display:none;text-align:center;max-width:90%;line-height:1.1}
+#talk.extrema{background:#f00;color:#fff;box-shadow:0 0 60px #f00;animation:shake 0.2s infinite}
+#talk.hebreo{background:#000;color:#f00;border:3px solid #f00;box-shadow:0 0 70px #f00}
+#talk.grosero{background:#000;color:#ff0;border:3px solid #ff0;box-shadow:0 0 60px #ff0;font-size:26px;animation:shake 0.15s infinite}
+#talk.mujer{background:rgba(0,255,255,0.92);color:#000}
+#talk.nena{background:rgba(255,105,180,0.92);color:#fff}
+#talk.nene{background:rgba(100,200,255,0.92);color:#fff}
+#talk.llorando{background:#222;color:#ccc;border:1px solid #555;font-style:italic}
+@keyframes shake{0%{transform:translate(-50%,-50%) translateX(-3px)}50%{transform:translate(-50%,-50%) translateX(3px)}100%{transform:translate(-50%,-50%) translateX(-3px)}}
+#sub{position:fixed;bottom:100px;left:0;right:0;text-align:center;color:#ff0;font-size:11px;z-index:10;background:rgba(0,0,0,0.6);padding:6px}
+#evp{position:fixed;left:10px;top:58px;width:46px;background:rgba(0,0,0,0.9);border:1px solid #333;border-radius:8px;padding:4px;z-index:10;text-align:center}
+#bar{height:72px;background:#111;border-radius:4px;overflow:hidden;margin-top:4px;position:relative}
 #fill{position:absolute;bottom:0;width:100%;background:linear-gradient(#0f0,#f00);height:0%}
-#talk{position:fixed;top:45%;left:50%;transform:translate(-50%,-50%);padding:20px 28px;border-radius:16px;font-weight:900;font-size:21px;z-index:99;display:none;text-align:center;max-width:90%}
-#talk.extrema{background:#f00;color:#fff;box-shadow:0 0 50px #f00;animation:shake 0.2s infinite}
-#talk.hebreo{background:#000;color:#f00;border:3px solid #f00;box-shadow:0 0 60px #f00}
-#talk.nena{background:#ff69b4;color:#fff}#talk.nene{background:#64c8ff;color:#fff}
-#talk.mujer{background:#0ff;color:#000}#talk.llorando{background:#222;color:#ccc;font-style:italic}
-@keyframes shake{0%{transform:translate(-50%,-50%) translateX(-2px)}50%{transform:translate(-50%,-50%) translateX(2px)}100%{transform:translate(-50%,-50%) translateX(-2px)}}
-#sub{position:fixed;bottom:95px;left:0;right:0;text-align:center;color:#ff0;font-size:11px;z-index:10;background:rgba(0,0,0,0.7);padding:4px}
 </style>
 </head>
 <body>
-<video id="video" autoplay playsinline muted></video><canvas id="canvas"></canvas>
+<video id="video" autoplay playsinline muted></video>
+<canvas id="canvas"></canvas>
+
 <div id="center">
-<div style="color:#f00;letter-spacing:3px;font-size:22px;font-weight:900">ARCHIVAX</div>
-<div style="color:#fff;font-size:9px;margin:8px">Sin zumbido - Permiso una sola vez</div><br>
-<button id="activar" style="padding:20px 36px;background:#f00;color:#fff;border:2px solid #fff;border-radius:16px;font-weight:900;font-size:20px">ACTIVAR</button>
-<div id="err" style="color:#f44;font-size:11px;margin-top:10px"></div>
+  <div style="color:#f00;font-size:26px;font-weight:900;letter-spacing:4px">ARCHIVAX</div>
+  <div style="color:#fff;font-size:10px;margin-top:8px">4000 FRASES • 20-40 SEG • 1 MIN PREGUNTAS</div>
+  <div style="color:#666;font-size:9px;margin-top:4px">Sombra real + Grosero + Extrema + Hebrea</div>
+  <br><br>
+  <button id="activar" style="padding:20px 40px;background:#f00;color:#fff;border:2px solid #fff;border-radius:16px;font-weight:900;font-size:20px;box-shadow:0 0 30px #f00">ACTIVAR CÁMARA</button>
+  <div id="err" style="color:#f44;font-size:11px;margin-top:14px;line-height:1.3"></div>
 </div>
-<div id="top"><span>● ARCHIVAX</span><span id="status">Esperando</span></div>
-<div id="evp"><div style="font-size:7px;color:#888">EVP</div><div id="db" style="color:#fff">--</div><div id="bar"><div id="fill"></div></div><div id="type" style="font-size:6px;color:#f00">-</div></div>
-<div id="talk"></div><div id="sub">Preguntá lo que quieras...</div>
+
+<div id="top"><span>● ARCHIVAX • LENTO</span><span id="status">Esperando...</span></div>
+
+<div id="evp">
+  <div style="font-size:7px;color:#888">EVP</div>
+  <div id="db" style="color:#fff;font-size:13px">--</div>
+  <div id="bar"><div id="fill"></div></div>
+  <div id="type" style="font-size:6px;color:#f00;margin-top:3px">-</div>
+</div>
+
+<div id="talk"></div>
+<div id="sub">Preguntá algo y esperá 1 minuto... las entidades tardan 20 a 40 seg</div>
+
 <div id="bottom">
-<button class="btn" onclick="location.href='/menu.html'">MENU</button>
-<button class="btn" id="bCam" style="border-color:#0af;color:#0af">🔄 CAM</button>
-<button class="btn active" id="bAudio">👻 VOCES ON</button>
-<button class="btn active" id="bSls">DETECTOR ON</button>
-<button class="btn" id="bRec">● REC</button>
+  <button class="btn" onclick="location.href='/menu.html'">⬅ MENU</button>
+  <button class="btn btn-blue" id="bCam">🔄 CAMARA<br><span style="font-size:7px" id="camLabel">TRASERA</span></button>
+  <button class="btn btn-red" id="bRec">● REC</button>
 </div>
+
 <script>
 let video=document.getElementById('video'),canvas=document.getElementById('canvas'),ctx=canvas.getContext('2d');
-let vStream,aStream,facing='environment',running=true,analyser,lastVoice=0,usadas=new Set(),nombreUsuario="",audioCtx;
-const DATA={
- nombresMujer:["Elena","Marta","Lucía","Rosa","Ana","Isabel","Teresa","Nélida","Sofía","Carmen","Juana","Olga","Mirta","Susana","Silvia","Laura","Claudia","Patricia","Alejandra","Verónica"],
- nombresNena:["Sofi","Luna","Mia","Emma","Martu","Cata","Luli","Alma","Pili","Vicky","Agus","Mili"],
- nombresNene:["Benja","Tomi","Mateo","Thiago","Bauti","Santi","Nico","Lauti","Facu","Joaco","Juan","Lucas"],
- apellidos:["Gómez","Pérez","Rodríguez","López","García","Martínez","Díaz","Sosa","Acosta","Fernández"],
- edades:["5","7","8","9","12","14","19","23","27","34","41","52","67","73"],
- muertes:["me ahogué","me quemé","me atropellaron","me dispararon","me caí del techo","me ahorcaron","me apuñalaron","me envenenaron","tuve un infarto","me enterraron viva","me perdí en el monte"],
- lugares:["en el río","en esta casa","en el patio","en el sótano","en la ruta","en el baño","debajo de la cama","detrás de la pared","en el espejo","en el altillo","en el pozo","acá mismo"],
- verbos:["ayudame","buscame","escuchame","mirame","encontrame","perdoname","sacame","llévame","no me dejes","volvé"],
- pedidos:["trae agua","trae una cruz","trae luz","cerrá la puerta","abrí la ventana","no mires atrás","corré","quedate quieto","rezá por mi"],
-};
-function random(a){return a[Math.floor(Math.random()*a.length)];}
-function generar(tipo){
- let f="";
- if(tipo==='mujer'){ let t=Math.floor(Math.random()*6);
-  if(t===0) f=`me llamo ${random(DATA.nombresMujer)} ${random(DATA.apellidos)}`;
-  if(t===1) f=`tengo ${random(DATA.edades)} años y ${random(DATA.muertes)} ${random(DATA.lugares)}`;
-  if(t===2) f=`${random(DATA.verbos)} por favor, estoy ${random(DATA.lugares)}`;
-  if(t===3) f=`viví acá en ${1920+Math.floor(Math.random()*100)}, era ${random(DATA.nombresMujer)}`;
-  if(t===4) f=`${random(DATA.pedidos)}, ${random(DATA.verbos)}`;
-  if(t===5) f=`no me quiero ir, esta es mi casa ${random(DATA.lugares)}`;
- } else if(tipo==='nena'){ let t=Math.floor(Math.random()*4);
-  if(t===0) f=`mami? soy ${random(DATA.nombresNena)}, tengo ${random([5,6,7,8,9])} años`;
-  if(t===1) f=`${random(DATA.verbos)} tengo miedo ${random(DATA.lugares)}`;
-  if(t===2) f=`jugas conmigo? estoy ${random(DATA.lugares)}`;
-  if(t===3) f=`donde esta mi mama, ${random(DATA.muertes)} ${random(DATA.lugares)}`;
- } else if(tipo==='nene'){ let t=Math.floor(Math.random()*4);
-  if(t===0) f=`papa? soy ${random(DATA.nombresNene)}, ${random(DATA.muertes)}`;
-  if(t===1) f=`me caí ${random(DATA.lugares)} y no puedo salir`;
-  if(t===2) f=`tengo ${random([7,8,9,10,11])} años, ${random(DATA.verbos)}`;
-  if(t===3) f=`quiero ir a casa, estoy ${random(DATA.lugares)}`;
- } else if(tipo==='llorando'){ f=`*llorando* ${random(DATA.verbos)}... ${random(DATA.muertes)} ${random(DATA.lugares)}`; }
- else if(tipo==='extrema'){ let b=["MUERTE","MORIRÁS","TE MATARÉ","DETRÁS DE TI","TE TENGO","TE VEO","NO SALDRÁS","SANGRE","TE ENCONTRÉ","MÍO","CORRE","AHORA ES TU TURNO","TE SIGO A VOS","TE QUEDAS CONMIGO","TU ALMA","DOLOR ETERNO"]; f=random(b)+ (Math.random()<0.3?` ${random(DATA.lugares)}`:""); if(nombreUsuario&&Math.random()<0.15) f=`${nombreUsuario.toUpperCase()}, ${f}`; }
- else if(tipo==='hebrea'){ let he=[{he:"אהרוג אותך",es:`TE MATARÉ ${nombreUsuario?nombreUsuario:''}`},{he:"תמות",es:"MORIRÁS AHORA"},{he:"מצאתי אותך",es:`TE ENCONTRÉ ${random(DATA.lugares)}`},{he:"יש לי אותך",es:"TE TENGO, NO ESCAPAS"},{he:"לא תברח ממני",es:"NO ESCAPARÁS DE MI"},{he:"הנשמה שלך שלי",es:"TU ALMA ES MÍA"},{he:"אתה כבר מת",es:"YA ESTÁS MUERTO"}]; return random(he); }
- return f;
-}
-const TIPOS={mujer:{prob:0.22,color:'mujer',rate:0.9,pitch:0.8,label:'MUJER'},nena:{prob:0.18,color:'nena',rate:1.5,pitch:1.8,label:'NENA'},nene:{prob:0.17,color:'nene',rate:1.35,pitch:1.45,label:'NENE'},llorando:{prob:0.08,color:'llorando',rate:0.65,pitch:0.55,label:'LLORANDO'},extrema:{prob:0.20,color:'extrema',rate:0.55,pitch:0.15,label:'EXTREMA'},hebrea:{prob:0.15,color:'hebreo',rate:0.45,pitch:0.02,label:'HEBREA FURIA'}};
-function pick(){let r=Math.random(),a=0;for(let k in TIPOS){a+=TIPOS[k].prob;if(r<=a)return k;}return 'mujer';}
-function hablar(){
- if(Date.now()-lastVoice<3000) return; lastVoice=Date.now();
- let tipo=pick(); let ent=TIPOS[tipo]; let gen=generar(tipo);
- let texto,extra=""; if(tipo==='hebrea'){ texto=gen.he; extra=gen.es; } else texto=gen;
- let key=tipo+texto; if(usadas.has(key)){ if(usadas.size>800) usadas.clear(); else return hablar(); } usadas.add(key);
- let box=document.getElementById('talk'); box.className=ent.color; box.style.display='block';
- if(tipo==='hebrea') box.innerHTML=`<div style="font-size:30px">${texto}</div><div style="font-size:11px;color:#fff;margin-top:6px">${extra}</div>`; else box.innerText=texto.toUpperCase();
- setTimeout(()=>box.style.display='none', tipo==='hebrea'?5000:3500);
- document.getElementById('type').innerText=ent.label;
- let u=new SpeechSynthesisUtterance(texto); 
- if(tipo==='hebrea'){ u.lang='he-IL'; u.rate=0.45; u.pitch=0.01; } else if(tipo==='nena'){ u.lang='es-AR'; u.rate=1.6; u.pitch=1.9; } else if(tipo==='nene'){ u.lang='es-AR'; u.rate=1.4; u.pitch=1.5; } else if(tipo==='llorando'){ u.lang='es-AR'; u.rate=0.6; u.pitch=0.5; } else { u.lang='es-AR'; u.rate=ent.rate; u.pitch=ent.pitch; }
- u.volume=1; 
- if(tipo==='extrema'||tipo==='hebrea'){ let u2=new SpeechSynthesisUtterance(texto); u2.lang=u.lang; u2.rate=u.rate*0.9; u2.pitch=0; u2.volume=0.85; speechSynthesis.speak(u2); if(navigator.vibrate) navigator.vibrate([200,100,300]); }
- speechSynthesis.speak(u);
+let vStream,aStream,facing='environment',analyser,lastVoice=0,lastUserQuestion=0,lastUserText="",usadas=new Set();
+let recCanvas=document.createElement('canvas'), recCtx=recCanvas.getContext('2d');
+let currentShadow=null, shadowTimeout=0, nombreUsuario="";
+
+function pickTipo(){
+ let r=Math.random();
+ if(r<0.26) return "grosero";
+ if(r<0.41) return "extrema";
+ if(r<0.53) return "hebrea";
+ if(r<0.69) return "mujer";
+ if(r<0.83) return "nena";
+ if(r<0.93) return "nene";
+ return "llorando";
 }
 
-// UN SOLO PERMISO - CAMARA + MICRO JUNTOS - SIN ACOPLE
+function generarRespuesta(tipo, pregunta=""){
+ if(typeof ARCHIVAX_DB==='undefined'){ return {tipo:"extrema", texto:"NO CARGO ENTIDADES.JS - SUBILO A LA RAIZ"}; }
+ let lista=ARCHIVAX_DB.filter(x=>x.tipo===tipo);
+ if(pregunta.includes("nombre")||pregunta.includes("llamas")||pregunta.includes("quien sos")){
+   let deNombre=ARCHIVAX_DB.filter(x=>["mujer","nena","nene"].includes(x.tipo));
+   return deNombre[Math.floor(Math.random()*deNombre.length)];
+ }
+ if(pregunta.includes("edad")||pregunta.includes("anos")||pregunta.includes("cuantos")){
+   return {tipo:"mujer", texto:`tengo ${Math.floor(Math.random()*70)+5} anos`};
+ }
+ let item=lista[Math.floor(Math.random()*lista.length)];
+ let key=tipo+JSON.stringify(item);
+ if(usadas.has(key)&&usadas.size<2000){ return generarRespuesta(tipo,pregunta); }
+ usadas.add(key); if(usadas.size>2500) usadas.clear();
+ return item;
+}
+
+function hablar(pregunta=""){
+ let ahora=Date.now();
+ if(ahora-lastVoice<20000) return; // 20 SEGUNDOS MINIMO ENTRE FRASES
+ lastVoice=ahora;
+ let tipo=pickTipo();
+ let data=generarRespuesta(tipo,pregunta);
+ let textoHablar="", textoMostrar="";
+ if(data.tipo==="hebrea"){ textoHablar=data.texto; textoMostrar=data.traduccion||data.texto; }
+ else { textoHablar=data.texto; textoMostrar=data.texto; }
+ textoMostrar=textoMostrar.toUpperCase();
+
+ let box=document.getElementById('talk');
+ box.className = data.tipo==="grosero"?"grosero":data.tipo==="extrema"?"extrema":data.tipo==="hebrea"?"hebreo":data.tipo;
+ box.style.display='block';
+ if(data.tipo==="hebrea") box.innerHTML=`<div style="font-size:30px">${data.texto}</div><div style="font-size:12px;color:#fff;margin-top:6px">${data.traduccion}</div>`;
+ else box.innerText=textoMostrar;
+
+ document.getElementById('type').innerText=data.tipo.toUpperCase();
+ document.getElementById('status').innerText=data.tipo.toUpperCase()+": "+textoMostrar.substring(0,28);
+
+ setTimeout(()=>{ box.style.display='none'; }, 6000);
+
+ let u=new SpeechSynthesisUtterance(textoHablar);
+ if(data.tipo==="grosero"){ u.lang='es-AR'; u.rate=0.75; u.pitch=0.08; }
+ else if(data.tipo==="hebrea"){ u.lang='he-IL'; u.rate=0.45; u.pitch=0.01; }
+ else if(data.tipo==="nena"){ u.lang='es-AR'; u.rate=1.5; u.pitch=1.7; }
+ else if(data.tipo==="nene"){ u.lang='es-AR'; u.rate=1.35; u.pitch=1.45; }
+ else if(data.tipo==="llorando"){ u.lang='es-AR'; u.rate=0.6; u.pitch=0.5; }
+ else { u.lang='es-AR'; u.rate=0.85; u.pitch=0.7; }
+ u.volume=1;
+ speechSynthesis.speak(u);
+ if(data.tipo==="grosero"||data.tipo==="extrema"||data.tipo==="hebrea"){
+   let u2=new SpeechSynthesisUtterance(textoHablar);
+   u2.lang=u.lang; u2.rate=u.rate*0.92; u2.pitch=0; u2.volume=0.85;
+   speechSynthesis.speak(u2);
+   if(navigator.vibrate) navigator.vibrate([300,100,400]);
+ }
+}
+
 async function activarTodo(){
  if(!navigator.mediaDevices?.getUserMedia){ document.getElementById('err').innerText='Usá https://archiviax.com.ar/camara.html'; return; }
  try{
   if(vStream) vStream.getTracks().forEach(t=>t.stop());
-  // PEDIMOS TODO JUNTO UNA VEZ
   let stream=await navigator.mediaDevices.getUserMedia({
-   video:{facingMode:facing, width:{ideal:1280}, height:{ideal:720}},
-   audio:{echoCancellation:true, noiseSuppression:true, autoGainControl:true}
+    video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},
+    audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}
   });
   vStream=stream;
-  let videoTrack=stream.getVideoTracks()[0];
-  let audioTrack=stream.getAudioTracks()[0];
-  aStream=new MediaStream([audioTrack]);
-
-  video.srcObject=new MediaStream([videoTrack]);
+  aStream=new MediaStream(stream.getAudioTracks());
+  video.srcObject=new MediaStream(stream.getVideoTracks());
   await video.play();
   document.getElementById('center').style.display='none';
-  document.getElementById('status').innerText='Activo sin zumbido';
-
-  // ANALIZADOR SOLO PARA VER BARRA, NO VA A PARLANTE
-  audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  let src=audioCtx.createMediaStreamSource(aStream);
-  let hp=audioCtx.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=250;
-  let lp=audioCtx.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500;
-  let notch=audioCtx.createBiquadFilter(); notch.type='notch'; notch.frequency.value=50; notch.Q.value=10;
-  let notch2=audioCtx.createBiquadFilter(); notch2.type='notch'; notch2.frequency.value=100; notch2.Q.value=10;
-  analyser=audioCtx.createAnalyser(); analyser.fftSize=1024;
-  // NO CONECTAMOS A DESTINO PARA NO HACER PIPIPI
-  src.connect(notch); notch.connect(notch2); notch2.connect(hp); hp.connect(lp); lp.connect(analyser);
-  audioLoop(); startSTT(aStream); loadDetector();
-
+  document.getElementById('status').innerText='Activo - '+ (facing==='environment'?'Trasera':'Delantera');
+  document.getElementById('camLabel').innerText=facing==='environment'?'TRASERA':'DELANTERA';
+  let ac=new (window.AudioContext||window.webkitAudioContext)();
+  let src=ac.createMediaStreamSource(aStream);
+  let hp=ac.createBiquadFilter(); hp.type='highpass'; hp.frequency.value=250;
+  let lp=ac.createBiquadFilter(); lp.type='lowpass'; lp.frequency.value=3500;
+  analyser=ac.createAnalyser(); analyser.fftSize=1024;
+  src.connect(hp); hp.connect(lp); lp.connect(analyser);
+  audioLoop(); startSTT(); iniciarComposicion(); loopSombras();
  }catch(e){
-  document.getElementById('err').innerText='Error: '+e.name+' '+e.message+' - Da permiso a cámara y micro juntos';
+  document.getElementById('err').innerText='Error: '+e.name+' - '+e.message;
  }
 }
 
-function startSTT(stream){
+function startSTT(){
  let SR=window.SpeechRecognition||window.webkitSpeechRecognition; if(!SR) return;
  let r=new SR(); r.lang='es-AR'; r.continuous=true; r.interimResults=true;
  r.onresult=(e)=>{
   let txt=e.results[e.results.length-1][0].transcript.toLowerCase();
-  document.getElementById('sub').innerText='Dijiste: "'+txt+'"';
-  if(txt.includes('me llamo')||txt.includes('soy ')){ let p=txt.split(' '); let m=p[p.length-1]; if(m.length>2) nombreUsuario=m; }
-  setTimeout(()=>hablar(),700+Math.random()*1200);
+  document.getElementById('sub').innerText='Escuché: "'+txt+'" - responde en 1 minuto...';
+  lastUserQuestion=Date.now(); lastUserText=txt;
+  if(txt.includes("me llamo")){ let p=txt.split(" "); nombreUsuario=p[p.length-1]; }
+  setTimeout(()=>{ hablar(txt); }, 60000); // 1 MINUTO
  };
- r.onend=()=>{ try{ r.start(); }catch{} }; try{ r.start(); }catch{}
+ r.onend=()=>{ try{ r.start(); }catch{} };
+ try{ r.start(); }catch{}
 }
+
 function audioLoop(){
  if(!analyser) return requestAnimationFrame(audioLoop);
  let d=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(d);
  let avg=d.slice(8,90).reduce((a,b)=>a+b,0)/82;
- document.getElementById('fill').style.height=Math.min(100,avg*2)+'%'; document.getElementById('db').innerText=avg.toFixed(0);
- if(Date.now()-lastVoice>6000 && Math.random()<0.05){ hablar(); }
+ document.getElementById('fill').style.height=Math.min(100,avg*2)+'%';
+ document.getElementById('db').innerText=avg.toFixed(0);
+ // HABLA SOLA CADA 20 A 40 SEGUNDOS
+ if(Date.now()-lastVoice>30000 && Date.now()-lastUserQuestion>65000 && Math.random()<0.06){
+   let espera = 20000 + Math.random()*20000;
+   setTimeout(()=>{ hablar(); }, espera);
+   lastVoice=Date.now();
+ }
  requestAnimationFrame(audioLoop);
 }
-document.getElementById('activar').onclick=activarTodo;
-document.getElementById('bCam').onclick=async()=>{ facing=facing==='environment'?'user':'environment'; await activarTodo(); };
-document.getElementById('bAudio').onclick=e=>{
- // este boton ahora solo silencia voces TTS
- if(e.target.innerText.includes('ON')){ e.target.innerText='👻 VOCES OFF'; lastVoice=Date.now()+999999; }
- else { e.target.innerText='👻 VOCES ON'; lastVoice=0; }
-};
-document.getElementById('bSls').onclick=e=>{ running=!running; e.target.innerText=running?'DETECTOR ON':'DETECTOR OFF'; if(!running) ctx.clearRect(0,0,canvas.width,canvas.height); };
-async function loadDetector(){
- try{
-  let mod=await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
-  let fs=await mod.FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
-  let lm=await mod.PoseLandmarker.createFromOptions(fs,{baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",delegate:"GPU"},runningMode:"VIDEO",numPoses:5,minPoseDetectionConfidence:0.3});
-  let lastT=0; (function loop(){ if(running && video.currentTime!==lastT && video.readyState>=2){ lastT=video.currentTime; let res=lm.detectForVideo(video,performance.now()); ctx.clearRect(0,0,canvas.width,canvas.height);
-   if(res.landmarks?.length){ res.landmarks.forEach(l=>{ ctx.lineWidth=5; ctx.strokeStyle='#f00'; ctx.fillStyle='#f00'; ctx.shadowColor='#f00'; ctx.shadowBlur=18; [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]].forEach(([a,b])=>{ let p1=l[a],p2=l[b]; if(p1&&p2){ ctx.beginPath(); let tx=x=> facing==='user'?(1-x)*canvas.width:x*canvas.width; ctx.moveTo(tx(p1.x),p1.y*canvas.height); ctx.lineTo(tx(p2.x),p2.y*canvas.height); ctx.stroke(); }}); l.forEach(p=>{ let tx=x=> facing==='user'?(1-x)*canvas.width:x*canvas.width; ctx.beginPath(); ctx.arc(tx(p.x),p.y*canvas.height,6,0,6.28); ctx.fill(); }); ctx.shadowBlur=0; }); }
-  } requestAnimationFrame(loop); })();
- }catch(e){}
+
+function loopSombras(){
+ setInterval(()=>{
+  if(Math.random()<0.22){
+   currentShadow={x:0.2+Math.random()*0.6,y:0.15+Math.random()*0.6,h:0.5+Math.random()*0.4,w:0.18+Math.random()*0.15,opacity:0.75+Math.random()*0.25};
+   shadowTimeout=Date.now()+(3000+Math.random()*4000);
+  }
+ }, 5000);
 }
+
+function iniciarComposicion(){
+ recCanvas.width=1280; recCanvas.height=720;
+ canvas.width=innerWidth; canvas.height=innerHeight;
+ let lastTalkForRec="", lastTalkTimeForRec=0;
+ const origDisplay = document.getElementById('talk');
+ const observer = new MutationObserver(()=>{
+   if(origDisplay.style.display==='block'){
+     lastTalkForRec=origDisplay.innerText;
+     lastTalkTimeForRec=Date.now();
+   }
+ });
+ observer.observe(origDisplay,{attributes:true,attributeFilter:['style']});
+ function draw(){
+  if(video.readyState>=2){
+   let vw=video.videoWidth, vh=video.videoHeight;
+   let scale=Math.max(recCanvas.width/vw, recCanvas.height/vh);
+   let w=vw*scale, h=vh*scale, x=(recCanvas.width-w)/2, y=(recCanvas.height-h)/2;
+   recCtx.drawImage(video,x,y,w,h);
+  } else { recCtx.fillStyle='#000'; recCtx.fillRect(0,0,recCanvas.width,recCanvas.height); }
+  if(currentShadow && Date.now()<shadowTimeout){
+   recCtx.save(); recCtx.globalAlpha=currentShadow.opacity; recCtx.fillStyle='rgba(0,0,0,0.88)'; recCtx.filter='blur(14px)';
+   let cx=currentShadow.x*recCanvas.width, cy=currentShadow.y*recCanvas.height;
+   let sh=currentShadow.h*recCanvas.height, sw=currentShadow.w*recCanvas.width;
+   recCtx.beginPath(); recCtx.arc(cx,cy,sw*0.35,0,6.28); recCtx.fill();
+   recCtx.fillRect(cx-sw*0.42,cy+sw*0.3,sw*0.84,sh*0.7);
+   recCtx.restore();
+  } else if(currentShadow && Date.now()>=shadowTimeout){ currentShadow=null; }
+  if(lastTalkForRec && Date.now()-lastTalkTimeForRec<6000){
+   recCtx.save();
+   recCtx.fillStyle='rgba(255,0,0,0.88)'; recCtx.fillRect(0,recCanvas.height-120,recCanvas.width,120);
+   recCtx.fillStyle='#fff'; recCtx.font='900 36px monospace'; recCtx.textAlign='center';
+   recCtx.fillText(lastTalkForRec.substring(0,55),recCanvas.width/2,recCanvas.height-42);
+   recCtx.restore();
+  }
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+  ctx.drawImage(recCanvas,0,0,canvas.width,canvas.height);
+  if(currentShadow && Date.now()<shadowTimeout){
+   ctx.save(); ctx.globalAlpha=0.55; ctx.fillStyle='#000'; ctx.filter='blur(12px)';
+   let cx=currentShadow.x*canvas.width, cy=currentShadow.y*canvas.height;
+   let sh=currentShadow.h*canvas.height, sw=currentShadow.w*canvas.width;
+   ctx.beginPath(); ctx.arc(cx,cy,sw*0.35,0,6.28); ctx.fill();
+   ctx.fillRect(cx-sw*0.42,cy+sw*0.3,sw*0.84,sh*0.7);
+   ctx.restore();
+   document.getElementById('status').innerText='SOMBRA DETECTADA';
+  }
+  requestAnimationFrame(draw);
+ }
+ draw();
+}
+
+document.getElementById('activar').onclick=activarTodo;
+document.getElementById('bCam').onclick=async()=>{
+ facing = facing==='environment' ? 'user' : 'environment';
+ await activarTodo();
+};
 let rec,chunks=[],isRec=false;
 document.getElementById('bRec').onclick=async()=>{
  if(!isRec){
-  let cS=canvas.captureStream(30);
-  // usa el mismo aStream, no pide permiso de nuevo
-  let comb=new MediaStream([...cS.getVideoTracks(),...aStream.getAudioTracks()]);
-  rec=new MediaRecorder(comb); chunks=[]; rec.ondataavailable=e=>chunks.push(e.data);
+  let cStream=recCanvas.captureStream(30);
+  let combined=new MediaStream([...cStream.getVideoTracks(),...aStream.getAudioTracks()]);
+  rec=new MediaRecorder(combined,{mimeType:'video/webm;codecs=vp9'}); chunks=[];
+  rec.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); };
   rec.onstop=()=>{ let b=new Blob(chunks,{type:'video/webm'}); let a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download=`ARCHIVAX-${Date.now()}.webm`; a.click(); isRec=false; document.getElementById('bRec').innerText='● REC'; };
-  rec.start(); isRec=true; document.getElementById('bRec').innerText='■ STOP';
- } else rec.stop();
+  rec.start(100); isRec=true; document.getElementById('bRec').innerText='■ STOP';
+ } else { rec.stop(); }
 };
+window.addEventListener('resize',()=>{ canvas.width=innerWidth; canvas.height=innerHeight; });
 speechSynthesis.getVoices();
+if(typeof ARCHIVAX_DB==='undefined'){ document.getElementById('err').innerText='FALTA entidades.js - Subilo a la raíz del sitio'; }
 </script>
 </body>
 </html>
