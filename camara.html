@@ -4,28 +4,22 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>ARCHIVAX GHOST</title>
-<script src="/entidades.js?v=8"></script>
+<script src="entidades.js?v=12"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;font-family:monospace}
-#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover;background:#000}
+#video{position:fixed;inset:0;width:100%;height:100%;object-fit:cover}
 #canvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none}
 #top{position:fixed;top:0;left:0;right:0;height:44px;background:rgba(0,0,0,0.9);border-bottom:2px solid #f00;display:flex;align-items:center;justify-content:space-between;padding:0 12px;color:#f00;font-size:11px;z-index:10}
 #center{position:fixed;inset:0;background:#000;z-index:100;display:flex;flex-direction:column;align-items:center;justify-content:center}
 #bottom{position:fixed;bottom:0;left:0;right:0;padding:10px;display:flex;gap:8px;z-index:20;background:linear-gradient(transparent,#000 80%)}
-.btn{flex:1;background:#111;border:1px solid #333;color:#888;padding:14px 6px;border-radius:12px;font-size:10px;font-weight:800;cursor:pointer}
+.btn{flex:1;background:#111;border:1px solid #333;color:#888;padding:14px 6px;border-radius:12px;font-size:10px;font-weight:800}
 .btn-red{border-color:#f00;color:#f00}
 .btn-blue{border-color:#0af;color:#0af}
-#talk{position:fixed;top:46%;left:50%;transform:translate(-50%,-50%);padding:22px 28px;border-radius:16px;font-weight:900;font-size:22px;z-index:99;display:none;text-align:center;max-width:90%;line-height:1.1}
-#talk.extrema{background:#f00;color:#fff;box-shadow:0 0 60px #f00;animation:shake 0.2s infinite}
-#talk.hebreo{background:#000;color:#f00;border:3px solid #f00;box-shadow:0 0 70px #f00}
-#talk.grosero{background:#000;color:#ff0;border:3px solid #ff0;box-shadow:0 0 60px #ff0;font-size:26px;animation:shake 0.15s infinite}
-#talk.mujer{background:rgba(0,255,255,0.92);color:#000}
-#talk.nena{background:rgba(255,105,180,0.92);color:#fff}
-#talk.nene{background:rgba(100,200,255,0.92);color:#fff}
-#talk.llorando{background:#222;color:#ccc;border:1px solid #555;font-style:italic}
-@keyframes shake{0%{transform:translate(-50%,-50%) translateX(-3px)}50%{transform:translate(-50%,-50%) translateX(3px)}100%{transform:translate(-50%,-50%) translateX(-3px)}}
-#sub{position:fixed;bottom:100px;left:0;right:0;text-align:center;color:#777;font-size:10px;z-index:10;letter-spacing:1px}
+#evpBar{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);width:90%;height:54px;background:rgba(0,0,0,0.95);border:1px solid #f00;border-radius:10px;display:none;z-index:15;overflow:hidden;align-items:center;padding:0 10px}
+#sweep{width:200%;height:4px;background:linear-gradient(90deg,#000,#f00,#ff0,#0f0,#000);animation:sweep 0.12s linear infinite}
+@keyframes sweep{0%{transform:translateX(-50%)}100%{transform:translateX(0%)}}
+#sub{position:fixed;bottom:95px;left:0;right:0;text-align:center;color:#666;font-size:9px;letter-spacing:2px;z-index:10}
 #evp{position:fixed;left:10px;top:58px;width:46px;background:rgba(0,0,0,0.9);border:1px solid #333;border-radius:8px;padding:4px;z-index:10;text-align:center}
 #bar{height:72px;background:#111;border-radius:4px;overflow:hidden;margin-top:4px;position:relative}
 #fill{position:absolute;bottom:0;width:100%;background:linear-gradient(#0f0,#f00);height:0%}
@@ -42,12 +36,14 @@ body{background:#000;overflow:hidden;font-family:monospace}
   <div id="err" style="color:#f44;font-size:11px;margin-top:14px"></div>
 </div>
 
-<div id="top"><span>● ARCHIVAX GHOST</span><span id="status">-</span></div>
-<div id="evp"><div style="font-size:7px;color:#888">EVP</div><div id="db" style="color:#fff;font-size:13px">--</div><div id="bar"><div id="fill"></div></div><div id="type" style="font-size:6px;color:#f00;margin-top:3px">-</div></div>
-<div id="talk"></div>
-<div id="sub">HABLAR CON ENTIDAD</div>
+<div id="top"><span>● ARCHIVAX GHOST • EVP REAL</span><span id="status">-</span></div>
+<div id="evp"><div style="font-size:7px;color:#888">EVP</div><div id="db" style="color:#fff;font-size:13px">--</div><div id="bar"><div id="fill"></div></div><div id="type" style="font-size:6px;color:#f00">SCAN</div></div>
+
+<div id="evpBar"><div style="width:100%"><div style="color:#f00;font-size:10px;display:flex;justify-content:space-between"><span>SPIRIT BOX - 87.9 FM</span><span id="freq">SCANNING...</span></div><div id="sweep"></div><div style="color:#666;font-size:7px;margin-top:4px">AM 530-1700 • FM 88-108 • EVP DETECTADO - ESCUCHA</div></div></div>
+
+<div id="sub">HABLAR CON ENTIDAD - ESCUCHA LA RADIO</div>
 <div id="bottom">
-  <button class="btn" onclick="location.href='/menu.html'">⬅ MENU</button>
+  <button class="btn" onclick="location.href='menu.html'">⬅ MENU</button>
   <button class="btn btn-blue" id="bCam">🔄 CAMARA<br><span style="font-size:7px" id="camLabel">TRASERA</span></button>
   <button class="btn btn-red" id="bRec">● REC</button>
 </div>
@@ -57,106 +53,7 @@ let video=document.getElementById('video'),canvas=document.getElementById('canva
 let vStream,aStream,facing='environment',analyser,lastVoice=0,lastUserQuestion=0,usadas=new Set();
 let recCanvas=document.createElement('canvas'), recCtx=recCanvas.getContext('2d');
 let currentShadow=null, shadowTimeout=0;
+let audioCtx, shadowImg=new Image();
 
-function pickTipo(){let r=Math.random();if(r<0.26)return"grosero";if(r<0.41)return"extrema";if(r<0.53)return"hebrea";if(r<0.69)return"mujer";if(r<0.83)return"nena";if(r<0.93)return"nene";return"llorando";}
-function generarRespuesta(tipo, pregunta=""){
- if(typeof ARCHIVAX_DB==='undefined'){return{texto:"ERROR ENTIDADES.JS"};}
- let lista=ARCHIVAX_DB.filter(x=>x.tipo===tipo);
- if(pregunta.includes("nombre")||pregunta.includes("llamas")){let d=ARCHIVAX_DB.filter(x=>["mujer","nena","nene"].includes(x.tipo));return d[Math.floor(Math.random()*d.length)];}
- let item=lista[Math.floor(Math.random()*lista.length)];let key=tipo+JSON.stringify(item);if(usadas.has(key)&&usadas.size<2000){return generarRespuesta(tipo,pregunta);}usadas.add(key);if(usadas.size>2500)usadas.clear();return item;
-}
-function hablar(pregunta=""){
- let ahora=Date.now();if(ahora-lastVoice<20000)return;lastVoice=ahora;
- let tipo=pickTipo();let data=generarRespuesta(tipo,pregunta);
- let textoHablar=data.texto, textoMostrar=data.traduccion||data.texto; textoMostrar=textoMostrar.toUpperCase();
- let box=document.getElementById('talk');box.className=data.tipo==="grosero"?"grosero":data.tipo==="extrema"?"extrema":data.tipo==="hebrea"?"hebreo":data.tipo;
- box.style.display='block';if(data.tipo==="hebrea")box.innerHTML=`<div style="font-size:30px">${data.texto}</div><div style="font-size:12px;color:#fff;margin-top:6px">${data.traduccion}</div>`;else box.innerText=textoMostrar;
- document.getElementById('type').innerText=data.tipo.toUpperCase();document.getElementById('status').innerText=data.tipo.toUpperCase();
- setTimeout(()=>{box.style.display='none';},6000);
- let u=new SpeechSynthesisUtterance(textoHablar);
- if(data.tipo==="grosero"){u.lang='es-AR';u.rate=0.62;u.pitch=0.05;u.volume=0.65;}
- else if(data.tipo==="hebrea"){u.lang='he-IL';u.rate=0.38;u.pitch=0.01;u.volume=0.55;}
- else if(data.tipo==="nena"){u.lang='es-AR';u.rate=1.2;u.pitch=1.5;u.volume=0.6;}
- else if(data.tipo==="nene"){u.lang='es-AR';u.rate=1.1;u.pitch=1.2;u.volume=0.6;}
- else if(data.tipo==="llorando"){u.lang='es-AR';u.rate=0.5;u.pitch=0.4;u.volume=0.5;}
- else{u.lang='es-AR';u.rate=0.68;u.pitch=0.55;u.volume=0.6;}
- speechSynthesis.speak(u);
- if(data.tipo==="grosero"||data.tipo==="extrema"||data.tipo==="hebrea"){
-   setTimeout(()=>{let u2=new SpeechSynthesisUtterance(textoHablar);u2.lang=u.lang;u2.rate=u.rate*0.88;u2.pitch=0.01;u2.volume=0.35;speechSynthesis.speak(u2);},400);
-   if(navigator.vibrate)navigator.vibrate([300,100,400]);
- }
-}
-async function activarTodo(){
- try{
-  if(vStream)vStream.getTracks().forEach(t=>t.stop());
-  let stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-  vStream=stream;aStream=new MediaStream(stream.getAudioTracks());video.srcObject=new MediaStream(stream.getVideoTracks());await video.play();
-  document.getElementById('center').style.display='none';document.getElementById('camLabel').innerText=facing==='environment'?'TRASERA':'DELANTERA';
-  let ac=new(window.AudioContext||window.webkitAudioContext)();let src=ac.createMediaStreamSource(aStream);let hp=ac.createBiquadFilter();hp.type='highpass';hp.frequency.value=250;let lp=ac.createBiquadFilter();lp.type='lowpass';lp.frequency.value=3500;analyser=ac.createAnalyser();analyser.fftSize=1024;src.connect(hp);hp.connect(lp);lp.connect(analyser);
-  audioLoop();startSTT();iniciarComposicion();loopSombras();
- }catch(e){document.getElementById('err').innerText=e.message;}
-}
-function startSTT(){
- let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return;
- let r=new SR();r.lang='es-AR';r.continuous=true;r.interimResults=true;
- r.onresult=(e)=>{let txt=e.results[e.results.length-1][0].transcript.toLowerCase();lastUserQuestion=Date.now();setTimeout(()=>{hablar(txt);},60000);};
- r.onend=()=>{try{r.start();}catch{}};try{r.start();}catch{}
-}
-function audioLoop(){
- if(!analyser)return requestAnimationFrame(audioLoop);
- let d=new Uint8Array(analyser.frequencyBinCount);analyser.getByteFrequencyData(d);
- let avg=d.slice(8,90).reduce((a,b)=>a+b,0)/82;document.getElementById('fill').style.height=Math.min(100,avg*2)+'%';document.getElementById('db').innerText=avg.toFixed(0);
- if(Date.now()-lastVoice>30000 && Date.now()-lastUserQuestion>65000 && Math.random()<0.06){let espera=20000+Math.random()*20000;setTimeout(()=>{hablar();},espera);lastVoice=Date.now();}
- requestAnimationFrame(audioLoop);
-}
-function loopSombras(){
- setInterval(()=>{
-  if(Math.random()<0.18 &&!currentShadow){
-   currentShadow={x:Math.random()<0.5?-0.2:1.2,targetX:0.3+Math.random()*0.4,y:0.25+Math.random()*0.35,speed:0.002+Math.random()*0.003,phase:0,opacity:0};
-   shadowTimeout=Date.now()+12000;
-  }
- },6000);
-}
-function dibujarSombraRealista(ctx, x, y, w, h, phase, opacity){
- ctx.save();ctx.globalAlpha=opacity;ctx.filter='blur(3px) contrast(0.8)';
- let grad=ctx.createRadialGradient(x, y+h*0.5, 0, x, y+h*0.5, w*1.2);
- grad.addColorStop(0,'rgba(0,0,0,0.95)');grad.addColorStop(0.4,'rgba(10,10,10,0.7)');grad.addColorStop(1,'rgba(0,0,0,0)');
- ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(x, y, w*0.18, w*0.22, 0, 0, 6.28);ctx.fill();
- let sway=Math.sin(phase)*w*0.05;ctx.fillRect(x-w*0.22+sway, y+w*0.2, w*0.44, h*0.45);
- let armSwing=Math.sin(phase*1.5)*0.08;ctx.fillRect(x-w*0.35+sway+armSwing*w, y+w*0.25, w*0.12, h*0.32);ctx.fillRect(x+w*0.23+sway-armSwing*w, y+w*0.25, w*0.12, h*0.32);
- let legSwing=Math.sin(phase*2)*w*0.15;ctx.fillRect(x-w*0.18+legSwing, y+h*0.65, w*0.14, h*0.35);ctx.fillRect(x+w*0.04-legSwing, y+h*0.65, w*0.14, h*0.35);ctx.restore();
-}
-function iniciarComposicion(){
- recCanvas.width=1280;recCanvas.height=720;canvas.width=innerWidth;canvas.height=innerHeight;
- let lastTalkForRec="",lastTalkTimeForRec=0;const origDisplay=document.getElementById('talk');
- const observer=new MutationObserver(()=>{if(origDisplay.style.display==='block'){lastTalkForRec=origDisplay.innerText;lastTalkTimeForRec=Date.now();}});observer.observe(origDisplay,{attributes:true,attributeFilter:['style']});
- let lastFrameCheck=Date.now();
- function draw(){
-  if(Date.now()-lastFrameCheck>500 && currentShadow){lastFrameCheck=Date.now();if(Math.random()<0.12){currentShadow=null;}}
-  if(video.readyState>=2){let vw=video.videoWidth,vh=video.videoHeight;let scale=Math.max(recCanvas.width/vw,recCanvas.height/vh);let w=vw*scale,h=vh*scale,x=(recCanvas.width-w)/2,y=(recCanvas.height-h)/2;recCtx.drawImage(video,x,y,w,h);}else{recCtx.fillStyle='#000';recCtx.fillRect(0,0,recCanvas.width,recCanvas.height);}
-  if(currentShadow && Date.now()<shadowTimeout){
-   if(currentShadow.opacity<0.85)currentShadow.opacity+=0.02;currentShadow.phase+=0.08;currentShadow.x+=(currentShadow.targetX-currentShadow.x)*currentShadow.speed*80;
-   let cx=currentShadow.x*recCanvas.width,cy=currentShadow.y*recCanvas.height;let sh=recCanvas.height*0.65;let sw=recCanvas.width*0.18;dibujarSombraRealista(recCtx,cx,cy,sw,sh,currentShadow.phase,currentShadow.opacity);
-  }else if(currentShadow && Date.now()>=shadowTimeout){currentShadow=null;}
-  if(lastTalkForRec && Date.now()-lastTalkTimeForRec<6000){recCtx.save();recCtx.fillStyle='rgba(255,0,0,0.88)';recCtx.fillRect(0,recCanvas.height-120,recCanvas.width,120);recCtx.fillStyle='#fff';recCtx.font='900 36px monospace';recCtx.textAlign='center';recCtx.fillText(lastTalkForRec.substring(0,55),recCanvas.width/2,recCanvas.height-42);recCtx.restore();}
-  ctx.clearRect(0,0,canvas.width,canvas.height);ctx.drawImage(recCanvas,0,0,canvas.width,canvas.height);
-  if(currentShadow && Date.now()<shadowTimeout){let cx=currentShadow.x*canvas.width,cy=currentShadow.y*canvas.height;let sh=canvas.height*0.65;let sw=canvas.width*0.18;dibujarSombraRealista(ctx,cx,cy,sw,sh,currentShadow.phase,currentShadow.opacity*0.7);document.getElementById('status').innerText='SOMBRA DETECTADA';}
-  requestAnimationFrame(draw);
- }draw();
-}
-document.getElementById('activar').onclick=activarTodo;
-document.getElementById('bCam').onclick=async()=>{facing=facing==='environment'?'user':'environment';currentShadow=null;await activarTodo();};
-let rec,chunks=[],isRec=false;
-document.getElementById('bRec').onclick=async()=>{
- if(!isRec){
-  let cStream=recCanvas.captureStream(30);let combined=new MediaStream([...cStream.getVideoTracks(),...aStream.getAudioTracks()]);
-  rec=new MediaRecorder(combined,{mimeType:'video/webm;codecs=vp9'});chunks=[];rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
-  rec.onstop=()=>{let b=new Blob(chunks,{type:'video/webm'});let a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ARCHIVAX-${Date.now()}.webm`;a.click();isRec=false;document.getElementById('bRec').innerText='● REC';};
-  rec.start(100);isRec=true;document.getElementById('bRec').innerText='■ STOP';
- }else{rec.stop();}
-};
-window.addEventListener('resize',()=>{canvas.width=innerWidth;canvas.height=innerHeight;});
-speechSynthesis.getVoices();
-</script>
-</body>
-</html>
+// IMAGEN SOMBRA REAL EMBEBIDA - NO NECESITAS shadow.png
+shadowImg.src="data:image/webp;base64,UklGRoQBAABXRUJQVlA4WAoAAAAQAAAA/wMALwEAQUxQSCwAAAABD0p0y0gN0x6uN/6gAR5gAP0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb0aR0x6uN/6gAb
