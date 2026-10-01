@@ -3,48 +3,46 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX SLS BLACK PRO</title>
+<title>ARCHIVAX SLS BLACK REAL</title>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 body{background:#000;overflow:hidden;font-family:monospace}
-#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;transform:scaleX(-1);background:#000}
+#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;background:#000}
 #canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none}
-#ui{position:fixed;top:0;left:0;width:100%;z-index:20;padding:10px;display:flex;flex-direction:column;gap:6px}
-.top-row{display:flex;gap:6px}
-.btn{padding:12px 10px;background:#000;color:#0f0;border:1px solid #0f0;font-size:13px;font-weight:bold;flex:1}
-.btn-main{width:100%;padding:16px;font-size:16px;letter-spacing:2px;border:2px solid #0f0}
-#status{color:#0f0;background:rgba(0,0,0,.8);padding:6px;text-align:center;font-size:11px;border:1px solid #0f0}
-#controls{position:fixed;bottom:0;left:0;width:100%;z-index:20;background:rgba(0,0,0,.9);border-top:1px solid #0f0;padding:10px;display:flex;flex-direction:column;gap:8px}
-.ctrl-row{display:flex;gap:6px;align-items:center}
-.ctrl-row label{color:#0f0;font-size:10px;flex:1}
-.ctrl-row input{flex:2}
-#freq{color:#0f0;font-size:11px;text-align:center;letter-spacing:1px}
+#ui{position:fixed;top:0;left:0;width:100%;z-index:20;padding:8px;display:flex;flex-direction:column;gap:6px}
+.btn{padding:12px;background:#000;color:#0f0;border:1px solid #0f0;font-size:12px;flex:1}
+.btn-main{width:100%;padding:18px;font-size:18px;border:2px solid #0f0;letter-spacing:2px}
+.row{display:flex;gap:6px}
+#status{color:#0f0;background:rgba(0,0,0,.85);padding:6px;text-align:center;font-size:11px;border:1px solid #0f0}
+#freq{color:#0f0;text-align:center;font-size:12px;background:rgba(0,0,0,.7);padding:4px}
+#controls{position:fixed;bottom:0;left:0;width:100%;z-index:20;background:rgba(0,0,0,.92);border-top:1px solid #0f0;padding:8px}
 </style>
 </head>
 <body>
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
-
 <div id="ui">
-<button id="btn" class="btn btn-main">ACTIVAR SLS BLACK PRO</button>
-<div class="top-row">
-<button id="switchCam" class="btn">CAM: TRASERA ↔ FRONTAL</button>
+<button id="btn" class="btn btn-main">INICIAR SLS BLACK REAL</button>
+<div class="row">
+<button id="switchCam" class="btn">CAM FRONTAL/TRASERA</button>
 <button id="menuBtn" class="btn">☰ MENU</button>
 </div>
-<div id="status">SLS: OFF | DETECCION: 0% | EVP: OFF</div>
-<div id="freq">88.0 MHz - ESPERANDO</div>
+<div id="status">Cargando IA SLS...</div>
+<div id="freq">88.0 MHz - - -</div>
+</div>
+<div id="controls">
+<div class="row">
+<button id="evpBtn" class="btn">EVP REAL ON/OFF</button>
+<button id="scanBtn" class="btn">SCAN 88-108</button>
+</div>
 </div>
 
-<div id="controls">
-<div class="ctrl-row">
-<label>SENSIBILIDAD DETECCION</label>
-<input type="range" id="sens" min="5" max="95" value="45">
-</div>
-<div class="ctrl-row">
-<button id="evpBtn" class="btn">EVP ON/OFF</button>
-<button id="scanBtn" class="btn">SCAN RADIO</button>
-</div>
-</div>
+<audio id="static" loop crossorigin="anonymous" src="https://cdn.freesound.org/previews/19/19226_60348-lq.mp3"></audio>
+<audio id="evp1" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/132/132101_2337290-lq.mp3"></audio>
+<audio id="evp2" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/415/415362_5121236-lq.mp3"></audio>
+<audio id="evp3" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/270/270310_5121236-lq.mp3"></audio>
 
 <script>
 const video=document.getElementById('video');
@@ -57,206 +55,144 @@ const statusEl=document.getElementById('status');
 const freqEl=document.getElementById('freq');
 const evpBtn=document.getElementById('evpBtn');
 const scanBtn=document.getElementById('scanBtn');
-const sensInput=document.getElementById('sens');
+const staticAudio=document.getElementById('static');
+const evpAudios=[document.getElementById('evp1'),document.getElementById('evp2'),document.getElementById('evp3')];
 
-let W,H, facing='environment', stream=null, ghost=null, ghosts=[], evpOn=false, audioCtx, noiseNode, filter, gainNode;
-let detectionScore=0, lastFrame=null, sensitivity=45;
+let W,H, detector=null, facing='environment', stream=null, evpOn=false, ghost=null, lastPoses=[];
+W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight;
+window.addEventListener('resize',()=>{W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight;});
 
-class BlackSkeleton{
-  constructor(x,y, isReal=false){
-    this.x=x||Math.random()*0.6+0.2;
-    this.y=y||Math.random()*0.4+0.3;
-    this.vx=(Math.random()-0.5)*0.004;
-    this.vy=(Math.random()-0.5)*0.002;
-    this.phase=Math.random()*Math.PI*2;
-    this.visible=true;
-    this.isReal=isReal; // si detectó forma real
-    this.life= isReal? 180+Math.random()*200 : 400+Math.random()*600;
-  }
-  update(){
-    this.phase+= this.isReal? 0.12 : 0.07;
-    this.life--;
-    if(this.visible){
-      if(!this.isReal){ this.x+=this.vx; this.y+=this.vy; }
-      else { this.x+= (Math.random()-0.5)*0.002; }
-      if(this.x<0.08||this.x>0.92) this.vx*=-1;
-      if(this.y<0.12||this.y>0.88) this.vy*=-1;
-    }
-  }
+class Ghost{
+  constructor(){this.x=Math.random()*0.6+0.2; this.y=0.4; this.vx=(Math.random()-0.5)*0.004; this.phase=0; this.visible=true;}
+  update(){this.phase+=0.06; this.x+=this.vx; if(this.x<0.1||this.x>0.9) this.vx*=-1; if(Math.random()<0.005) this.visible=!this.visible;}
   draw(){
-    if(!this.visible || this.life<=0) return false;
-    const cx=this.x*W, cy=this.y*H, s=H*0.36;
-    const walk=Math.sin(this.phase)*14, legWalk=Math.sin(this.phase)*20;
-    ctx.save();
-    // Huesos negros con glow verde muy sutil como SLS real pero en negro
-    ctx.strokeStyle=this.isReal? 'rgba(0,0,0,0.98)' : 'rgba(15,15,15,0.95)';
-    ctx.lineWidth= this.isReal? 5 : 4;
-    ctx.lineCap='round'; ctx.lineJoin='round';
-    ctx.shadowColor=this.isReal? 'rgba(0,255,0,0.6)' : 'rgba(0,255,0,0.25)';
-    ctx.shadowBlur= this.isReal? 12 : 6;
-
-    // Cabeza - SLS
-    ctx.beginPath(); ctx.arc(cx, cy-s*0.45, s*0.095,0,Math.PI*2); ctx.stroke();
-    // Cuello a tronco
+    if(!this.visible) return;
+    const cx=this.x*W, cy=this.y*H, s=H*0.38, walk=Math.sin(this.phase)*15;
+    ctx.strokeStyle='rgba(0,0,0,0.95)'; ctx.lineWidth=5; ctx.lineCap='round'; ctx.shadowColor='rgba(0,255,0,0.4)'; ctx.shadowBlur=10;
+    ctx.beginPath(); ctx.arc(cx, cy-s*0.45, s*0.09,0,Math.PI*2); ctx.stroke();
     ctx.beginPath(); ctx.moveTo(cx, cy-s*0.36); ctx.lineTo(cx, cy+s*0.06); ctx.stroke();
-    // Hombros a codos
-    ctx.beginPath();
-    ctx.moveTo(cx, cy-s*0.26); ctx.lineTo(cx-s*0.20+walk*0.5, cy-s*0.06);
-    ctx.moveTo(cx, cy-s*0.26); ctx.lineTo(cx+s*0.20-walk*0.5, cy-s*0.06);
-    ctx.stroke();
-    // Antebrazos
-    ctx.beginPath();
-    ctx.moveTo(cx-s*0.20+walk*0.5, cy-s*0.06); ctx.lineTo(cx-s*0.26+walk, cy+s*0.09);
-    ctx.moveTo(cx+s*0.20-walk*0.5, cy-s*0.06); ctx.lineTo(cx+s*0.26-walk, cy+s*0.09);
-    ctx.stroke();
-    // Cadera a rodillas - camina solo, no sigue cámara
-    ctx.beginPath();
-    ctx.moveTo(cx, cy+s*0.06); ctx.lineTo(cx-s*0.13+legWalk*0.6, cy+s*0.22);
-    ctx.moveTo(cx, cy+s*0.06); ctx.lineTo(cx+s*0.13-legWalk*0.6, cy+s*0.22);
-    ctx.stroke();
-    // Rodillas a pies
-    ctx.beginPath();
-    ctx.moveTo(cx-s*0.13+legWalk*0.6, cy+s*0.22); ctx.lineTo(cx-s*0.15+legWalk, cy+s*0.42);
-    ctx.moveTo(cx+s*0.13-legWalk*0.6, cy+s*0.22); ctx.lineTo(cx+s*0.15-legWalk, cy+s*0.42);
-    ctx.stroke();
-
-    // Articulaciones - Puntos verdes SLS pero esqueleto negro
+    ctx.beginPath(); ctx.moveTo(cx, cy-s*0.26); ctx.lineTo(cx-s*0.2+walk*0.4, cy-s*0.05); ctx.moveTo(cx, cy-s*0.26); ctx.lineTo(cx+s*0.2-walk*0.4, cy-s*0.05); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy+s*0.06); ctx.lineTo(cx-s*0.12+walk*0.6, cy+s*0.40); ctx.moveTo(cx, cy+s*0.06); ctx.lineTo(cx+s*0.12-walk*0.6, cy+s*0.40); ctx.stroke();
     ctx.shadowBlur=0;
-    const joints=[
-      [0,-0.45],[0,-0.36],[0,-0.26],[-0.20,-0.06],[0.20,-0.06],
-      [-0.26,0.09],[0.26,0.09],[0,0.06],[-0.13,0.22],[0.13,0.22],[-0.15,0.42],[0.15,0.42]
-    ];
-    joints.forEach((p,i)=>{
-      // Punto verde SLS
-      ctx.fillStyle= this.isReal? '#00ff00' : 'rgba(0,255,0,0.7)';
-      ctx.beginPath(); ctx.arc(cx+p[0]*s, cy+p[1]*s, this.isReal?4.5:3,0,Math.PI*2); ctx.fill();
-      // Borde negro
+  }
+}
+ghost=new Ghost();
+
+// SLS REAL - Dibuja esqueleto NEGRO sobre persona detectada por IA
+function drawRealSLS(keypoints){
+  if(!keypoints) return;
+  const get=(name)=>keypoints.find(k=>k.name===name);
+  const pairs=[['left_shoulder','right_shoulder'],['left_shoulder','left_elbow'],['left_elbow','left_wrist'],['right_shoulder','right_elbow'],['right_elbow','right_wrist'],['left_shoulder','left_hip'],['right_shoulder','right_hip'],['left_hip','right_hip'],['left_hip','left_knee'],['left_knee','left_ankle'],['right_hip','right_knee'],['right_knee','right_ankle']];
+
+  ctx.save();
+  ctx.strokeStyle='#000000'; // ESQUELETO NEGRO como pediste
+  ctx.lineWidth=6;
+  ctx.lineCap='round';
+  ctx.shadowColor='#00ff00';
+  ctx.shadowBlur=15;
+
+  pairs.forEach(([a,b])=>{
+    const p1=get(a), p2=get(b);
+    if(p1 && p2 && p1.score>0.3 && p2.score>0.3){
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
+  });
+  // Articulaciones verdes tipo SLS real
+  ctx.shadowBlur=0;
+  keypoints.forEach(k=>{
+    if(k.score>0.3){
+      ctx.fillStyle='#00ff00';
+      ctx.beginPath(); ctx.arc(k.x,k.y,5,0,Math.PI*2); ctx.fill();
       ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
-    });
-    ctx.restore();
-    return true;
-  }
-}
-
-function resize(){W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight;}
-window.addEventListener('resize',resize); resize();
-
-// Detección de formas por movimiento + luz (sensibilidad)
-function detectForm(){
-  if(!video.videoWidth || sensitivity<10) return null;
-  const temp=document.createElement('canvas');
-  temp.width=64; temp.height=48;
-  const tctx=temp.getContext('2d');
-  tctx.drawImage(video,0,0,64,48);
-  const data=tctx.getImageData(0,0,64,48).data;
-  let movement=0;
-  if(lastFrame){
-    for(let i=0;i<data.length;i+=16){
-      const diff=Math.abs(data[i]-lastFrame[i]);
-      if(diff> sensitivity) movement++;
     }
-  }
-  lastFrame=new Uint8Array(data.filter((_,i)=>i%4==0));
-  detectionScore = movement/10;
-  statusEl.textContent=`SLS: ON | DETECCION: ${Math.min(99,Math.floor(detectionScore))}% | EVP: ${evpOn?'ON':'OFF'} | SENS: ${sensitivity}%`;
-
-  // Si hay forma, crea esqueleto real negro
-  if(detectionScore > (100-sensitivity)/2 && Math.random()<0.15 && ghosts.length<2){
-    const x= 0.2+Math.random()*0.6;
-    const y= 0.25+Math.random()*0.5;
-    ghosts.push(new BlackSkeleton(x,y,true));
-    freqEl.textContent='FORMA DETECTADA - SLS LOCK';
-    if(evpOn) speakGhostVoice();
-  }
-  return movement;
+  });
+  ctx.restore();
 }
 
-function loop(){
-  ctx.clearRect(0,0,W,H);
-  if(ghost || ghosts.length>0){
-    detectForm();
-    ghosts=ghosts.filter(g=>{ g.update(); return g.draw(); });
-    // Ghost errante que camina solo por la escena, no sigue cámara
-    if(ghosts.length==0 && Math.random()<0.008){
-      ghosts.push(new BlackSkeleton(null,null,false));
-    }
-  }
-  requestAnimationFrame(loop);
-}
-loop();
-
-// AUDIO EVP REAL - voces en el ruido
-const EVP_PHRASES=["...aquí...","¿quién eres?","déjame...","atrás...","no mires","está cerca","ayuda...","vete","lo veo","escucha"];
-function initAudio(){ audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-function playEVP(){
-  if(!audioCtx) initAudio();
-  if(noiseNode) try{noiseNode.stop();}catch{}
-  const bufferSize=audioCtx.sampleRate*3;
-  const buffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
-  const data=buffer.getChannelData(0);
-  for(let i=0;i<bufferSize;i++){
-    // Ruido de radio vieja
-    data[i]=(Math.random()*2-1)*0.6 + Math.sin(i*0.008+Math.random()*0.5)*0.15 + Math.sin(i*0.0007)*0.2;
-  }
-  noiseNode=audioCtx.createBufferSource(); noiseNode.buffer=buffer; noiseNode.loop=true;
-  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=700; filter.Q.value=4;
-  gainNode=audioCtx.createGain(); gainNode.gain.value=0.65;
-  noiseNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination);
-  noiseNode.start();
-}
-function speakGhostVoice(){
-  if(!audioCtx ||!evpOn) return;
-  const phrase=EVP_PHRASES[Math.floor(Math.random()*EVP_PHRASES.length)];
-  freqEl.textContent=`${(88+Math.random()*20).toFixed(1)} MHz - "${phrase.toUpperCase()}"`;
-  // Voz susurrada real con speechSynthesis
-  const utter=new SpeechSynthesisUtterance(phrase);
-  utter.rate=0.6; utter.pitch=0.2; utter.volume=0.9;
-  const voices=speechSynthesis.getVoices();
-  if(voices.length>0) utter.voice=voices[Math.floor(Math.random()*voices.length)];
-  speechSynthesis.speak(utter);
-  // Efecto radio
-  if(filter) filter.frequency.value= 200 + Math.random()*3000;
+async function initDetector(){
+  statusEl.textContent='Cargando IA SLS BLACK...';
+  await tf.setBackend('webgl');
+  await tf.ready();
+  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet, {modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
+  statusEl.textContent='IA SLS LISTA - Tocá INICIAR';
 }
 
 async function startCamera(){
   if(stream) stream.getTracks().forEach(t=>t.stop());
-  try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:true});
-    video.srcObject=stream; await video.play();
-    video.style.transform= facing==='user'? 'scaleX(-1)' : 'scaleX(1)';
-    ghosts=[new BlackSkeleton(0.5,0.5,false)];
-    statusEl.textContent='SLS BLACK: ACTIVO | BUSCANDO FORMAS...';
-    freqEl.textContent='88.3 MHz - SCAN SLS';
-    btn.style.display='none';
-  }catch(e){statusEl.textContent='ERROR: '+e.message+' - Usa Chrome y permití cámara en 🔒';}
+  stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:true});
+  video.srcObject=stream; await video.play();
+  video.style.transform= facing==='user'? 'scaleX(-1)' : 'none';
+  detectLoop();
 }
 
-btn.onclick=startCamera;
-switchCamBtn.onclick=()=>{
-  facing= facing==='environment'? 'user' : 'environment';
-  switchCamBtn.textContent=`CAM: ${facing==='environment'?'TRASERA':'FRONTAL'} ↔`;
-  startCamera();
-};
-menuBtn.onclick=()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); location.href='/'; };
-sensInput.oninput=(e)=>{sensitivity=parseInt(e.target.value); statusEl.textContent=`SENS: ${sensitivity}% | SLS: ${ghosts.length>0?'ON':'OFF'}`;};
+async function detectLoop(){
+  if(!detector || video.paused) {requestAnimationFrame(detectLoop); return;}
+  ctx.clearRect(0,0,W,H);
+  try{
+    const poses=await detector.estimatePoses(video);
+    if(poses && poses.length>0 && poses[0].keypoints){
+      const score=poses[0].score||0;
+      if(score>0.3){
+        drawRealSLS(poses[0].keypoints);
+        statusEl.textContent=`SLS: PERSONA DETECTADA ${Math.floor(score*100)}% | FORMA HUMANA LOCK`;
+        freqEl.textContent=`SLS LOCK - FORMA HUMANA DETECTADA`;
+      }else{
+        ghost.update(); ghost.draw();
+        statusEl.textContent=`SLS: BUSCANDO... | FANTASMA ERRANTE ${ghost.visible?'VISIBLE':''}`;
+      }
+    }else{
+      ghost.update(); ghost.draw();
+      statusEl.textContent=`SLS: SCAN VACIO - BUSCANDO FORMAS`;
+    }
+  }catch(e){ ghost.update(); ghost.draw(); }
+  requestAnimationFrame(detectLoop);
+}
 
-evpBtn.onclick=()=>{
-  if(!audioCtx) initAudio();
-  evpOn=!evpOn;
-  if(evpOn){playEVP(); evpBtn.textContent='EVP OFF';}
-  else{ if(noiseNode) noiseNode.stop(); evpBtn.textContent='EVP ON'; freqEl.textContent='EVP APAGADO'; }
+btn.onclick=async()=>{
+  btn.textContent='INICIANDO...';
+  if(!detector) await initDetector();
+  await startCamera();
+  btn.style.display='none';
+  statusEl.textContent='SLS BLACK REAL ACTIVO';
 };
+
+switchCamBtn.onclick=()=>{ facing=facing==='environment'?'user':'environment'; startCamera(); };
+menuBtn.onclick=()=>{ if(stream) stream.getTracks().forEach(t=>t.stop()); location.href='/'; };
+
+// EVP REAL con audios reales
+evpBtn.onclick=()=>{
+  evpOn=!evpOn;
+  if(evpOn){
+    staticAudio.volume=0.5; staticAudio.play();
+    evpBtn.textContent='EVP OFF';
+    statusEl.textContent='EVP REAL ON - RADIO 88-108 MHz';
+  }else{
+    staticAudio.pause();
+    evpAudios.forEach(a=>{a.pause(); a.currentTime=0;});
+    evpBtn.textContent='EVP REAL ON';
+  }
+};
+
 scanBtn.onclick=()=>{
   if(!evpOn) evpBtn.onclick();
-  let f=88, count=0;
+  let f=88;
   const int=setInterval(()=>{
-    f+=0.9+Math.random()*1.2; if(f>108) f=88;
-    freqEl.textContent=`${f.toFixed(1)} MHz - SCAN...`;
-    if(filter) filter.frequency.value=300+Math.random()*2500;
-    if(Math.random()<0.18) speakGhostVoice();
-    if(++count>40) clearInterval(int);
-  },130);
+    f+=0.7+Math.random()*1.3; if(f>108) f=88;
+    freqEl.textContent=`${f.toFixed(1)} MHz - SCAN EVP...`;
+    if(Math.random()<0.12){
+      const a=evpAudios[Math.floor(Math.random()*evpAudios.length)];
+      a.currentTime=0; a.volume=0.9; a.playbackRate=0.8+Math.random()*0.4;
+      a.play().catch(()=>{});
+      freqEl.textContent=`${f.toFixed(1)} MHz - [VOZ REAL CAPTADA]`;
+    }
+  },150);
+  setTimeout(()=>clearInterval(int),5000);
 };
+
+initDetector();
 </script>
 </body>
 </html>
