@@ -11,7 +11,7 @@
 #video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;background:#000}
 #canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none}
 #topBar{position:fixed;top:0;left:0;width:100%;z-index:20;background:rgba(0,0,0,.92);border-bottom:1px solid #0f0;padding:8px;display:flex;justify-content:space-between;align-items:center}
-.btn{padding:10px;background:#000;color:#0f0;border:1px solid #0f0;font-size:11px;flex:1}
+.btn{padding:10px;background:#000;color:#0f0;border:1px solid #0f0;font-size:11px;flex:1;cursor:pointer}
 .btn-main{background:#0f0;color:#000;font-weight:bold}
 #status{position:fixed;top:50px;left:0;width:100%;z-index:19;background:rgba(0,0,0,.7);text-align:center;padding:4px;font-size:10px}
 #uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:20;background:rgba(0,0,0,.95);border-top:2px solid #0f0;padding:8px;display:flex;flex-direction:column;gap:6px}
@@ -23,12 +23,15 @@
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <canvas id="recordCanvas" style="display:none"></canvas>
+
 <div id="topBar">
-<button id="subBtn" class="btn btn-main">★ SUSCRIBIRME $2990/mes</button>
+<button id="subBtn" class="btn btn-main">★ SUSCRIBIRME $5999/mes</button>
 <div id="premiumBadge" style="display:none">PREMIUM: <span id="userName"></span></div>
 <button id="switchCam" class="btn">CAM ↺</button>
 </div>
+
 <div id="status">inicia....</div>
+
 <div id="uiBottom">
 <div class="row">
 <button id="evpBtn" class="btn">EVP RADIO ON</button>
@@ -37,13 +40,16 @@
 </div>
 <button id="holdBtn" class="btn" style="padding:16px">🎤 MANTENÉ PARA PREGUNTAR</button>
 </div>
+
 <div id="blockScreen">
 <h2>40 MIN TERMINADOS</h2><p>Volvé en 24hs o premium ilimitado</p><br>
-<button id="goPremium" class="btn btn-main" style="padding:15px">ACTIVAR PREMIUM</button>
+<button id="goPremium" class="btn btn-main" style="padding:15px">ACTIVAR PREMIUM $5999</button>
 </div>
+
 <audio id="v1" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/193/193941_2694105-lq.mp3"></audio>
 <audio id="v2" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/368/368757_6687700-lq.mp3"></audio>
 <audio id="v3" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/415/415362_5121236-lq.mp3"></audio>
+
 <script>
 const SUPABASE_URL = "https://yxfzvogiladjupikgqyt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc";
@@ -57,14 +63,17 @@ const blockScreen=document.getElementById('blockScreen');
 let W,H, detector=null, facing='environment', stream=null, evpOn=false, audioCtx=null, noiseNode=null, filter=null, gainNode=null, evpTimer=null;
 let voices=[document.getElementById('v1'),document.getElementById('v2'),document.getElementById('v3')];
 let mediaRecorder=null, recordedChunks=[], isRecording=false;
+
 function resize(){W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; recordCanvas.width=W; recordCanvas.height=H;}
 window.addEventListener('resize',resize); resize();
+
 function checkAccess(){
   const premium=localStorage.getItem('archivax_premium')==='true';
   if(premium){
     document.getElementById('premiumBadge').style.display='block';
     document.getElementById('userName').textContent=localStorage.getItem('archivax_user')||'PREMIUM';
-    document.getElementById('subBtn').style.display='none'; return true;
+    document.getElementById('subBtn').style.display='none';
+    return true;
   }
   const blocked=parseInt(localStorage.getItem('archivax_blocked_until')||'0');
   if(Date.now()<blocked){ blockScreen.style.display='flex'; return false; }
@@ -72,87 +81,124 @@ function checkAccess(){
   if(!start){ start=Date.now(); localStorage.setItem('archivax_start',start); }
   if(Date.now()-start > 40*60*1000){
     localStorage.setItem('archivax_blocked_until', Date.now()+24*60*60*1000);
-    localStorage.removeItem('archivax_start'); blockScreen.style.display='flex'; return false;
+    localStorage.removeItem('archivax_start');
+    blockScreen.style.display='flex';
+    return false;
   }
   return true;
 }
+
 function drawBlackSLS(kp){
   const get=n=>kp.find(k=>k.name===n);
   const pairs=[['left_shoulder','right_shoulder'],['left_shoulder','left_elbow'],['left_elbow','left_wrist'],['right_shoulder','right_elbow'],['right_elbow','right_wrist'],['left_shoulder','left_hip'],['right_shoulder','right_hip'],['left_hip','right_hip'],['left_hip','left_knee'],['left_knee','left_ankle'],['right_hip','right_knee'],['right_knee','right_ankle']];
   ctx.save(); ctx.strokeStyle='#000'; ctx.lineWidth=7; ctx.lineCap='round'; ctx.shadowColor='#00ff00'; ctx.shadowBlur=20;
   pairs.forEach(([a,b])=>{ const p1=get(a),p2=get(b); if(p1&&p2&&p1.score>0.4&&p2.score>0.4){ ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke(); } });
-  ctx.shadowBlur=0; kp.forEach(k=>{ if(k.score>0.4){ ctx.fillStyle='#00ff00'; ctx.beginPath(); ctx.arc(k.x,k.y,6,0,Math.PI*2); ctx.fill(); } }); ctx.restore();
+  ctx.shadowBlur=0; kp.forEach(k=>{ if(k.score>0.4){ ctx.fillStyle='#00ff00'; ctx.beginPath(); ctx.arc(k.x,k.y,6,0,Math.PI*2); ctx.fill(); } });
+  ctx.restore();
 }
-async function initDetector(){ try{ await tf.setBackend('webgl'); await tf.ready(); detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING}); }catch{} }
+
+async function initDetector(){
+  try{ await tf.setBackend('webgl'); await tf.ready(); detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING}); }catch{}
+}
 async function startCamera(){
   if(!checkAccess()) return;
-  try{ stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:true}); video.srcObject=stream; await video.play(); video.style.transform=facing==='user'?'scaleX(-1)':'none'; if(!detector) await initDetector(); loop(); }catch(e){ statusEl.textContent='Permitir cámara'; document.body.addEventListener('click',startCamera,{once:true}); }
+  try{
+    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing},audio:true});
+    video.srcObject=stream; await video.play();
+    video.style.transform=facing==='user'?'scaleX(-1)':'none';
+    if(!detector) await initDetector(); loop();
+  }catch(e){ statusEl.textContent='Permitir cámara'; document.body.addEventListener('click',startCamera,{once:true}); }
 }
 async function loop(){
-  if(!detector||video.paused){ requestAnimationFrame(loop); return; } if(!checkAccess()) return;
+  if(!detector||video.paused){ requestAnimationFrame(loop); return; }
+  if(!checkAccess()) return;
   ctx.clearRect(0,0,W,H);
-  try{ const poses=await detector.estimatePoses(video,{flipHorizontal:facing==='user'}); if(poses&&poses.length>0&&poses[0].score>0.4) drawBlackSLS(poses[0].keypoints); }catch{}
-  rctx.drawImage(video,0,0,W,H); rctx.drawImage(canvas,0,0,W,H); rctx.fillStyle='rgba(0,0,0,0.6)'; rctx.fillRect(0,H-26,W,26); rctx.fillStyle='#0f0'; rctx.font='13px monospace'; rctx.fillText('archiviax.com.ar',10,H-8);
+  try{
+    const poses=await detector.estimatePoses(video,{flipHorizontal:facing==='user'});
+    if(poses&&poses.length>0&&poses[0].score>0.4) drawBlackSLS(poses[0].keypoints);
+  }catch{}
+  rctx.drawImage(video,0,0,W,H); rctx.drawImage(canvas,0,0,W,H);
+  rctx.fillStyle='rgba(0,0,0,0.6)'; rctx.fillRect(0,H-26,W,26);
+  rctx.fillStyle='#0f0'; rctx.font='13px monospace'; rctx.fillText('archiviax.com.ar',10,H-8);
   requestAnimationFrame(loop);
 }
 window.addEventListener('load', startCamera);
 document.getElementById('switchCam').onclick=()=>{ facing=facing==='environment'?'user':'environment'; startCamera(); };
+
 function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-function startRadio(){ initAudio(); if(noiseNode) try{noiseNode.stop();}catch{} const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*3,audioCtx.sampleRate); const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.5; noiseNode=audioCtx.createBufferSource(); noiseNode.buffer=buf; noiseNode.loop=true; filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=800; filter.Q.value=5; gainNode=audioCtx.createGain(); gainNode.gain.value=0.22; noiseNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); noiseNode.start(); }
+function startRadio(){
+  initAudio(); if(noiseNode) try{noiseNode.stop();}catch{}
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*3,audioCtx.sampleRate);
+  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.5;
+  noiseNode=audioCtx.createBufferSource(); noiseNode.buffer=buf; noiseNode.loop=true;
+  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=800; filter.Q.value=5;
+  gainNode=audioCtx.createGain(); gainNode.gain.value=0.22;
+  noiseNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); noiseNode.start();
+}
 function playRealVoice(){ const v=voices[Math.floor(Math.random()*voices.length)]; v.currentTime=0; v.volume=0.95; v.playbackRate=0.88; v.play().catch(()=>{}); }
-document.getElementById('evpBtn').onclick=()=>{ evpOn=!evpOn; if(evpOn){ startRadio(); document.getElementById('evpBtn').textContent='EVP OFF'; playRealVoice(); evpTimer=setInterval(playRealVoice,60000); }else{ if(noiseNode) try{noiseNode.stop();}catch{} clearInterval(evpTimer); document.getElementById('evpBtn').textContent='EVP RADIO ON'; } };
+
+document.getElementById('evpBtn').onclick=()=>{
+  evpOn=!evpOn;
+  if(evpOn){ startRadio(); document.getElementById('evpBtn').textContent='EVP OFF'; playRealVoice(); evpTimer=setInterval(playRealVoice,60000); }
+  else{ if(noiseNode) try{noiseNode.stop();}catch{} clearInterval(evpTimer); document.getElementById('evpBtn').textContent='EVP RADIO ON'; }
+};
 document.getElementById('photoBtn').onclick=()=>{ const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=recordCanvas.toDataURL(); a.click(); };
 document.getElementById('videoBtn').onclick=()=>{
   if(!isRecording){
-    recordedChunks=[]; const sRec=recordCanvas.captureStream(25); if(stream){ const at=stream.getAudioTracks()[0]; if(at) sRec.addTrack(at); }
-    mediaRecorder=new MediaRecorder(sRec,{mimeType:'video/webm'}); mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
+    recordedChunks=[]; const sRec=recordCanvas.captureStream(25);
+    if(stream){ const at=stream.getAudioTracks()[0]; if(at) sRec.addTrack(at); }
+    mediaRecorder=new MediaRecorder(sRec,{mimeType:'video/webm'});
+    mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
     mediaRecorder.onstop=()=>{ const blob=new Blob(recordedChunks,{type:'video/webm'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`ARCHIVAX_${Date.now()}.webm`; a.click(); };
     mediaRecorder.start(); isRecording=true; document.getElementById('videoBtn').textContent='■ STOP';
   }else{ mediaRecorder.stop(); isRecording=false; document.getElementById('videoBtn').textContent='● REC'; }
 };
+
+// --- PAGOS $5999 ---
 async function crearPago(){
-  statusEl.textContent='creando pago...';
+  statusEl.textContent='Conectando con MercadoPago $5999...';
   try{
     const res=await fetch(`${SUPABASE_URL}/functions/v1/create-preference`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},
-      body:JSON.stringify({title:'ARCHIVAX PREMIUM ILIMITADO', price:2990, device:navigator.userAgent})
+      body:JSON.stringify({title:'ARCHIVAX PREMIUM MENSUAL $5999', price:5999, quantity:1, device:navigator.userAgent})
     });
     const data=await res.json();
     if(data.init_point){ window.location.href=data.init_point; }
     else{ alert('Error: '+JSON.stringify(data)); statusEl.textContent='Error pago'; }
-  }catch(e){ alert('Error: '+e.message); }
+  }catch(e){ alert('Error: '+e.message); statusEl.textContent='Error'; }
 }
+
 async function verificarPago(){
   const url=new URL(window.location.href);
   const payment_id=url.searchParams.get('payment_id')||url.searchParams.get('collection_id');
   if(payment_id){
-    statusEl.textContent='verificando pago...';
+    statusEl.textContent='verificando pago $5999...';
     try{
-      const res=await fetch(`${SUPABASE_URL}/functions/v1/verify-payment?payment_id=${payment_id}`,{
-        headers:{'Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY}
+      const res=await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},
+        body:JSON.stringify({payment_id})
       });
       const data=await res.json();
-      if(data.status==='approved'){
-        const nombre=prompt('¡Pago aprobado! Poné tu nombre de usuario:')||'USUARIO';
+      if(data.paid){
+        const nombre=prompt('¡Pago $5999 aprobado! Poné tu nombre de usuario:')||'USUARIO';
         localStorage.setItem('archivax_premium','true');
         localStorage.setItem('archivax_user',nombre);
         localStorage.setItem('archivax_mp_id',payment_id);
         localStorage.setItem('archivax_device',navigator.userAgent);
         localStorage.removeItem('archivax_blocked_until');
         localStorage.removeItem('archivax_start');
-        await fetch(`${SUPABASE_URL}/functions/v1/save-premium`,{
-          method:'POST',
-          headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},
-          body:JSON.stringify({user:nombre, payment_id, device:navigator.userAgent})
-        });
-        alert('PREMIUM ACTIVADO para '+nombre);
+        alert('PREMIUM ACTIVADO $5999 para '+nombre);
         window.history.replaceState({},document.title,window.location.pathname);
         location.reload();
+      } else {
+        statusEl.textContent='Pago no aprobado: '+data.status;
       }
-    }catch(e){}
+    }catch(e){ statusEl.textContent='Error verificando'; }
   }
 }
+
 document.getElementById('subBtn').onclick=crearPago;
 document.getElementById('goPremium').onclick=crearPago;
 verificarPago();
