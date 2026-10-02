@@ -3,47 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX SLS A15 FIX</title>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils@0.3/camera_utils.js" crossorigin="anonymous"></script>
+<title>ARCHIVAX A15 FINAL</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js" crossorigin="anonymous"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
-#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#111}
-#canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
-#topBar{position:fixed;top:0;left:0;width:100%;z-index:10;background:#000;border-bottom:2px solid #0f0;padding:6px;display:flex;gap:6px}
-.btn{flex:1;padding:12px;background:#000;color:#0f0;border:1px solid #0f0;font-size:12px}
-.btn-main{background:#0f0;color:#000;font-weight:bold}
-#status{position:fixed;top:50px;left:0;width:100%;z-index:10;background:rgba(0,0,0,.9);text-align:center;padding:5px;font-size:11px;z-index:11}
-#bottom{position:fixed;bottom:0;left:0;width:100%;z-index:10;background:#000;border-top:2px solid #0f0;padding:6px;display:flex;gap:6px;flex-direction:column}
-.row{display:flex;gap:6px}
-#blockScreen{position:fixed;inset:0;z-index:99;background:#000;display:none;align-items:center;justify-content:center;flex-direction:column}
+*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
+#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;background:#000;z-index:1}
+#canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2}
+#uiTop{position:fixed;top:0;left:0;width:100%;z-index:10;display:flex;gap:5px;padding:6px;background:rgba(0,0,0,.8)}
+.btn{flex:1;padding:12px;border:1px solid #0f0;background:#000;color:#0f0;font-weight:bold}
+.btn-main{background:#0f0;color:#000}
+#status{position:fixed;top:55px;left:0;width:100%;z-index:10;text-align:center;background:rgba(0,0,0,.9);padding:5px;font-size:11px}
+#uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:10;display:flex;gap:5px;padding:6px;background:#000;border-top:2px solid #0f0}
+#payWall{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.95);display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px;text-align:center}
+#payWall.show{display:flex}
 </style>
 </head>
 <body>
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
-<div id="status">TOCA LA PANTALLA PARA INICIAR CAMARA</div>
 
-<div id="topBar">
-<button id="subBtn" class="btn btn-main">★ $5999/mes</button>
+<div id="uiTop">
+<button id="subBtn" class="btn btn-main">★ $5999/mes PREMIUM</button>
 <button id="camBtn" class="btn">CAM ↺</button>
 </div>
+<div id="status">TOCÁ LA PANTALLA PARA INICIAR</div>
 
-<div id="bottom">
-<div class="row">
-<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 SPIRIT BOX REAL</button>
+<div id="uiBottom">
+<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 SPIRIT BOX</button>
 <button id="photoBtn" class="btn">📸 FOTO</button>
 <button id="recBtn" class="btn" style="color:red;border-color:red">● REC</button>
 </div>
-</div>
 
-<div id="blockScreen">
-<h2>40 MIN TERMINADOS</h2><br>
-<button id="goPremium" class="btn btn-main">ACTIVAR $5999</button>
+<div id="payWall">
+<h2 style="color:#0f0;font-size:22px">40 MINUTOS TERMINADOS</h2>
+<p style="color:#fff;margin:10px 0">Para seguir usando el SLS Real ilimitado</p>
+<div style="font-size:36px;font-weight:900;color:#0f0;margin:10px">$5999/mes</div>
+<button id="goPremium" class="btn btn-main" style="padding:20px;width:100%;font-size:18px">DESBLOQUEAR PREMIUM AHORA</button>
+<p style="color:#666;font-size:11px;margin-top:15px">Pago seguro con MercadoPago</p>
+<button id="closePay" style="margin-top:20px;background:none;border:none;color:#666">Cerrar</button>
 </div>
-
-<audio id="radio1" preload="auto" loop src="https://cdn.freesound.org/previews/316/316920_5121236-lq.mp3"></audio>
 
 <script>
 const SUPABASE_URL="https://yxfzvogiladjupikgqyt.supabase.co";
@@ -52,100 +50,156 @@ const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const statusEl=document.getElementById('status');
-let facing='environment', stream=null, evpOn=false, pose=null, cameraMediapipe=null;
-let W,H;
-function resize(){W=canvas.width=window.innerWidth;H=canvas.height=window.innerHeight}
-window.addEventListener('resize',resize);resize();
+const payWall=document.getElementById('payWall');
+let facing='environment', stream=null, pose=null, isStarted=false;
+let audioCtx=null, noiseNode=null, evpOn=false;
+let W,H; function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight} resize(); addEventListener('resize',resize);
 
-function check(){ if(localStorage.getItem('archivax_premium')==='true') return true; const b=parseInt(localStorage.getItem('archivax_blocked_until')||'0'); if(Date.now()<b){document.getElementById('blockScreen').style.display='flex';return false;} let s=parseInt(localStorage.getItem('archivax_start')||'0'); if(!s){s=Date.now();localStorage.setItem('archivax_start',s);} if(Date.now()-s>40*60*1000){localStorage.setItem('archivax_blocked_until',Date.now()+24*60*60*1000);localStorage.removeItem('archivax_start');document.getElementById('blockScreen').style.display='flex';return false;} return true; }
-
-// DIBUJO COMO TU FOTO
-function onResults(results){
-  ctx.clearRect(0,0,W,H);
-  if(!results.poseLandmarks){ statusEl.textContent='Buscando cuerpo... acercate con luz'; statusEl.style.color='#ff0'; return; }
-  statusEl.textContent='✓ PERSONA DETECTADA - SLS REAL ACTIVO'; statusEl.style.color='#0f0';
-
-  const lm=results.poseLandmarks;
-  const pairs=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
-  ctx.save();
-  ctx.strokeStyle='#00FF00'; ctx.lineWidth=6; ctx.lineCap='round'; ctx.shadowColor='#00FF00'; ctx.shadowBlur=15;
-  pairs.forEach(([a,b])=>{
-    const p1=lm[a],p2=lm[b];
-    if(p1&&p2&&p1.visibility>0.3&&p2.visibility>0.3){
-      ctx.beginPath(); ctx.moveTo(p1.x*W,p1.y*H); ctx.lineTo(p2.x*W,p2.y*H); ctx.stroke();
-    }
-  });
-  lm.forEach((p,i)=>{
-    if(p.visibility>0.4){
-      ctx.fillStyle=i==0?'#FF0000':'#FFFF00';
-      ctx.beginPath(); ctx.arc(p.x*W,p.y*H,i==0?10:6,0,Math.PI*2); ctx.fill();
-    }
-  });
-  ctx.restore();
+function checkAccess(){
+  if(localStorage.getItem('archivax_premium')==='true'){ payWall.classList.remove('show'); return true; }
+  const blocked=parseInt(localStorage.getItem('archivax_blocked_until')||'0');
+  if(Date.now()<blocked){ payWall.classList.add('show'); statusEl.textContent=`BLOQUEADO hasta ${new Date(blocked).toLocaleTimeString()}`; return false; }
+  let start=parseInt(localStorage.getItem('archivax_start')||'0');
+  if(!start){ start=Date.now(); localStorage.setItem('archivax_start',start); }
+  if(Date.now()-start > 40*60*1000){ localStorage.setItem('archivax_blocked_until', Date.now()+24*60*60*1000); localStorage.removeItem('archivax_start'); payWall.classList.add('show'); return false; }
+  const left=Math.max(0, 40*60*1000 - (Date.now()-start));
+  const min=Math.floor(left/60000); 
+  if(min<5) statusEl.textContent=`Quedan ${min} min - Luego se bloquea`;
+  return true;
 }
 
-async function startPose(){
-  pose=new Pose({locateFile:(file)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${file}`});
-  pose.setOptions({modelComplexity:1,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
-  pose.onResults(onResults);
+function stopCamera(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
 }
 
 async function startCamera(){
-  if(!check()) return;
-  statusEl.textContent='Iniciando cámara '+facing+'...';
+  if(!checkAccess()) return;
+  if(isStarted) return;
+  isStarted=true;
+  stopCamera();
+  statusEl.textContent='Abriendo cámara '+facing+'...';
   try{
-    if(stream){ stream.getTracks().forEach(t=>t.stop()); }
-    const constraints={video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:false};
-    stream=await navigator.mediaDevices.getUserMedia(constraints);
+    // A15 FIX: 640x480, no 1280
+    stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:facing}, width:{ideal:640}, height:{ideal:480}},
+      audio:true
+    });
     video.srcObject=stream;
     await video.play();
     video.style.transform=facing==='user'?'scaleX(-1)':'none';
     statusEl.textContent='Cámara OK - Cargando IA...';
-    if(!pose) await startPose();
-    cameraMediapipe=new Camera(video,{
-      onFrame: async()=>{ await pose.send({image:video}); },
-      width:1280,height:720
-    });
-    cameraMediapipe.start();
-    statusEl.textContent='SLS REAL LISTO - Apuntá a alguien';
+    await initPose();
+    statusEl.textContent='TOCÁ PARA ACTIVAR AUDIO Y SLS';
   }catch(e){
-    statusEl.textContent='Error cámara: '+e.name+' '+e.message+' - Tocá para reintentar';
-    console.error(e);
+    isStarted=false;
+    statusEl.textContent='Error: '+e.name+' - Permitir cámara en Ajustes>Apps>Chrome';
+    alert('Samsung A15: Andá a Ajustes > Apps > Chrome > Permisos > Cámara > Permitir');
   }
 }
 
-// INICIAR CON TOQUE - OBLIGATORIO EN A15
-document.body.addEventListener('click',()=>{ if(!stream) startCamera(); },{once:true});
-window.addEventListener('load',()=>{ setTimeout(startCamera,500); });
+async function initPose(){
+  pose=new Pose({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});
+  pose.setOptions({modelComplexity:0, smoothLandmarks:true, minDetectionConfidence:0.5, minTrackingConfidence:0.5});
+  pose.onResults((res)=>{
+    ctx.clearRect(0,0,W,H);
+    if(!res.poseLandmarks){
+      statusEl.textContent='Sin persona - Ponete a 2m con luz';
+      statusEl.style.color='#ff0';
+      return;
+    }
+    statusEl.textContent='✓ SLS REAL DETECTANDO - PERSONA ENCONTRADA';
+    statusEl.style.color='#0f0';
+    const lm=res.poseLandmarks;
+    const pairs=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+    ctx.save();
+    ctx.lineWidth=5; ctx.lineCap='round'; ctx.strokeStyle='#00FF00'; ctx.shadowColor='#00FF00'; ctx.shadowBlur=15;
+    pairs.forEach(([a,b])=>{
+      const p1=lm[a],p2=lm[b];
+      if(p1.visibility>0.4 && p2.visibility>0.4){
+        ctx.beginPath(); ctx.moveTo(p1.x*W,p1.y*H); ctx.lineTo(p2.x*W,p2.y*H); ctx.stroke();
+      }
+    });
+    lm.forEach((p,i)=>{
+      if(p.visibility>0.5){
+        ctx.fillStyle=i==0?'#FF0000':'#FFFF00';
+        ctx.beginPath(); ctx.arc(p.x*W,p.y*H,i==0?10:5,0,Math.PI*2); ctx.fill();
+      }
+    });
+    ctx.restore();
+  });
+
+  async function frameLoop(){
+    if(video.readyState>=2 && pose){ await pose.send({image:video}); }
+    if(stream) requestAnimationFrame(frameLoop);
+  }
+  frameLoop();
+}
+
+// TOQUE OBLIGATORIO EN A15
+document.body.addEventListener('click', (e)=>{
+  if(e.target.tagName==='BUTTON') return;
+  if(!stream) startCamera();
+  // iniciar audio context con toque
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+}, {once:false});
 
 document.getElementById('camBtn').onclick=async()=>{
+  isStarted=false;
+  stopCamera();
   facing=facing==='environment'?'user':'environment';
-  await startCamera();
+  await new Promise(r=>setTimeout(r,500));
+  startCamera();
 };
 
-// FOTO
-document.getElementById('photoBtn').onclick=()=>{
-  const c=document.createElement('canvas'); c.width=W; c.height=H;
-  const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H);
-  const a=document.createElement('a'); a.download=`SLS_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
-};
+// SPIRIT BOX REAL CON WEB AUDIO - NO NECESITA MP3 EXTERNO
+function startSpiritBox(){
+  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+  if(noiseNode) try{noiseNode.stop()}catch{}
+  const bufferSize=audioCtx.sampleRate*2;
+  const buffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+  const data=buffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) data[i]=Math.random()*2-1;
 
-// SPIRIT BOX REAL
-let radio=document.getElementById('radio1'), sweepTimer=null;
-function startBox(){ radio.volume=1; radio.currentTime=Math.random()*10; radio.play().catch(()=>{}); sweepTimer=setInterval(()=>{ radio.currentTime=Math.random()*20; radio.playbackRate=0.8+Math.random()*0.4; },180); }
-function stopBox(){ clearInterval(sweepTimer); radio.pause(); }
+  noiseNode=audioCtx.createBufferSource(); noiseNode.buffer=buffer; noiseNode.loop=true;
+  const filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=800; filter.Q.value=10;
+  const gain=audioCtx.createGain(); gain.gain.value=0.3;
+  noiseNode.connect(filter); filter.connect(gain); gain.connect(audioCtx.destination);
+  noiseNode.start();
+
+  // barrido real
+  let freq=76;
+  window.sweepInt=setInterval(()=>{
+    freq+=0.5; if(freq>108) freq=76;
+    filter.frequency.value=300+Math.random()*2000;
+    if(Math.random()>0.7){
+      const utter=new SpeechSynthesisUtterance(['si','no','aqui','ayuda','atrás','hola','vete','frio','luz'][Math.floor(Math.random()*9)]);
+      utter.lang='es-AR'; utter.rate=0.9; utter.pitch=0.3; utter.volume=0.9;
+      speechSynthesis.speak(utter);
+    }
+  },150);
+  statusEl.textContent='📻 SPIRIT BOX BARRIDO REAL 76-108MHz';
+}
+function stopSpiritBox(){ clearInterval(window.sweepInt); if(noiseNode) try{noiseNode.stop()}catch{}; speechSynthesis.cancel(); }
+
 document.getElementById('evpBtn').onclick=()=>{
   evpOn=!evpOn;
-  if(evpOn){ startBox(); document.getElementById('evpBtn').textContent='📻 ON BARRIDO REAL'; document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black'; }
-  else { stopBox(); document.getElementById('evpBtn').textContent='📻 SPIRIT BOX REAL'; document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow'; }
+  if(evpOn){ startSpiritBox(); document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black'; document.getElementById('evpBtn').textContent='📻 ON - BARRIDO'; }
+  else { stopSpiritBox(); document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow'; document.getElementById('evpBtn').textContent='📻 SPIRIT BOX'; }
+};
+
+document.getElementById('photoBtn').onclick=()=>{
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H);
+  const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
 };
 
 async function crearPago(){
-  const res=await fetch(`${SUPABASE_URL}/functions/v1/create-preference`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({title:'ARCHIVAX $5999',price:5999,quantity:1})});
+  const res=await fetch(`${SUPABASE_URL}/functions/v1/create-preference`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({title:'ARCHIVAX PREMIUM $5999',price:5999})});
   const data=await res.json(); if(data.init_point) location.href=data.init_point;
 }
 document.getElementById('subBtn').onclick=crearPago;
 document.getElementById('goPremium').onclick=crearPago;
+document.getElementById('closePay').onclick=()=>{ payWall.classList.remove('show'); };
+setInterval(checkAccess,1000);
 </script>
 </body>
 </html>
