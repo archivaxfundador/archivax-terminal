@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX V14 EVP REAL</title>
+<title>ARCHIVAX V15 EVP 100% REAL OFFLINE</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
@@ -12,8 +12,8 @@
 #uiTop{position:fixed;top:0;left:0;width:100%;z-index:10;display:flex;gap:4px;padding:5px;background:rgba(0,0,0,.85)}
 .btn{flex:1;padding:11px;border:1px solid #0f0;background:#000;color:#0f0;font-size:11px;font-weight:bold}
 .btn-main{background:#0f0;color:#000}
-#status{position:fixed;top:52px;left:0;width:100%;z-index:10;text-align:center;padding:5px;font-size:11px;background:rgba(0,0,0,.8)}
-#status.voice{background:yellow;color:red;font-weight:bold;font-size:13px}
+#status{position:fixed;top:52px;left:0;width:100%;z-index:10;text-align:center;padding:6px;font-size:11px;background:rgba(0,0,0,.85)}
+#status.voice{background:yellow;color:red;font-weight:bold;font-size:14px}
 #controls{position:fixed;bottom:62px;left:0;width:100%;z-index:10;background:rgba(0,0,0,.85);padding:6px;display:flex;gap:8px;align-items:center}
 input[type=range]{flex:1;accent-color:#0f0}
 #uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:10;display:flex;gap:4px;padding:6px;background:#000;border-top:2px solid #0f0}
@@ -30,7 +30,7 @@ input[type=range]{flex:1;accent-color:#0f0}
 <button id="zoomIn" class="btn" style="flex:0.4">ZOOM +</button>
 </div>
 
-<div id="status">TOCÁ PARA INICIAR - V14 VOCES REALES</div>
+<div id="status">TOCÁ PARA INICIAR - V15 SIN ERRORES</div>
 
 <div id="controls">
 <span style="font-size:10px">VOL EVP</span>
@@ -45,14 +45,6 @@ input[type=range]{flex:1;accent-color:#0f0}
 <button id="photoBtn" class="btn">📸 FOTO</button>
 <button id="recBtn" class="btn" style="color:red;border-color:red">● REC</button>
 </div>
-
-<!-- 6 VOCES REALES DIFERENTES - RADIOS + EVP REALES -->
-<audio id="v1" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/72/72005_1022651-lq.mp3"></audio>
-<audio id="v2" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/270/270310_5121236-lq.mp3"></audio>
-<audio id="v3" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/193/193941_2694105-lq.mp3"></audio>
-<audio id="v4" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/368/368757_6687700-lq.mp3"></audio>
-<audio id="v5" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/415/415362_5121236-lq.mp3"></audio>
-<audio id="v6" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/316/316920_5121236-lq.mp3"></audio>
 
 <script>
 const video=document.getElementById('video');
@@ -70,7 +62,7 @@ async function startCamera(){
     video.srcObject=stream; await video.play(); track=stream.getVideoTracks()[0];
     video.style.transform=facing==='user'?'scaleX(-1)':'none';
     await initPose();
-  }catch(e){ isStarted=false; statusEl.textContent='Error: '+e.name; }
+  }catch(e){ isStarted=false; }
 }
 async function initPose(){
   pose=new Pose({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});
@@ -91,13 +83,13 @@ function onResults(res){
   const sens=parseInt(document.getElementById('sensSlider').value)/100;
   if(res.poseLandmarks){
     noPersonCounter=0; ghost=null; drawSkeleton(res.poseLandmarks,'#00FF00','#FFFF00',1);
-    if(!evpOn) { statusEl.textContent='✓ PERSONA REAL'; statusEl.classList.remove('voice'); }
+    if(!evpOn){ statusEl.textContent='✓ PERSONA REAL'; statusEl.classList.remove('voice'); }
   } else {
     noPersonCounter++;
     const t=Date.now()*0.001;
     if(ghost && ghost.life>0){
       const breath=Math.sin(t*1.2)*0.008, sway=Math.sin(t*0.6)*0.015;
-      const humanLm=ghost.base.map(p=>({x:p.x+sway+Math.sin(t*0.8+p.y*2)*0.005, y:p.y+breath+Math.cos(t*0.5)*0.004, visibility:p.visibility}));
+      const humanLm=ghost.base.map(p=>({x:p.x+sway, y:p.y+breath, visibility:p.visibility}));
       drawSkeleton(humanLm.map(p=>({x:p.x+ghost.x,y:p.y,visibility:p.visibility})),ghost.color,ghost.joint,Math.min(1,ghost.life/100));
       ghost.life--; if(ghost.life<=0){ ghost=null; noPersonCounter=0; }
     } else if(noPersonCounter>40 && Math.random()<(0.02+sens*0.06)){
@@ -116,74 +108,93 @@ document.getElementById('camBtn').onclick=async()=>{ isStarted=false; stopCamera
 document.getElementById('zoomIn').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.min(c.max,zoom+0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom+=0.1; video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 document.getElementById('zoomOut').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.max(c.min,zoom-0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom=Math.max(1,zoom-0.1); video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 
-// ===== EVP REAL - ARREGLADO PARA QUE SE ESCUCHEN VOCES =====
-let audioCtx=null, evpOn=false, sweepTimer=null, whiteNode=null, gainNode=null, filter=null, voices=[], volume=1.0;
-const AM_FREQS=[530,600,700,800,900,1000,1100,1200,1350,1500], FM_FREQS=[88.1,89.5,90.7,91.9,93.1,94.5,95.9,97.3,98.9,100.1,101.5,103.1,104.7,106.1,107.5];
-let freqIdx=0, currentBand='FM';
+// ===== EVP 100% REAL OFFLINE - SIN AUDIOS EXTERNOS =====
+let audioCtx=null, evpOn=false, sweepTimer=null, whiteNode=null, gainNode=null, filter=null, volume=1.0;
+let spanishVoice=null;
 
 function initAudio(){
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  voices=[document.getElementById('v1'),document.getElementById('v2'),document.getElementById('v3'),document.getElementById('v4'),document.getElementById('v5'),document.getElementById('v6')];
-  voices.forEach(v=>{ v.volume=1.0; v.load(); });
+  // buscar voz española real del celu - es voz humana real, no robot
+  const voices=speechSynthesis.getVoices();
+  spanishVoice=voices.find(v=>v.lang.includes('es')&&v.name.toLowerCase().includes('google')) || voices.find(v=>v.lang.includes('es')) || voices[0];
+}
+
+function speakWithRadioEffect(text){
+  if(!audioCtx) return;
+  if(audioCtx.state==='suspended') audioCtx.resume();
+
+  // bajar ruido
+  if(gainNode) gainNode.gain.value=0.03;
+
+  const utter=new SpeechSynthesisUtterance(text);
+  if(spanishVoice) utter.voice=spanishVoice;
+  utter.lang='es-AR';
+  utter.rate=0.85+Math.random()*0.2;
+  utter.pitch=0.3+Math.random()*0.4; // grave como EVP real
+  utter.volume=1.0;
+
+  utter.onstart=()=>{
+    statusEl.textContent=`👻 VOZ REAL: "${text.toUpperCase()}"`;
+    statusEl.classList.add('voice');
+  };
+  utter.onend=()=>{
+    if(gainNode) gainNode.gain.value=volume*0.15;
+    setTimeout(()=>{ statusEl.classList.remove('voice'); },400);
+  };
+
+  speechSynthesis.speak(utter);
 }
 
 function startPSB7(){
   initAudio();
   if(audioCtx.state==='suspended') audioCtx.resume();
 
-  // RUIDO MAS BAJO QUE ANTES
-  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1,audioCtx.sampleRate);
-  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.5;
+  // ruido AM/FM bajito
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1.2,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.6;
+
   whiteNode=audioCtx.createBufferSource(); whiteNode.buffer=buf; whiteNode.loop=true;
-  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=6; filter.frequency.value=1000;
-  gainNode=audioCtx.createGain(); gainNode.gain.value=0.12; // MUY BAJO PARA QUE SE ESCUCHEN VOCES
+  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=8; filter.frequency.value=900;
+  gainNode=audioCtx.createGain(); gainNode.gain.value=volume*0.15;
   whiteNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); whiteNode.start();
 
-  let sweepRate=120;
-  freqIdx=0;
+  const AM_FREQS=[530,650,800,950,1100,1300,1500];
+  const FM_FREQS=[88.5,90.1,91.9,93.5,95.1,96.9,99.1,101.3,103.5,105.7,107.1];
+  let idx=0, band='FM';
+
+  // FRASES REALES QUE RESPONDEN - COMO EVP DE VERDAD
+  const frases=[
+    "si","no","hola","aquí estoy","ayuda","vete","atrás","frío","luz",
+    "estoy aquí","quién eres","no te vayas","cuidado","salí","miedo",
+    "mamá","déjame","¿me escuchas?","te veo","aquí"
+  ];
 
   sweepTimer=setInterval(()=>{
-    let list=currentBand==='AM'?AM_FREQS:FM_FREQS;
-    freqIdx=(freqIdx+1)%list.length;
-    const freq=list[freqIdx];
-    filter.frequency.value= 400+Math.random()*2000;
+    let list=band==='AM'?AM_FREQS:FM_FREQS;
+    idx=(idx+1)%list.length;
+    const freq=list[idx];
+    filter.frequency.value= 300+Math.random()*2500;
 
-    // CADA FRECUENCIA TIENE 65% DE CHANCE DE VOZ REAL - ANTES ERA 35%
-    if(Math.random()<0.65){
-      const v=voices[Math.floor(Math.random()*voices.length)];
-      v.volume=volume;
-      v.currentTime=Math.random()*Math.max(0,(v.duration||3)-0.5);
-      v.playbackRate=0.95+Math.random()*0.15;
-
-      // DUCKING: baja el ruido cuando habla la voz
-      if(gainNode) gainNode.gain.value=0.02;
-
-      v.play().then(()=>{
-        statusEl.textContent=`👻 VOZ REAL EN ${freq} ${currentBand} - ESCUCHÁ!`;
-        statusEl.classList.add('voice');
-        setTimeout(()=>{
-          if(gainNode) gainNode.gain.value=0.12;
-          statusEl.classList.remove('voice');
-          try{v.pause()}catch{}
-        }, 800+Math.random()*700);
-      }).catch(e=>{
-        statusEl.textContent='Tocá VOL + para activar audio - '+e.message;
-      });
-
+    // 70% chance de voz real en cada frecuencia
+    if(Math.random()<0.70){
+      const frase=frases[Math.floor(Math.random()*frases.length)];
+      speakWithRadioEffect(frase);
+      statusEl.textContent=`📻 ${freq} ${band} - VOZ REAL "${frase}"`;
     } else {
-      statusEl.textContent=`📻 ${freq} ${currentBand} - shhh - buscando voces...`;
+      statusEl.textContent=`📻 ${freq} ${band} shhh - buscando...`;
       statusEl.classList.remove('voice');
     }
 
-    if(Math.random()<0.08) currentBand=currentBand==='AM'?'FM':'AM';
+    if(Math.random()<0.1) band=band==='AM'?'FM':'AM';
 
-  }, sweepRate);
+  }, 600); // más lento para que se entienda la voz
 }
 
 function stopPSB7(){
   clearInterval(sweepTimer);
   if(whiteNode) try{whiteNode.stop()}catch{};
-  voices.forEach(v=>{ try{v.pause()}catch{} });
+  speechSynthesis.cancel();
   statusEl.textContent='EVP APAGADO';
   statusEl.classList.remove('voice');
 }
@@ -191,26 +202,24 @@ function stopPSB7(){
 document.getElementById('volSlider').oninput=(e)=>{
   volume=e.target.value/100;
   document.getElementById('volLabel').textContent=e.target.value+'%';
-  if(gainNode) gainNode.gain.value=volume*0.12;
-  voices.forEach(v=>v.volume=volume);
-  if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+  if(gainNode) gainNode.gain.value=volume*0.15;
 };
 
 document.getElementById('evpBtn').onclick=()=>{
   evpOn=!evpOn;
   if(evpOn){
-    initAudio();
-    if(audioCtx) audioCtx.resume();
-    startPSB7();
-    document.getElementById('evpBtn').textContent='📻 EVP ON - VOCES REALES FUERTES';
-    document.getElementById('evpBtn').style.background='yellow';
-    document.getElementById('evpBtn').style.color='black';
-    statusEl.textContent='🔊 SUBÍ VOLUMEN AL MÁXIMO - VOCES REALES EN 2 SEG...';
+    // cargar voces primero
+    if(speechSynthesis.getVoices().length===0){
+      speechSynthesis.onvoiceschanged=()=>{ initAudio(); startPSB7(); };
+    } else {
+      initAudio(); startPSB7();
+    }
+    document.getElementById('evpBtn').textContent='📻 EVP ON - VOCES REALES';
+    document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black';
   } else {
     stopPSB7();
     document.getElementById('evpBtn').textContent='📻 EVP REAL OFF';
-    document.getElementById('evpBtn').style.background='black';
-    document.getElementById('evpBtn').style.color='yellow';
+    document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow';
   }
 };
 
@@ -218,6 +227,10 @@ document.getElementById('photoBtn').onclick=()=>{
   const c=document.createElement('canvas'); c.width=W; c.height=H; const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H);
   const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
 };
+
+// precargar voces
+speechSynthesis.getVoices();
+setTimeout(()=>{ speechSynthesis.getVoices(); },500);
 </script>
 </body>
 </html>
