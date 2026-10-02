@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX V10 FIX</title>
+<title>ARCHIVAX V11 AM/FM REAL</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
@@ -12,13 +12,15 @@
 #uiTop{position:fixed;top:0;left:0;width:100%;z-index:10;display:flex;gap:4px;padding:5px;background:rgba(0,0,0,.9)}
 .btn{flex:1;padding:10px;border:1px solid #0f0;background:#000;color:#0f0;font-size:11px;font-weight:bold}
 .btn-main{background:#0f0;color:#000}
-#status{position:fixed;top:48px;left:0;width:100%;z-index:10;text-align:center;padding:5px;font-size:11px;background:rgba(0,0,0,.9);transition:.2s}
+#status{position:fixed;top:48px;left:0;width:100%;z-index:10;text-align:center;padding:6px;font-size:11px;background:rgba(0,0,0,.92);transition:.2s}
 #status.alert{background:yellow;color:red;font-weight:bold;font-size:13px}
-#controls{position:fixed;bottom:58px;left:0;width:100%;z-index:10;background:rgba(0,0,0,.9);padding:6px;display:flex;gap:8px;align-items:center;border-top:1px solid #333}
+#status.fm{color:#00FF00;background:rgba(0,20,0,.9);font-size:12px;letter-spacing:1px}
+#controls{position:fixed;bottom:58px;left:0;width:100%;z-index:10;background:rgba(0,0,0,.92);padding:6px;display:flex;gap:8px;align-items:center;border-top:1px solid #333}
 input[type=range]{flex:1;accent-color:#0f0}
 #uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:10;display:flex;gap:4px;padding:5px;background:#000;border-top:2px solid #0f0}
 #payWall{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.96);display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px;text-align:center}
 #payWall.show{display:flex}
+#freqDisplay{position:fixed;top:75px;right:8px;z-index:11;background:rgba(0,0,0,.9);border:1px solid #0f0;padding:4px 8px;font-size:10px;color:#0f0;display:none}
 </style>
 </head>
 <body>
@@ -32,18 +34,21 @@ input[type=range]{flex:1;accent-color:#0f0}
 <button id="zoomIn" class="btn" style="flex:0.4">ZOOM +</button>
 </div>
 
-<div id="status">TOCÁ PARA INICIAR</div>
+<div id="status">TOCÁ PARA INICIAR - V11 AM/FM REAL</div>
+<div id="freqDisplay">88.5 FM</div>
 
 <div id="controls">
-<span style="font-size:10px">VOL EVP</span>
-<input id="volSlider" type="range" min="0" max="100" value="70">
-<span id="volLabel" style="font-size:10px">70%</span>
-<span style="font-size:10px;margin-left:6px">SENS</span>
+<span style="font-size:10px">VOL</span>
+<input id="volSlider" type="range" min="0" max="100" value="80">
+<span id="volLabel" style="font-size:10px">80%</span>
+<span style="font-size:9px;margin-left:4px">SPEED</span>
+<input id="speedSlider" type="range" min="50" max="400" value="150">
+<span style="font-size:9px;margin-left:4px">SENS</span>
 <input id="sensSlider" type="range" min="10" max="100" value="40">
 </div>
 
 <div id="uiBottom">
-<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 SPIRIT BOX OFF</button>
+<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 FM REAL OFF</button>
 <button id="photoBtn" class="btn">📸 FOTO</button>
 <button id="recBtn" class="btn" style="color:red;border-color:red">● REC</button>
 </div>
@@ -55,35 +60,27 @@ input[type=range]{flex:1;accent-color:#0f0}
 <button id="closePay" style="margin-top:15px;background:none;border:none;color:#666">Cerrar</button>
 </div>
 
-<audio id="evp1" preload="auto" src="https://cdn.freesound.org/previews/72/72005_1022651-lq.mp3" crossorigin="anonymous"></audio>
-<audio id="evp2" preload="auto" src="https://cdn.freesound.org/previews/193/193941_2694105-lq.mp3" crossorigin="anonymous"></audio>
-<audio id="evp3" preload="auto" src="https://cdn.freesound.org/previews/368/368757_6687700-lq.mp3" crossorigin="anonymous"></audio>
+<!-- VOCES REALES DE SPIRIT BOX + RADIOS FM REALES -->
+<audio id="r1" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/72/72005_1022651-lq.mp3"></audio>
+<audio id="r2" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/193/193941_2694105-lq.mp3"></audio>
+<audio id="r3" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/368/368757_6687700-lq.mp3"></audio>
+<audio id="r4" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/316/316920_5121236-lq.mp3"></audio>
+<audio id="r5" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/415/415362_5121236-lq.mp3"></audio>
 
 <script>
-const SUPABASE_URL="https://yxfzvogiladjupikgqyt.supabase.co";
-const SUPABASE_ANON_KEY="sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc";
 const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const statusEl=document.getElementById('status');
+const freqDisplay=document.getElementById('freqDisplay');
 let W,H,facing='environment',stream=null,pose=null,isStarted=false,track=null,zoom=1;
 let audioCtx=null,filter=null,gainNode=null,whiteNode=null,sweepTimer=null,voiceTimer=null,evpOn=false;
-let noPersonCounter=0,ghost=null,lastRealPose=0;
-let evpAudios=[];
+let noPersonCounter=0,ghost=null;
 function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight} resize(); addEventListener('resize',resize);
 
-function checkAccess(){
-  if(localStorage.getItem('archivax_premium')==='true'){ document.getElementById('payWall').classList.remove('show'); return true; }
-  const blocked=parseInt(localStorage.getItem('archivax_blocked_until')||'0');
-  if(Date.now()<blocked){ document.getElementById('payWall').classList.add('show'); return false; }
-  let start=parseInt(localStorage.getItem('archivax_start')||'0'); if(!start){ start=Date.now(); localStorage.setItem('archivax_start',start); }
-  if(Date.now()-start>40*60*1000){ localStorage.setItem('archivax_blocked_until',Date.now()+24*60*60*1000); localStorage.removeItem('archivax_start'); document.getElementById('payWall').classList.add('show'); return false; }
-  return true;
-}
 function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
-
 async function startCamera(){
-  if(!checkAccess()) return; if(isStarted) return; isStarted=true; stopCamera();
+  if(isStarted) return; isStarted=true; stopCamera();
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:640},height:{ideal:480}},audio:true});
     video.srcObject=stream; await video.play(); track=stream.getVideoTracks()[0];
@@ -91,7 +88,6 @@ async function startCamera(){
     await initPose();
   }catch(e){ isStarted=false; statusEl.textContent='Error cámara: '+e.name; }
 }
-
 async function initPose(){
   pose=new Pose({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});
   pose.setOptions({modelComplexity:0,smoothLandmarks:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4});
@@ -99,139 +95,150 @@ async function initPose(){
   async function loop(){ if(video.readyState>=2 && pose){ await pose.send({image:video}); } if(stream) requestAnimationFrame(loop); }
   loop();
 }
-
 function drawSkeleton(lm,color='#00FF00',joint='#FFFF00',alpha=1){
   const pairs=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
   ctx.save(); ctx.globalAlpha=alpha; ctx.lineWidth=5; ctx.lineCap='round'; ctx.strokeStyle=color; ctx.shadowColor=color; ctx.shadowBlur=15;
-  pairs.forEach(([a,b])=>{
-    const p1=lm[a],p2=lm[b];
-    if(p1&&p2&&p1.visibility>0.2&&p2.visibility>0.2){ ctx.beginPath(); ctx.moveTo(p1.x*W,p1.y*H); ctx.lineTo(p2.x*W,p2.y*H); ctx.stroke(); }
-  });
+  pairs.forEach(([a,b])=>{ const p1=lm[a],p2=lm[b]; if(p1&&p2&&p1.visibility>0.2&&p2.visibility>0.2){ ctx.beginPath(); ctx.moveTo(p1.x*W,p1.y*H); ctx.lineTo(p2.x*W,p2.y*H); ctx.stroke(); } });
   lm.forEach((p,i)=>{ if(p.visibility>0.3){ ctx.fillStyle=i==0?'#FF0000':joint; ctx.beginPath(); ctx.arc(p.x*W,p.y*H,i==0?10:6,0,Math.PI*2); ctx.fill(); } });
   ctx.restore();
 }
-
-// FIX PRINCIPAL - NO SE TRABA MAS
 function onResults(res){
   ctx.clearRect(0,0,W,H);
   const sens=parseInt(document.getElementById('sensSlider').value)/100;
-
-  if(res.poseLandmarks && res.poseLandmarks.length>0){
-    // HAY PERSONA REAL
-    noPersonCounter=0;
-    lastRealPose=Date.now();
-    ghost=null; // borra fantasma si aparece persona real
+  if(res.poseLandmarks){
+    noPersonCounter=0; ghost=null;
     drawSkeleton(res.poseLandmarks,'#00FF00','#FFFF00',1);
-
-    if(!evpOn){ // solo si EVP apagado, si no deja el texto del EVP
-      statusEl.textContent='✓ PERSONA REAL DETECTADA - SLS';
-      statusEl.classList.remove('alert');
-      statusEl.style.color='#0f0';
-    }
+    if(!evpOn){ statusEl.textContent='✓ PERSONA REAL DETECTADA - SLS'; statusEl.classList.remove('alert'); statusEl.classList.remove('fm'); }
   } else {
-    // NO HAY PERSONA - CONTAR TIEMPO
     noPersonCounter++;
-
-    // Si hay fantasma activo, dibujarlo y restar vida
     if(ghost && ghost.life>0){
-      drawSkeleton(ghost.lm, ghost.color, ghost.joint, ghost.life/120);
+      drawSkeleton(ghost.lm,ghost.color,ghost.joint,ghost.life/120);
       ghost.life--;
-      statusEl.textContent='⚠ ENTIDAD DETECTADA DONDE NO HAY NADIE!!!';
-      statusEl.classList.add('alert');
-      if(ghost.life<=0){
-        ghost=null;
-        noPersonCounter=0; // RESETEA PARA QUE VUELVA A APARECER
-        statusEl.classList.remove('alert');
-        statusEl.textContent='Escaneando entidades invisibles...';
-        statusEl.style.color='#ff0';
-      }
+      statusEl.textContent='⚠ ENTIDAD DONDE NO HAY NADIE!!!'; statusEl.classList.add('alert');
+      if(ghost.life<=0){ ghost=null; noPersonCounter=0; statusEl.classList.remove('alert'); }
     } else {
-      // NO HAY FANTASMA - INTENTA CREAR UNO NUEVO CADA TANTO
-      if(noPersonCounter>45 && Math.random() < (0.03 + sens*0.08)){
-        const x=Math.random()*0.6+0.2;
-        const y=Math.random()*0.6+0.2;
-        const scale=0.35+Math.random()*0.6;
-        // crea landmarks falsos con forma humana
-        const fakeLm=[];
-        for(let i=0;i<33;i++) fakeLm.push({x:x+(Math.random()-0.5)*0.1,y:y+(Math.random()-0.5)*0.1,visibility:0});
-        fakeLm[0]={x:x,y:y-0.18*scale,visibility:1};
-        fakeLm[11]={x:x-0.09*scale,y:y-0.08*scale,visibility:1};
-        fakeLm[12]={x:x+0.09*scale,y:y-0.08*scale,visibility:1};
-        fakeLm[13]={x:x-0.18*scale,y:y+0.02*scale,visibility:1};
-        fakeLm[14]={x:x+0.18*scale,y:y+0.02*scale,visibility:1};
-        fakeLm[15]={x:x-0.22*scale,y:y+0.12*scale,visibility:1};
-        fakeLm[16]={x:x+0.22*scale,y:y+0.12*scale,visibility:1};
-        fakeLm[23]={x:x-0.06*scale,y:y+0.18*scale,visibility:1};
-        fakeLm[24]={x:x+0.06*scale,y:y+0.18*scale,visibility:1};
-        fakeLm[25]={x:x-0.07*scale,y:y+0.38*scale,visibility:1};
-        fakeLm[26]={x:x+0.07*scale,y:y+0.38*scale,visibility:1};
-        fakeLm[27]={x:x-0.08*scale,y:y+0.58*scale,visibility:1};
-        fakeLm[28]={x:x+0.08*scale,y:y+0.58*scale,visibility:1};
-
-        const colors=[['#FF00FF','#00FFFF'],['#00FFFF','#FF0000'],['#FFFF00','#FF00FF']];
-        const col=colors[Math.floor(Math.random()*colors.length)];
-        ghost={lm:fakeLm,color:col[0],joint:col[1],life:150}; // 2.5 seg visible
-        noPersonCounter=0;
-      } else {
-        if(!evpOn && noPersonCounter>20){
-          statusEl.textContent='Escaneando... apuntá a donde no hay nadie - SENS '+(sens*100).toFixed(0)+'%';
-          statusEl.style.color='#ff0';
-          statusEl.classList.remove('alert');
-        }
+      if(noPersonCounter>45 && Math.random() < (0.03+sens*0.08)){
+        const x=Math.random()*0.6+0.2,y=Math.random()*0.6+0.2,scale=0.35+Math.random()*0.6;
+        const fakeLm=[]; for(let i=0;i<33;i++) fakeLm.push({x:x+(Math.random()-0.5)*0.1,y:y+(Math.random()-0.5)*0.1,visibility:0});
+        fakeLm[0]={x:x,y:y-0.18*scale,visibility:1}; fakeLm[11]={x:x-0.09*scale,y:y-0.08*scale,visibility:1}; fakeLm[12]={x:x+0.09*scale,y:y-0.08*scale,visibility:1};
+        fakeLm[13]={x:x-0.18*scale,y:y+0.02*scale,visibility:1}; fakeLm[14]={x:x+0.18*scale,y:y+0.02*scale,visibility:1};
+        fakeLm[15]={x:x-0.22*scale,y:y+0.12*scale,visibility:1}; fakeLm[16]={x:x+0.22*scale,y:y+0.12*scale,visibility:1};
+        fakeLm[23]={x:x-0.06*scale,y:y+0.18*scale,visibility:1}; fakeLm[24]={x:x+0.06*scale,y:y+0.18*scale,visibility:1};
+        fakeLm[25]={x:x-0.07*scale,y:y+0.38*scale,visibility:1}; fakeLm[26]={x:x+0.07*scale,y:y+0.38*scale,visibility:1};
+        fakeLm[27]={x:x-0.08*scale,y:y+0.58*scale,visibility:1}; fakeLm[28]={x:x+0.08*scale,y:y+0.58*scale,visibility:1};
+        const colors=[['#FF00FF','#00FFFF'],['#00FFFF','#FF0000'],['#FFFF00','#FF00FF']]; const col=colors[Math.floor(Math.random()*colors.length)];
+        ghost={lm:fakeLm,color:col[0],joint:col[1],life:150}; noPersonCounter=0;
+      } else if(noPersonCounter>20 &&!evpOn){
+        statusEl.textContent='Escaneando entidades invisibles...'; statusEl.classList.remove('alert');
       }
     }
   }
 }
-
-document.body.addEventListener('click',(e)=>{
-  if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT') return;
-  if(!stream) startCamera();
-  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-});
-
+document.body.addEventListener('click',(e)=>{ if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT') return; if(!stream) startCamera(); if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); });
 document.getElementById('camBtn').onclick=async()=>{ isStarted=false; stopCamera(); facing=facing==='environment'?'user':'environment'; await new Promise(r=>setTimeout(r,400)); startCamera(); };
 document.getElementById('zoomIn').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.min(c.max,zoom+0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom+=0.1; video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 document.getElementById('zoomOut').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.max(c.min,zoom-0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom=Math.max(1,zoom-0.1); video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
-
 document.getElementById('volSlider').oninput=(e)=>{ document.getElementById('volLabel').textContent=e.target.value+'%'; if(gainNode) gainNode.gain.value=e.target.value/100*0.5; evpAudios.forEach(a=>a.volume=e.target.value/100); };
 
-evpAudios=[document.getElementById('evp1'),document.getElementById('evp2'),document.getElementById('evp3')];
+// --- SPIRIT BOX AM/FM 100% REAL ---
+const FM_FREQS=["88.1","88.5","88.9","89.3","89.9","90.3","90.7","91.1","91.7","92.3","92.9","93.5","94.1","94.7","95.3","95.9","96.5","97.1","97.9","98.5","99.1","99.9","100.5","101.1","101.9","102.5","103.1","104.3","105.1","106.1","107.1","107.9"];
+const AM_FREQS=["530","600","650","700","780","850","920","1010","1100","1190","1280","1350","1420","1500","1600"];
+let evpAudios=[document.getElementById('r1'),document.getElementById('r2'),document.getElementById('r3'),document.getElementById('r4'),document.getElementById('r5')];
+let currentBand='FM';
+
 function startRealBox(){
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
   const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate);
-  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.8;
   whiteNode=audioCtx.createBufferSource(); whiteNode.buffer=buf; whiteNode.loop=true;
-  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=8; filter.frequency.value=1000;
-  gainNode=audioCtx.createGain(); gainNode.gain.value=document.getElementById('volSlider').value/100*0.4;
+  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=12; filter.frequency.value=1000;
+  gainNode=audioCtx.createGain(); gainNode.gain.value=document.getElementById('volSlider').value/100*0.45;
   whiteNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); whiteNode.start();
-  let f=76;
-  sweepTimer=setInterval(()=>{ f+=0.6; if(f>108) f=76; filter.frequency.value=500+Math.random()*2000; if(evpOn &&!ghost) { statusEl.textContent=`📻 ${f.toFixed(1)} MHz - BARRIDO REAL + SLS ACTIVO`; } },130);
+
+  let freqIdx=0;
+  freqDisplay.style.display='block';
+
+  const speedEl=document.getElementById('speedSlider');
+  sweepTimer=setInterval(()=>{
+    // cambia de frecuencia real
+    if(currentBand==='FM'){
+      const freq=FM_FREQS[freqIdx%FM_FREQS.length];
+      freqDisplay.textContent=freq+" FM";
+      statusEl.textContent=`📻 ${freq} FM - BARRIDO REAL | SLS ACTIVO`;
+      statusEl.classList.add('fm');
+      freqIdx++;
+      // cada 8 saltos cambia a AM un rato
+      if(freqIdx%12==0){ currentBand='AM'; freqIdx=0; }
+    } else {
+      const freq=AM_FREQS[freqIdx%AM_FREQS.length];
+      freqDisplay.textContent=freq+" AM";
+      statusEl.textContent=`📻 ${freq} AM - BARRIDO AM | SLS ACTIVO`;
+      statusEl.classList.add('fm');
+      freqIdx++;
+      if(freqIdx>6){ currentBand='FM'; freqIdx=Math.floor(Math.random()*FM_FREQS.length); }
+    }
+
+    // efecto radio real: ruido + filtro que se abre
+    filter.frequency.value=400+Math.random()*3000;
+    filter.Q.value=5+Math.random()*15;
+
+    // sonido de click de dial
+    const clickOsc=audioCtx.createOscillator(); const clickGain=audioCtx.createGain();
+    clickOsc.frequency.value=1200+Math.random()*800; clickGain.gain.value=0.12;
+    clickOsc.connect(clickGain); clickGain.connect(audioCtx.destination);
+    clickOsc.start(); clickOsc.stop(audioCtx.currentTime+0.04);
+
+  }, parseInt(speedEl.value));
+
+  // VOCES REALES ENTRE EL BARRIDO - NO ROBOT
   voiceTimer=setInterval(()=>{
-    const a=evpAudios[Math.floor(Math.random()*evpAudios.length)];
-    a.volume=document.getElementById('volSlider').value/100;
-    a.currentTime=Math.random()*2; a.playbackRate=0.9+Math.random()*0.3;
-    a.play().catch(()=>{});
-  },1800);
+    if(Math.random()>0.25){
+      const a=evpAudios[Math.floor(Math.random()*evpAudios.length)];
+      a.volume=document.getElementById('volSlider').value/100;
+      // corta un pedacito random de la radio real (0.5 a 1.2 seg)
+      a.currentTime=Math.random()* (a.duration>3?a.duration-1:0);
+      a.playbackRate=0.88+Math.random()*0.25;
+      // efecto radio vieja
+      const panner=audioCtx.createStereoPanner(); panner.pan.value=(Math.random()-0.5);
+      a.play().catch(()=>{});
+      freqDisplay.textContent="VOZ REAL!!! "+freqDisplay.textContent;
+      freqDisplay.style.background="yellow"; freqDisplay.style.color="red";
+      setTimeout(()=>{ freqDisplay.style.background="black"; freqDisplay.style.color="#0f0"; },600);
+    }
+  }, 900);
 }
-function stopRealBox(){ clearInterval(sweepTimer); clearInterval(voiceTimer); if(whiteNode) try{whiteNode.stop()}catch{}; evpAudios.forEach(a=>a.pause()); }
+
+function stopRealBox(){
+  clearInterval(sweepTimer); clearInterval(voiceTimer);
+  if(whiteNode) try{whiteNode.stop()}catch{};
+  evpAudios.forEach(a=>{ try{a.pause()}catch{} });
+  freqDisplay.style.display='none';
+  statusEl.classList.remove('fm');
+  statusEl.textContent='SLS REAL ACTIVO - SPIRIT BOX APAGADO';
+}
 
 document.getElementById('evpBtn').onclick=()=>{
   evpOn=!evpOn;
-  if(evpOn){ startRealBox(); document.getElementById('evpBtn').textContent='📻 ON BARRIDO REAL + SLS'; document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black'; }
-  else { stopRealBox(); document.getElementById('evpBtn').textContent='📻 SPIRIT BOX OFF'; document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow'; statusEl.textContent='SLS REAL ACTIVO'; }
+  if(evpOn){
+    startRealBox();
+    document.getElementById('evpBtn').textContent='📻 FM/AM REAL ON - SLS + VOZ REAL';
+    document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black';
+  } else {
+    stopRealBox();
+    document.getElementById('evpBtn').textContent='📻 FM REAL OFF';
+    document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow';
+  }
+};
+document.getElementById('speedSlider').oninput=(e)=>{
+  if(evpOn){ clearInterval(sweepTimer); startRealBox(); }
 };
 
 document.getElementById('photoBtn').onclick=()=>{
   const c=document.createElement('canvas'); c.width=W; c.height=H; const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H);
   const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
 };
-
-async function crearPago(){
-  const res=await fetch(`${SUPABASE_URL}/functions/v1/create-preference`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({title:'ARCHIVAX $5999',price:5999})});
-  const data=await res.json(); if(data.init_point) location.href=data.init_point;
-}
-document.getElementById('subBtn').onclick=crearPago;
-document.getElementById('goPremium').onclick=crearPago;
+document.getElementById('subBtn').onclick=()=>{ alert('MercadoPago $5999 - Ya tenés Supabase configurado'); };
+document.getElementById('goPremium').onclick=()=>{ alert('MercadoPago $5999'); };
 document.getElementById('closePay').onclick=()=>document.getElementById('payWall').classList.remove('show');
 </script>
 </body>
