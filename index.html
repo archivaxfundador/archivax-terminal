@@ -3,24 +3,37 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX V11 AM/FM REAL</title>
+<title>ARCHIVAX P-SB7 REAL</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
 #video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000}
 #canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2}
-#uiTop{position:fixed;top:0;left:0;width:100%;z-index:10;display:flex;gap:4px;padding:5px;background:rgba(0,0,0,.9)}
+#uiTop{position:fixed;top:0;left:0;width:100%;z-index:20;display:flex;gap:4px;padding:5px;background:rgba(0,0,0,.9)}
 .btn{flex:1;padding:10px;border:1px solid #0f0;background:#000;color:#0f0;font-size:11px;font-weight:bold}
 .btn-main{background:#0f0;color:#000}
-#status{position:fixed;top:48px;left:0;width:100%;z-index:10;text-align:center;padding:6px;font-size:11px;background:rgba(0,0,0,.92);transition:.2s}
-#status.alert{background:yellow;color:red;font-weight:bold;font-size:13px}
-#status.fm{color:#00FF00;background:rgba(0,20,0,.9);font-size:12px;letter-spacing:1px}
-#controls{position:fixed;bottom:58px;left:0;width:100%;z-index:10;background:rgba(0,0,0,.92);padding:6px;display:flex;gap:8px;align-items:center;border-top:1px solid #333}
+#status{position:fixed;top:50px;left:0;width:100%;z-index:15;text-align:center;padding:4px;font-size:11px;background:rgba(0,0,0,.85)}
+
+/* P-SB7 REPLICA EXACTA DE TU FOTO */
+#spiritBoxDevice{position:fixed;bottom:85px;left:50%;transform:translateX(-50%);z-index:18;width:96%;max-width:380px;background:linear-gradient(#222,#111);border:2px solid #333;border-radius:18px;padding:10px;box-shadow:0 10px 30px rgba(0,0,0,.9);display:none}
+#spiritBoxDevice.on{display:block}
+#sbScreen{background:#ffcccc;border:3px solid #000;border-radius:8px;padding:6px 10px;position:relative;box-shadow:inset 0 0 15px rgba(255,0,0,.5)}
+#sbTopRow{display:flex;justify-content:space-between;font-size:14px;color:#000;font-weight:bold}
+#sbFreq{font-size:52px;font-weight:900;color:#000;text-align:center;letter-spacing:3px;font-family:'Courier New',monospace;line-height:1}
+#sbBottomRow{display:flex;justify-content:space-between;font-size:12px;color:#000}
+#sbBars{position:absolute;right:10px;top:8px;display:flex;gap:2px;align-items:end}
+.sbBar{width:10px;background:#000}
+#sbControls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:12px}
+.sbBtn{background:linear-gradient(#ddd,#999);border:2px solid #666;border-radius:12px;padding:10px 2px;text-align:center;color:#000;font-size:10px;font-weight:bold;box-shadow:0 3px 0 #444;cursor:pointer}
+.sbBtn:active{transform:translateY(3px);box-shadow:none}
+#sbSpeaker{margin-top:12px;background:repeating-linear-gradient(90deg,#111 0 2px,#222 2px 4px);height:90px;border-radius:45px;position:relative;border:2px solid #000}
+#sbGear{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:48px;height:48px;background:radial-gradient(#eee,#999);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;border:2px solid #000}
+
+#controls{position:fixed;bottom:60px;left:0;width:100%;z-index:16;background:rgba(0,0,0,.9);padding:5px;display:flex;gap:6px;align-items:center;border-top:1px solid #333}
 input[type=range]{flex:1;accent-color:#0f0}
-#uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:10;display:flex;gap:4px;padding:5px;background:#000;border-top:2px solid #0f0}
+#uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:20;display:flex;gap:4px;padding:5px;background:#000;border-top:2px solid #0f0}
 #payWall{position:fixed;inset:0;z-index:99;background:rgba(0,0,0,.96);display:none;align-items:center;justify-content:center;flex-direction:column;padding:20px;text-align:center}
 #payWall.show{display:flex}
-#freqDisplay{position:fixed;top:75px;right:8px;z-index:11;background:rgba(0,0,0,.9);border:1px solid #0f0;padding:4px 8px;font-size:10px;color:#0f0;display:none}
 </style>
 </head>
 <body>
@@ -33,22 +46,37 @@ input[type=range]{flex:1;accent-color:#0f0}
 <button id="zoomOut" class="btn" style="flex:0.4">ZOOM -</button>
 <button id="zoomIn" class="btn" style="flex:0.4">ZOOM +</button>
 </div>
+<div id="status">TOCÁ PARA INICIAR - P-SB7 REAL</div>
 
-<div id="status">TOCÁ PARA INICIAR - V11 AM/FM REAL</div>
-<div id="freqDisplay">88.5 FM</div>
+<!-- DISPOSITIVO SPIRIT BOX COMO TU FOTO -->
+<div id="spiritBoxDevice">
+  <div id="sbScreen">
+    <div id="sbTopRow"><span id="sbBand">AM</span><span>▶▶</span><div id="sbBars"><div class="sbBar" style="height:4px"></div><div class="sbBar" style="height:7px"></div><div class="sbBar" style="height:10px"></div><div class="sbBar" style="height:14px"></div><div class="sbBar" style="height:18px"></div></div></div>
+    <div id="sbFreq">530.0</div>
+    <div id="sbBottomRow"><span id="sbSweep">100</span><span id="sbUnit">KHz</span></div>
+  </div>
+  <div id="sbControls">
+    <div class="sbBtn" id="btnSweepRate">SWEEP<br>RATE</div>
+    <div class="sbBtn" id="btnVolDown">VOL -</div>
+    <div class="sbBtn" id="btnVolUp">VOL +</div>
+    <div class="sbBtn" id="btnAmFm">AM/FM</div>
+    <div class="sbBtn" id="btnFwdRwd">SWEEP<br>FWD/RWD</div>
+    <div class="sbBtn" id="btnPower" style="background:linear-gradient(#ff6666,#aa0000);color:#fff">POWER</div>
+  </div>
+  <div id="sbSpeaker"><div id="sbGear">⚙️</div></div>
+  <div style="text-align:center;color:#aaa;font-size:14px;margin-top:8px;letter-spacing:2px">ITC Research Device<br><span style="font-size:10px">Ferron Software</span></div>
+</div>
 
 <div id="controls">
 <span style="font-size:10px">VOL</span>
-<input id="volSlider" type="range" min="0" max="100" value="80">
-<span id="volLabel" style="font-size:10px">80%</span>
-<span style="font-size:9px;margin-left:4px">SPEED</span>
-<input id="speedSlider" type="range" min="50" max="400" value="150">
+<input id="volSlider" type="range" min="0" max="100" value="85">
+<span id="volLabel" style="font-size:10px">85%</span>
 <span style="font-size:9px;margin-left:4px">SENS</span>
 <input id="sensSlider" type="range" min="10" max="100" value="40">
 </div>
 
 <div id="uiBottom">
-<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 FM REAL OFF</button>
+<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 P-SB7 OFF</button>
 <button id="photoBtn" class="btn">📸 FOTO</button>
 <button id="recBtn" class="btn" style="color:red;border-color:red">● REC</button>
 </div>
@@ -56,28 +84,26 @@ input[type=range]{flex:1;accent-color:#0f0}
 <div id="payWall">
 <h2 style="color:#0f0">40 MIN TERMINADOS</h2>
 <div style="font-size:32px;color:#0f0;margin:10px;font-weight:900">$5999/mes</div>
-<button id="goPremium" class="btn btn-main" style="padding:18px;width:100%">DESBLOQUEAR PREMIUM</button>
+<button id="goPremium" class="btn btn-main" style="padding:18px;width:100%">DESBLOQUEAR</button>
 <button id="closePay" style="margin-top:15px;background:none;border:none;color:#666">Cerrar</button>
 </div>
 
-<!-- VOCES REALES DE SPIRIT BOX + RADIOS FM REALES -->
-<audio id="r1" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/72/72005_1022651-lq.mp3"></audio>
-<audio id="r2" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/193/193941_2694105-lq.mp3"></audio>
-<audio id="r3" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/368/368757_6687700-lq.mp3"></audio>
-<audio id="r4" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/316/316920_5121236-lq.mp3"></audio>
-<audio id="r5" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/415/415362_5121236-lq.mp3"></audio>
+<!-- BANCO DE VOCES REALES - RADIOS FM REALES + EVP REALES -->
+<audio id="voice1" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/72/72005_1022651-lq.mp3"></audio>
+<audio id="voice2" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/193/193941_2694105-lq.mp3"></audio>
+<audio id="voice3" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/368/368757_6687700-lq.mp3"></audio>
+<audio id="voice4" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/316/316920_5121236-lq.mp3"></audio>
+<audio id="voice5" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/415/415362_5121236-lq.mp3"></audio>
+<audio id="voice6" preload="auto" crossorigin="anonymous" src="https://cdn.freesound.org/previews/270/270414_5121236-lq.mp3"></audio>
 
 <script>
 const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const statusEl=document.getElementById('status');
-const freqDisplay=document.getElementById('freqDisplay');
 let W,H,facing='environment',stream=null,pose=null,isStarted=false,track=null,zoom=1;
-let audioCtx=null,filter=null,gainNode=null,whiteNode=null,sweepTimer=null,voiceTimer=null,evpOn=false;
 let noPersonCounter=0,ghost=null;
 function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight} resize(); addEventListener('resize',resize);
-
 function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
 async function startCamera(){
   if(isStarted) return; isStarted=true; stopCamera();
@@ -86,7 +112,7 @@ async function startCamera(){
     video.srcObject=stream; await video.play(); track=stream.getVideoTracks()[0];
     video.style.transform=facing==='user'?'scaleX(-1)':'none';
     await initPose();
-  }catch(e){ isStarted=false; statusEl.textContent='Error cámara: '+e.name; }
+  }catch(e){ isStarted=false; }
 }
 async function initPose(){
   pose=new Pose({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});
@@ -106,140 +132,154 @@ function onResults(res){
   ctx.clearRect(0,0,W,H);
   const sens=parseInt(document.getElementById('sensSlider').value)/100;
   if(res.poseLandmarks){
-    noPersonCounter=0; ghost=null;
-    drawSkeleton(res.poseLandmarks,'#00FF00','#FFFF00',1);
-    if(!evpOn){ statusEl.textContent='✓ PERSONA REAL DETECTADA - SLS'; statusEl.classList.remove('alert'); statusEl.classList.remove('fm'); }
+    noPersonCounter=0; ghost=null; drawSkeleton(res.poseLandmarks,'#00FF00','#FFFF00',1);
+    if(!evpOn){ statusEl.textContent='✓ PERSONA REAL - SLS + P-SB7 LISTO'; statusEl.style.color='#0f0'; }
   } else {
     noPersonCounter++;
     if(ghost && ghost.life>0){
-      drawSkeleton(ghost.lm,ghost.color,ghost.joint,ghost.life/120);
-      ghost.life--;
-      statusEl.textContent='⚠ ENTIDAD DONDE NO HAY NADIE!!!'; statusEl.classList.add('alert');
-      if(ghost.life<=0){ ghost=null; noPersonCounter=0; statusEl.classList.remove('alert'); }
-    } else {
-      if(noPersonCounter>45 && Math.random() < (0.03+sens*0.08)){
-        const x=Math.random()*0.6+0.2,y=Math.random()*0.6+0.2,scale=0.35+Math.random()*0.6;
-        const fakeLm=[]; for(let i=0;i<33;i++) fakeLm.push({x:x+(Math.random()-0.5)*0.1,y:y+(Math.random()-0.5)*0.1,visibility:0});
-        fakeLm[0]={x:x,y:y-0.18*scale,visibility:1}; fakeLm[11]={x:x-0.09*scale,y:y-0.08*scale,visibility:1}; fakeLm[12]={x:x+0.09*scale,y:y-0.08*scale,visibility:1};
-        fakeLm[13]={x:x-0.18*scale,y:y+0.02*scale,visibility:1}; fakeLm[14]={x:x+0.18*scale,y:y+0.02*scale,visibility:1};
-        fakeLm[15]={x:x-0.22*scale,y:y+0.12*scale,visibility:1}; fakeLm[16]={x:x+0.22*scale,y:y+0.12*scale,visibility:1};
-        fakeLm[23]={x:x-0.06*scale,y:y+0.18*scale,visibility:1}; fakeLm[24]={x:x+0.06*scale,y:y+0.18*scale,visibility:1};
-        fakeLm[25]={x:x-0.07*scale,y:y+0.38*scale,visibility:1}; fakeLm[26]={x:x+0.07*scale,y:y+0.38*scale,visibility:1};
-        fakeLm[27]={x:x-0.08*scale,y:y+0.58*scale,visibility:1}; fakeLm[28]={x:x+0.08*scale,y:y+0.58*scale,visibility:1};
-        const colors=[['#FF00FF','#00FFFF'],['#00FFFF','#FF0000'],['#FFFF00','#FF00FF']]; const col=colors[Math.floor(Math.random()*colors.length)];
-        ghost={lm:fakeLm,color:col[0],joint:col[1],life:150}; noPersonCounter=0;
-      } else if(noPersonCounter>20 &&!evpOn){
-        statusEl.textContent='Escaneando entidades invisibles...'; statusEl.classList.remove('alert');
-      }
+      drawSkeleton(ghost.lm,ghost.color,ghost.joint,ghost.life/120); ghost.life--;
+      if(ghost.life<=0){ ghost=null; noPersonCounter=0; }
+    } else if(noPersonCounter>45 && Math.random() < (0.03+sens*0.08)){
+      const x=Math.random()*0.6+0.2,y=Math.random()*0.6+0.2,scale=0.35+Math.random()*0.6;
+      const fakeLm=[]; for(let i=0;i<33;i++) fakeLm.push({x:x+(Math.random()-0.5)*0.1,y:y+(Math.random()-0.5)*0.1,visibility:0});
+      fakeLm[0]={x:x,y:y-0.18*scale,visibility:1}; fakeLm[11]={x:x-0.09*scale,y:y-0.08*scale,visibility:1}; fakeLm[12]={x:x+0.09*scale,y:y-0.08*scale,visibility:1};
+      fakeLm[13]={x:x-0.18*scale,y:y+0.02*scale,visibility:1}; fakeLm[14]={x:x+0.18*scale,y:y+0.02*scale,visibility:1}; fakeLm[15]={x:x-0.22*scale,y:y+0.12*scale,visibility:1}; fakeLm[16]={x:x+0.22*scale,y:y+0.12*scale,visibility:1};
+      fakeLm[23]={x:x-0.06*scale,y:y+0.18*scale,visibility:1}; fakeLm[24]={x:x+0.06*scale,y:y+0.18*scale,visibility:1}; fakeLm[25]={x:x-0.07*scale,y:y+0.38*scale,visibility:1}; fakeLm[26]={x:x+0.07*scale,y:y+0.38*scale,visibility:1}; fakeLm[27]={x:x-0.08*scale,y:y+0.58*scale,visibility:1}; fakeLm[28]={x:x+0.08*scale,y:y+0.58*scale,visibility:1};
+      const colors=[['#FF00FF','#00FFFF'],['#00FFFF','#FF0000']]; const col=colors[Math.floor(Math.random()*colors.length)];
+      ghost={lm:fakeLm,color:col[0],joint:col[1],life:150};
     }
   }
 }
-document.body.addEventListener('click',(e)=>{ if(e.target.tagName==='BUTTON'||e.target.tagName==='INPUT') return; if(!stream) startCamera(); if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); });
+document.body.addEventListener('click',(e)=>{ if(e.target.closest('button')||e.target.closest('.sbBtn')||e.target.tagName==='INPUT') return; if(!stream) startCamera(); if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); });
+
+// CAM Y ZOOM
 document.getElementById('camBtn').onclick=async()=>{ isStarted=false; stopCamera(); facing=facing==='environment'?'user':'environment'; await new Promise(r=>setTimeout(r,400)); startCamera(); };
 document.getElementById('zoomIn').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.min(c.max,zoom+0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom+=0.1; video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 document.getElementById('zoomOut').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.max(c.min,zoom-0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom=Math.max(1,zoom-0.1); video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
-document.getElementById('volSlider').oninput=(e)=>{ document.getElementById('volLabel').textContent=e.target.value+'%'; if(gainNode) gainNode.gain.value=e.target.value/100*0.5; evpAudios.forEach(a=>a.volume=e.target.value/100); };
 
-// --- SPIRIT BOX AM/FM 100% REAL ---
-const FM_FREQS=["88.1","88.5","88.9","89.3","89.9","90.3","90.7","91.1","91.7","92.3","92.9","93.5","94.1","94.7","95.3","95.9","96.5","97.1","97.9","98.5","99.1","99.9","100.5","101.1","101.9","102.5","103.1","104.3","105.1","106.1","107.1","107.9"];
-const AM_FREQS=["530","600","650","700","780","850","920","1010","1100","1190","1280","1350","1420","1500","1600"];
-let evpAudios=[document.getElementById('r1'),document.getElementById('r2'),document.getElementById('r3'),document.getElementById('r4'),document.getElementById('r5')];
-let currentBand='FM';
+// ============ P-SB7 REAL ENGINE ============
+let audioCtx=null, evpOn=false, sweepRate=100, currentBand='AM', fwd=true, freqIdx=0, volume=0.85;
+let sweepTimer=null, whiteNode=null, gainNode=null, filter=null;
+let voices=[];
 
-function startRealBox(){
+const AM_FREQS=[530,540,550,560,580,600,620,650,680,710,750,800,850,900,950,1000,1050,1100,1150,1200,1260,1320,1380,1440,1500,1560,1620,1680,1700];
+const FM_FREQS=[76.0,76.5,77.1,78.3,79.5,80.2,81.1,82.3,83.5,84.7,85.9,87.5,88.1,88.5,88.9,89.5,90.1,90.9,91.5,92.1,92.9,93.5,94.3,95.1,95.9,96.7,97.5,98.3,99.1,99.9,100.7,101.5,102.3,103.1,104.1,105.3,106.1,107.1,107.9];
+
+function initAudio(){
   if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate);
-  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.8;
+  voices=[document.getElementById('voice1'),document.getElementById('voice2'),document.getElementById('voice3'),document.getElementById('voice4'),document.getElementById('voice5'),document.getElementById('voice6')];
+}
+
+function startPSB7(){
+  initAudio();
+  const device=document.getElementById('spiritBoxDevice');
+  device.classList.add('on');
+  document.getElementById('sbBand').textContent=currentBand;
+  document.getElementById('sbUnit').textContent=currentBand==='AM'?'KHz':'MHz';
+  document.getElementById('sbSweep').textContent=sweepRate;
+
+  // ruido blanco base AM/FM
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1.5,audioCtx.sampleRate);
+  const d=buf.getChannelData(0);
+  for(let i=0;i<d.length;i++){
+    d[i]=currentBand==='AM'?(Math.random()*2-1)*0.9 + Math.sin(i*0.05)*0.3 : (Math.random()*2-1)*0.6;
+  }
   whiteNode=audioCtx.createBufferSource(); whiteNode.buffer=buf; whiteNode.loop=true;
-  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=12; filter.frequency.value=1000;
-  gainNode=audioCtx.createGain(); gainNode.gain.value=document.getElementById('volSlider').value/100*0.45;
+  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=currentBand==='AM'?800:1200; filter.Q.value=8;
+  gainNode=audioCtx.createGain(); gainNode.gain.value=volume*0.35;
   whiteNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); whiteNode.start();
 
-  let freqIdx=0;
-  freqDisplay.style.display='block';
-
-  const speedEl=document.getElementById('speedSlider');
+  freqIdx=0;
   sweepTimer=setInterval(()=>{
-    // cambia de frecuencia real
-    if(currentBand==='FM'){
-      const freq=FM_FREQS[freqIdx%FM_FREQS.length];
-      freqDisplay.textContent=freq+" FM";
-      statusEl.textContent=`📻 ${freq} FM - BARRIDO REAL | SLS ACTIVO`;
-      statusEl.classList.add('fm');
-      freqIdx++;
-      // cada 8 saltos cambia a AM un rato
-      if(freqIdx%12==0){ currentBand='AM'; freqIdx=0; }
+    // avanzar frecuencia como P-SB7 real
+    if(fwd){ freqIdx++; } else { freqIdx--; }
+    let freqList=currentBand==='AM'?AM_FREQS:FM_FREQS;
+    if(freqIdx>=freqList.length) { freqIdx=0; }
+    if(freqIdx<0) { freqIdx=freqList.length-1; }
+
+    const freq=freqList[freqIdx];
+    document.getElementById('sbFreq').textContent=currentBand==='AM'?freq.toFixed(1):freq.toFixed(1);
+    document.getElementById('sbBand').textContent=currentBand;
+
+    // barras de señal random
+    document.querySelectorAll('.sbBar').forEach(b=>{ b.style.height=(4+Math.random()*16)+'px'; b.style.background=Math.random()>0.7?'#ff0000':'#000'; });
+
+    // cambio de filtro = sonido de sintonía real
+    filter.frequency.value= (currentBand==='AM'? 300+Math.random()*1500 : 800+Math.random()*3000);
+
+    // 35% de probabilidad de que en esta frecuencia caiga una voz real
+    if(Math.random()<0.35){
+      const v=voices[Math.floor(Math.random()*voices.length)];
+      v.volume=volume;
+      // reproduce solo 0.3 a 0.9 seg, como hace la P-SB7 real
+      v.currentTime=Math.random()* Math.max(0, (v.duration||4)-1);
+      v.playbackRate= currentBand==='AM'?0.92+Math.random()*0.15 : 0.95+Math.random()*0.2;
+      v.play().then(()=>{
+        // corta a los 600ms como barrido real
+        setTimeout(()=>{ try{v.pause()}catch{} }, 350+Math.random()*500);
+      }).catch(()=>{});
+
+      document.getElementById('sbFreq').style.color='#ff0000';
+      setTimeout(()=>{ document.getElementById('sbFreq').style.color='#000'; },200);
+      statusEl.textContent=`👻 VOZ REAL EN ${freq} ${currentBand} - ${fwd?'FWD':'RWD'} ${sweepRate}ms`;
     } else {
-      const freq=AM_FREQS[freqIdx%AM_FREQS.length];
-      freqDisplay.textContent=freq+" AM";
-      statusEl.textContent=`📻 ${freq} AM - BARRIDO AM | SLS ACTIVO`;
-      statusEl.classList.add('fm');
-      freqIdx++;
-      if(freqIdx>6){ currentBand='FM'; freqIdx=Math.floor(Math.random()*FM_FREQS.length); }
+      statusEl.textContent=`📻 ${freq} ${currentBand} ${fwd?'>>':'<<'} SWEEP ${sweepRate}ms - SLS ACTIVO`;
     }
 
-    // efecto radio real: ruido + filtro que se abre
-    filter.frequency.value=400+Math.random()*3000;
-    filter.Q.value=5+Math.random()*15;
+  }, sweepRate);
 
-    // sonido de click de dial
-    const clickOsc=audioCtx.createOscillator(); const clickGain=audioCtx.createGain();
-    clickOsc.frequency.value=1200+Math.random()*800; clickGain.gain.value=0.12;
-    clickOsc.connect(clickGain); clickGain.connect(audioCtx.destination);
-    clickOsc.start(); clickOsc.stop(audioCtx.currentTime+0.04);
-
-  }, parseInt(speedEl.value));
-
-  // VOCES REALES ENTRE EL BARRIDO - NO ROBOT
-  voiceTimer=setInterval(()=>{
-    if(Math.random()>0.25){
-      const a=evpAudios[Math.floor(Math.random()*evpAudios.length)];
-      a.volume=document.getElementById('volSlider').value/100;
-      // corta un pedacito random de la radio real (0.5 a 1.2 seg)
-      a.currentTime=Math.random()* (a.duration>3?a.duration-1:0);
-      a.playbackRate=0.88+Math.random()*0.25;
-      // efecto radio vieja
-      const panner=audioCtx.createStereoPanner(); panner.pan.value=(Math.random()-0.5);
-      a.play().catch(()=>{});
-      freqDisplay.textContent="VOZ REAL!!! "+freqDisplay.textContent;
-      freqDisplay.style.background="yellow"; freqDisplay.style.color="red";
-      setTimeout(()=>{ freqDisplay.style.background="black"; freqDisplay.style.color="#0f0"; },600);
-    }
-  }, 900);
+  // vibración de parlante
+  const gear=document.getElementById('sbGear');
+  setInterval(()=>{ if(evpOn){ gear.style.transform=`translate(-50%,-50%) scale(${0.9+Math.random()*0.3}) rotate(${Math.random()*20}deg)`; } },80);
 }
 
-function stopRealBox(){
-  clearInterval(sweepTimer); clearInterval(voiceTimer);
+function stopPSB7(){
+  clearInterval(sweepTimer);
   if(whiteNode) try{whiteNode.stop()}catch{};
-  evpAudios.forEach(a=>{ try{a.pause()}catch{} });
-  freqDisplay.style.display='none';
-  statusEl.classList.remove('fm');
-  statusEl.textContent='SLS REAL ACTIVO - SPIRIT BOX APAGADO';
+  voices.forEach(v=>{ try{v.pause()}catch{} });
+  document.getElementById('spiritBoxDevice').classList.remove('on');
+  statusEl.textContent='P-SB7 APAGADO - SLS SIGUE ACTIVO';
 }
+
+// CONTROLES DE LA P-SB7 COMO TU FOTO
+document.getElementById('btnPower').onclick=()=>{ document.getElementById('evpBtn').click(); };
+document.getElementById('btnAmFm').onclick=()=>{
+  currentBand=currentBand==='AM'?'FM':'AM';
+  document.getElementById('sbBand').textContent=currentBand;
+  document.getElementById('sbUnit').textContent=currentBand==='AM'?'KHz':'MHz';
+  if(filter) filter.frequency.value=currentBand==='AM'?800:1500;
+  if(evpOn){ clearInterval(sweepTimer); startPSB7(); }
+};
+document.getElementById('btnFwdRwd').onclick=()=>{ fwd=!fwd; };
+document.getElementById('btnSweepRate').onclick=()=>{
+  const rates=[50,100,150,200,300];
+  let idx=rates.indexOf(sweepRate); idx=(idx+1)%rates.length; sweepRate=rates[idx];
+  document.getElementById('sbSweep').textContent=sweepRate;
+  if(evpOn){ clearInterval(sweepTimer); startPSB7(); }
+};
+document.getElementById('btnVolUp').onclick=()=>{ volume=Math.min(1,volume+0.1); if(gainNode) gainNode.gain.value=volume*0.4; voices.forEach(v=>v.volume=volume); document.getElementById('volSlider').value=volume*100; document.getElementById('volLabel').textContent=Math.round(volume*100)+'%'; };
+document.getElementById('btnVolDown').onclick=()=>{ volume=Math.max(0,volume-0.1); if(gainNode) gainNode.gain.value=volume*0.4; voices.forEach(v=>v.volume=volume); document.getElementById('volSlider').value=volume*100; document.getElementById('volLabel').textContent=Math.round(volume*100)+'%'; };
+
+document.getElementById('volSlider').oninput=(e)=>{ volume=e.target.value/100; document.getElementById('volLabel').textContent=e.target.value+'%'; if(gainNode) gainNode.gain.value=volume*0.4; voices.forEach(v=>v.volume=volume); };
 
 document.getElementById('evpBtn').onclick=()=>{
   evpOn=!evpOn;
   if(evpOn){
-    startRealBox();
-    document.getElementById('evpBtn').textContent='📻 FM/AM REAL ON - SLS + VOZ REAL';
+    initAudio();
+    startPSB7();
+    document.getElementById('evpBtn').textContent='📻 P-SB7 ON - BARRIDO REAL';
     document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black';
   } else {
-    stopRealBox();
-    document.getElementById('evpBtn').textContent='📻 FM REAL OFF';
+    stopPSB7();
+    document.getElementById('evpBtn').textContent='📻 P-SB7 OFF';
     document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow';
   }
-};
-document.getElementById('speedSlider').oninput=(e)=>{
-  if(evpOn){ clearInterval(sweepTimer); startRealBox(); }
 };
 
 document.getElementById('photoBtn').onclick=()=>{
   const c=document.createElement('canvas'); c.width=W; c.height=H; const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H);
-  const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
+  const a=document.createElement('a'); a.download=`ARCHIVAX_PSB7_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
 };
-document.getElementById('subBtn').onclick=()=>{ alert('MercadoPago $5999 - Ya tenés Supabase configurado'); };
-document.getElementById('goPremium').onclick=()=>{ alert('MercadoPago $5999'); };
-document.getElementById('closePay').onclick=()=>document.getElementById('payWall').classList.remove('show');
 </script>
 </body>
 </html>
