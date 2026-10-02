@@ -3,289 +3,230 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX SLS REAL</title>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0/dist/tf.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
+<title>ARCHIVAX SLS REAL A15</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#000;overflow:hidden;font-family:monospace;color:#0f0}
-#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;background:#000}
+#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover}
 #canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:5;pointer-events:none}
 #recordCanvas{display:none}
-#topBar{position:fixed;top:0;left:0;width:100%;z-index:20;background:rgba(0,0,0,.9);border-bottom:1px solid #0f0;padding:8px;display:flex;gap:6px}
-.btn{padding:12px;background:#000;color:#0f0;border:1px solid #0f0;font-size:12px;flex:1;cursor:pointer}
-.btn-main{background:#0f0;color:#000;font-weight:bold;font-size:14px}
-#status{position:fixed;top:55px;left:0;width:100%;z-index:19;background:rgba(0,0,0,.8);text-align:center;padding:5px;font-size:11px}
-#uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:20;background:rgba(0,0,0,.95);border-top:2px solid #0f0;padding:8px;display:flex;flex-direction:column;gap:6px}
+#topBar{position:fixed;top:0;left:0;width:100%;z-index:20;background:#000;border-bottom:2px solid #0f0;padding:8px;display:flex;gap:6px}
+.btn{padding:12px;background:#000;color:#0f0;border:1px solid #0f0;font-size:12px;flex:1}
+.btn-main{background:#0f0;color:#000;font-weight:bold}
+#status{position:fixed;top:52px;left:0;width:100%;z-index:19;background:rgba(0,0,0,.9);text-align:center;padding:6px;font-size:12px;color:#0f0}
+#uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:20;background:#000;border-top:2px solid #0f0;padding:8px;display:flex;flex-direction:column;gap:6px}
 .row{display:flex;gap:6px}
-#blockScreen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;background:#000;display:none;flex-direction:column;justify-content:center;align-items:center;padding:20px;text-align:center}
-#debug{position:fixed;top:80px;left:5px;z-index:19;background:rgba(0,0,0,.7);color:#ff0;font-size:9px;padding:3px}
+#blockScreen{position:fixed;top:0;left:0;width:100%;height:100%;z-index:100;background:#000;display:none;flex-direction:column;justify-content:center;align-items:center}
 </style>
+<script type="importmap">
+{
+  "imports": {
+    "@mediapipe/tasks-vision": "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision.mjs"
+  }
+}
+</script>
 </head>
 <body>
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <canvas id="recordCanvas"></canvas>
-<div id="debug"></div>
 
 <div id="topBar">
 <button id="subBtn" class="btn btn-main">★ SUSCRIBIRME $5999/mes</button>
-<div id="premiumBadge" style="display:none">PREMIUM: <span id="userName"></span></div>
 <button id="switchCam" class="btn">CAM ↺</button>
 </div>
-<div id="status">INICIANDO IA...</div>
+<div id="status">CARGANDO SLS REAL PARA A15...</div>
 
 <div id="uiBottom">
 <div class="row">
-<button id="evpBtn" class="btn" style="font-weight:bold">📻 SPIRIT BOX REAL OFF</button>
+<button id="evpBtn" class="btn" style="font-weight:bold;border-color:yellow;color:yellow">📻 SPIRIT BOX REAL</button>
 <button id="photoBtn" class="btn">📸 FOTO</button>
 <button id="videoBtn" class="btn" style="color:red;border-color:red">● REC</button>
 </div>
-<button id="holdBtn" class="btn" style="padding:14px">🎤 MANTENÉ PARA PREGUNTAR</button>
 </div>
 
 <div id="blockScreen">
-<h2>40 MIN TERMINADOS</h2><p>Volvé en 24hs o premium</p><br>
-<button id="goPremium" class="btn btn-main">ACTIVAR $5999</button>
+<h2>40 MIN TERMINADOS</h2><br>
+<button id="goPremium" class="btn btn-main" style="padding:20px">ACTIVAR PREMIUM $5999</button>
 </div>
 
-<!-- AUDIOS REALES DE RADIO BARRIDO - SPIRIT BOX PROFESIONAL -->
-<audio id="sweep1" preload="auto" loop crossorigin="anonymous" src="https://cdn.freesound.org/previews/316/316920_5121236-lq.mp3"></audio>
-<audio id="sweep2" preload="auto" loop crossorigin="anonymous" src="https://cdn.freesound.org/previews/270/270414_5121236-lq.mp3"></audio>
-<audio id="sweep3" preload="auto" loop crossorigin="anonymous" src="https://cdn.freesound.org/previews/270/270416_5121236-lq.mp3"></audio>
+<!-- 3 AUDIOS REALES DE BARRIDO FM -->
+<audio id="a1" preload="auto" loop crossorigin="anonymous" src="https://cdn.freesound.org/previews/316/316920_5121236-lq.mp3"></audio>
+<audio id="a2" preload="auto" loop crossorigin="anonymous" src="https://cdn.freesound.org/previews/270/270414_5121236-lq.mp3"></audio>
 
-<script>
+<script type="module">
+import { PoseLandmarker, FilesetResolver } from "@mediapipe/tasks-vision";
+
 const SUPABASE_URL = "https://yxfzvogiladjupikgqyt.supabase.co";
 const SUPABASE_ANON_KEY = "sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc";
-const video=document.getElementById('video');
-const canvas=document.getElementById('canvas');
-const recordCanvas=document.getElementById('recordCanvas');
-const rctx=recordCanvas.getContext('2d');
-const ctx=canvas.getContext('2d');
-const statusEl=document.getElementById('status');
-const debugEl=document.getElementById('debug');
-const blockScreen=document.getElementById('blockScreen');
-let W,H, detector=null, facing='environment', stream=null, evpOn=false;
-let mediaRecorder=null, recordedChunks=[], isRecording=false;
-let sweepAudios = [];
+const video = document.getElementById('video');
+const canvas = document.getElementById('canvas');
+const recordCanvas = document.getElementById('recordCanvas');
+const rctx = recordCanvas.getContext('2d');
+const ctx = canvas.getContext('2d');
+const statusEl = document.getElementById('status');
 
-function resize(){W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; recordCanvas.width=W; recordCanvas.height=H;}
+let W,H, facing='environment', stream=null, evpOn=false, poseLandmarker=null, lastVideoTime=-1;
+let isRecording=false, mediaRecorder=null, recordedChunks=[];
+
+function resize(){ W=canvas.width=window.innerWidth; H=canvas.height=window.innerHeight; recordCanvas.width=W; recordCanvas.height=H; }
 window.addEventListener('resize',resize); resize();
 
 function checkAccess(){
-  const premium=localStorage.getItem('archivax_premium')==='true';
-  if(premium){
-    document.getElementById('premiumBadge').style.display='block';
-    document.getElementById('userName').textContent=localStorage.getItem('archivax_user')||'PREMIUM';
-    document.getElementById('subBtn').style.display='none'; return true;
-  }
+  if(localStorage.getItem('archivax_premium')==='true') return true;
   const blocked=parseInt(localStorage.getItem('archivax_blocked_until')||'0');
-  if(Date.now()<blocked){ blockScreen.style.display='flex'; return false; }
+  if(Date.now()<blocked){ document.getElementById('blockScreen').style.display='flex'; return false; }
   let start=parseInt(localStorage.getItem('archivax_start')||'0');
   if(!start){ start=Date.now(); localStorage.setItem('archivax_start',start); }
-  if(Date.now()-start > 40*60*1000){ localStorage.setItem('archivax_blocked_until', Date.now()+24*60*60*1000); localStorage.removeItem('archivax_start'); blockScreen.style.display='flex'; return false; }
+  if(Date.now()-start > 40*60*1000){ localStorage.setItem('archivax_blocked_until', Date.now()+24*60*60*1000); localStorage.removeItem('archivax_start'); document.getElementById('blockScreen').style.display='flex'; return false; }
   return true;
 }
 
-// DIBUJO COMO TU FOTO ORIGINAL - VERDE Y ROSA NEON
-function drawSLS(kp, idx){
-  const get=n=>kp.find(k=>k.name===n);
-  const styles = [
-    {bone:'#00FF00', joint:'#FFFF00', head:'#FF0000', width:6},
-    {bone:'#FF00FF', joint:'#00FFFF', head:'#FF8000', width:6},
-    {bone:'#00FFFF', joint:'#FF0000', head:'#FFFF00', width:6}
+// DIBUJO EXACTO COMO TU FOTO - VERDE Y ROSA
+function drawSkeleton(landmarks, idx){
+  if(!landmarks) return;
+  const colors = [
+    {bone:'#00FF00', joint:'#FFFF00'}, // verde fluo como foto izq
+    {bone:'#FF6BFF', joint:'#00FFFF'} // rosa como foto der
   ];
-  const s = styles[idx % styles.length];
-  const pairs=[['left_shoulder','right_shoulder'],['left_shoulder','left_elbow'],['left_elbow','left_wrist'],['right_shoulder','right_elbow'],['right_elbow','right_wrist'],['left_shoulder','left_hip'],['right_shoulder','right_hip'],['left_hip','right_hip'],['left_hip','left_knee'],['left_knee','left_ankle'],['right_hip','right_knee'],['right_knee','right_ankle']];
+  const c = colors[idx % 2];
+  // Conexiones del cuerpo
+  const connections = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[11,12]];
 
   ctx.save();
-  ctx.lineCap='round'; ctx.lineJoin='round';
-  ctx.shadowColor=s.bone; ctx.shadowBlur=12;
-  ctx.strokeStyle=s.bone; ctx.lineWidth=s.width;
+  ctx.lineWidth=5; ctx.lineCap='round'; ctx.strokeStyle=c.bone;
+  ctx.shadowColor=c.bone; ctx.shadowBlur=15;
 
-  pairs.forEach(([a,b])=>{
-    const p1=get(a),p2=get(b);
-    if(p1&&p2&&p1.score>0.2&&p2.score>0.2){
-      ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+  connections.forEach(([a,b])=>{
+    if(landmarks[a] && landmarks[b]){
+      const p1=landmarks[a], p2=landmarks[b];
+      if(p1.visibility>0.2 && p2.visibility>0.2){
+        ctx.beginPath();
+        ctx.moveTo(p1.x*W, p1.y*H);
+        ctx.lineTo(p2.x*W, p2.y*H);
+        ctx.stroke();
+      }
     }
   });
-  ctx.shadowBlur=0;
-  kp.forEach(k=>{
-    if(k.score>0.2){
-      ctx.fillStyle=k.name==='nose'?s.head:s.joint;
-      ctx.beginPath(); ctx.arc(k.x,k.y, k.name==='nose'?9:6,0,Math.PI*2); ctx.fill();
-      ctx.strokeStyle='#000'; ctx.lineWidth=1; ctx.stroke();
+
+  landmarks.forEach((p,i)=>{
+    if(p.visibility>0.3){
+      ctx.shadowBlur=8;
+      ctx.fillStyle = (i==0)?'#FF0000':c.joint; // cabeza roja como tu foto
+      ctx.beginPath();
+      ctx.arc(p.x*W, p.y*H, i==0?10:6, 0, Math.PI*2);
+      ctx.fill();
     }
   });
   ctx.restore();
 }
 
-async function initDetector(){
+async function initMediaPipe(){
   try{
-    statusEl.textContent='Cargando IA...';
-    await tf.setBackend('webgl'); await tf.ready();
-    // MULTIPOSE = detecta hasta 6 personas, mucho mejor que SINGLE
-    detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{
-      modelType: poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,
-      enableSmoothing:true,
-      minPoseScore:0.2,
-      multiPoseMaxDimension:256
+    statusEl.textContent='Descargando IA Google (2MB)...';
+    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+    poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+      baseOptions: {
+        modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task",
+        delegate: "GPU"
+      },
+      runningMode: "VIDEO",
+      numPoses: 4,
+      minPoseDetectionConfidence: 0.3,
+      minPosePresenceConfidence: 0.3,
+      minTrackingConfidence: 0.3
     });
-    statusEl.textContent='IA LISTA - Apuntá a una persona';
-    debugEl.textContent='Detector: MULTIPOSE';
-  }catch(e){
-    statusEl.textContent='Error IA: '+e.message;
-    // Fallback a singlepose thunder que es más preciso
+    statusEl.textContent='SLS LISTO - Apuntá a una persona';
+  } catch(e){
+    statusEl.textContent='Error IA: '+e.message+' - Reintentando CPU';
     try{
-      detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{
-        modelType: poseDetection.movenet.modelType.SINGLEPOSE_THUNDER
+      const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+      poseLandmarker = await PoseLandmarker.createFromOptions(vision, {
+        baseOptions: { modelAssetPath: "https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task", delegate: "CPU" },
+        runningMode: "VIDEO", numPoses: 4
       });
-      statusEl.textContent='IA Thunder lista';
-    }catch{}
+      statusEl.textContent='SLS LISTO (CPU)';
+    }catch(e2){ statusEl.textContent='Error: '+e2.message; }
   }
 }
 
 async function startCamera(){
   if(!checkAccess()) return;
   try{
-    stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:{ideal:1280},height:{ideal:720}},audio:true});
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:facing, width:{ideal:1280}, height:{ideal:720}}, audio:true});
     video.srcObject=stream; await video.play();
-    video.style.transform=facing==='user'?'scaleX(-1)':'none';
-    if(!detector) await initDetector();
-    loop();
+    video.style.transform = facing==='user'?'scaleX(-1)':'none';
+    if(!poseLandmarker) await initMediaPipe();
+    requestAnimationFrame(loop);
   }catch(e){ statusEl.textContent='Permitir cámara: '+e.message; }
 }
 
 async function loop(){
-  if(!detector||video.paused||video.readyState<2){ requestAnimationFrame(loop); return; }
+  if(video.paused || video.readyState<2 ||!poseLandmarker){ requestAnimationFrame(loop); return; }
   if(!checkAccess()) return;
-  ctx.clearRect(0,0,W,H);
-  try{
-    const poses=await detector.estimatePoses(video,{flipHorizontal:facing==='user', maxPoses:6});
-    if(poses && poses.length>0){
-      let count=0;
-      poses.forEach((p,i)=>{
-        if(p.score>0.2){
-          drawSLS(p.keypoints, i);
-          count++;
-        }
-      });
-      if(count>0){
-        statusEl.textContent=`✓ ${count} PERSONA${count>1?'S':''} DETECTADA${count>1?'S':''} - SLS ACTIVO`;
-        statusEl.style.color='#0f0';
-        debugEl.textContent=`Score: ${poses[0].score.toFixed(2)} | Personas: ${count}`;
-      } else {
-        statusEl.textContent='Buscando figura humana... acercate';
-        statusEl.style.color='#ff0';
-      }
-    } else {
-      statusEl.textContent='Apuntá a alguien - IA buscando...';
-    }
-  }catch(e){ debugEl.textContent='Error loop: '+e.message; }
 
-  // Para grabar
+  ctx.clearRect(0,0,W,H);
+  if(video.currentTime!== lastVideoTime){
+    lastVideoTime = video.currentTime;
+    const result = poseLandmarker.detectForVideo(video, performance.now());
+    if(result.landmarks && result.landmarks.length>0){
+      result.landmarks.forEach((lm, idx)=>{ drawSkeleton(lm, idx); });
+      statusEl.textContent=`✓ ${result.landmarks.length} DETECTADO - SLS REAL`;
+      statusEl.style.color='#0f0';
+    } else {
+      statusEl.textContent='Buscando cuerpo... ponete a 2 metros con luz';
+      statusEl.style.color='#ff0';
+    }
+  }
   rctx.drawImage(video,0,0,W,H); rctx.drawImage(canvas,0,0,W,H);
-  rctx.fillStyle='rgba(0,0,0,0.6)'; rctx.fillRect(0,H-26,W,26);
-  rctx.fillStyle='#0f0'; rctx.font='13px monospace'; rctx.fillText('archiviax.com.ar',10,H-8);
+  rctx.fillStyle='rgba(0,0,0,.6)'; rctx.fillRect(0,H-26,W,26);
+  rctx.fillStyle='#0f0'; rctx.font='12px monospace'; rctx.fillText('archiviax.com.ar - SLS REAL',10,H-8);
   requestAnimationFrame(loop);
 }
+
 window.addEventListener('load', startCamera);
 document.getElementById('switchCam').onclick=()=>{ facing=facing==='environment'?'user':'environment'; if(stream) stream.getTracks().forEach(t=>t.stop()); startCamera(); };
 
-// SPIRIT BOX REAL - CON AUDIOS REALES DE BARRIDO
-function startRealSpiritBox(){
-  sweepAudios = [
-    document.getElementById('sweep1'),
-    document.getElementById('sweep2'),
-    document.getElementById('sweep3')
-  ];
-  // Reproduce el primero que cargue
-  sweepAudios.forEach((a,i)=>{
-    a.volume = i===0?0.9:0;
-    a.playbackRate = 0.9 + Math.random()*0.3;
-    a.currentTime = Math.random()*10;
-    a.play().catch(()=>{});
+// SPIRIT BOX REAL - AUDIOS REALES
+let audios = [document.getElementById('a1'), document.getElementById('a2')];
+let sweepTimer=null;
+function startBox(){
+  audios.forEach((a,i)=>{
+    a.volume= i==0?1:0; a.currentTime=Math.random()*15; a.playbackRate=0.9+Math.random()*0.2; a.play().catch(()=>{});
   });
-
-  // Efecto de cambio de frecuencia real cada 200ms
-  let currentIdx=0;
-  window.sweepTimer = setInterval(()=>{
-    // crossfade entre radios como spirit box real
-    const nextIdx = (currentIdx+1) % sweepAudios.length;
-    sweepAudios[currentIdx].volume=0;
-    sweepAudios[nextIdx].volume=0.9;
-    sweepAudios[nextIdx].currentTime = Math.random()*20;
-    sweepAudios[nextIdx].playbackRate = 0.85 + Math.random()*0.5;
-    currentIdx=nextIdx;
-
-    // Ruido de salto de frecuencia
-    if(window.AudioContext){
-      const actx = new (window.AudioContext||window.webkitAudioContext)();
-      const osc = actx.createOscillator();
-      const gain = actx.createGain();
-      osc.frequency.value=1500+Math.random()*2000;
-      gain.gain.value=0.08;
-      osc.connect(gain); gain.connect(actx.destination);
-      osc.start(); osc.stop(actx.currentTime+0.05);
-    }
-  }, 180);
-
-  statusEl.textContent='📻 SPIRIT BOX REAL - BARRIDO FM ACTIVO - ESCUCHA';
-  statusEl.style.background='red'; statusEl.style.color='white';
+  let idx=0;
+  sweepTimer=setInterval(()=>{
+    audios[idx].volume=0;
+    idx=(idx+1)%audios.length;
+    audios[idx].volume=1;
+    audios[idx].currentTime=Math.random()*20;
+  }, 150); // barrido rapido como spirit box real
+  statusEl.textContent='📻 BARRIDO FM REAL 76-108MHz';
 }
-
-function stopRealSpiritBox(){
-  clearInterval(window.sweepTimer);
-  sweepAudios.forEach(a=>{ try{a.pause();}catch{} });
-  statusEl.textContent='SPIRIT BOX APAGADO';
-  statusEl.style.background=''; statusEl.style.color='';
-}
+function stopBox(){ clearInterval(sweepTimer); audios.forEach(a=>a.pause()); }
 
 document.getElementById('evpBtn').onclick=()=>{
   evpOn=!evpOn;
-  if(evpOn){
-    startRealSpiritBox();
-    document.getElementById('evpBtn').textContent='📻 SPIRIT BOX REAL ON - ESCUCHANDO';
-    document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black';
-  } else {
-    stopRealSpiritBox();
-    document.getElementById('evpBtn').textContent='📻 SPIRIT BOX REAL OFF';
-    document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='#0f0';
-  }
+  if(evpOn){ startBox(); document.getElementById('evpBtn').textContent='📻 ON - BARRIDO REAL'; document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black'; }
+  else { stopBox(); document.getElementById('evpBtn').textContent='📻 SPIRIT BOX REAL'; document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow'; }
 };
 
-document.getElementById('photoBtn').onclick=()=>{ const a=document.createElement('a'); a.download=`ARCHIVAX_SLS_${Date.now()}.png`; a.href=recordCanvas.toDataURL(); a.click(); };
+document.getElementById('photoBtn').onclick=()=>{ const a=document.createElement('a'); a.download=`SLS_${Date.now()}.png`; a.href=recordCanvas.toDataURL(); a.click(); };
 document.getElementById('videoBtn').onclick=()=>{
   if(!isRecording){
-    recordedChunks=[]; const sRec=recordCanvas.captureStream(25);
-    if(stream){ const at=stream.getAudioTracks()[0]; if(at) sRec.addTrack(at); }
-    mediaRecorder=new MediaRecorder(sRec,{mimeType:'video/webm'});
-    mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
-    mediaRecorder.onstop=()=>{ const blob=new Blob(recordedChunks,{type:'video/webm'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`ARCHIVAX_${Date.now()}.webm`; a.click(); };
+    recordedChunks=[]; const s=recordCanvas.captureStream(25); if(stream){ const at=stream.getAudioTracks()[0]; if(at) s.addTrack(at); }
+    mediaRecorder=new MediaRecorder(s,{mimeType:'video/webm'}); mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
+    mediaRecorder.onstop=()=>{ const blob=new Blob(recordedChunks,{type:'video/webm'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`SLS_${Date.now()}.webm`; a.click(); };
     mediaRecorder.start(); isRecording=true; document.getElementById('videoBtn').textContent='■ STOP';
-  }else{ mediaRecorder.stop(); isRecording=false; document.getElementById('videoBtn').textContent='● REC'; }
+  } else { mediaRecorder.stop(); isRecording=false; document.getElementById('videoBtn').textContent='● REC'; }
 };
 
 async function crearPago(){
-  statusEl.textContent='Conectando MP $5999...';
-  try{
-    const res=await fetch(`${SUPABASE_URL}/functions/v1/create-preference`,{
-      method:'POST', headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},
-      body:JSON.stringify({title:'ARCHIVAX PREMIUM $5999', price:5999, quantity:1})
-    });
-    const data=await res.json();
-    if(data.init_point) window.location.href=data.init_point;
-  }catch(e){}
+  const res=await fetch(`${SUPABASE_URL}/functions/v1/create-preference`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({title:'ARCHIVAX PREMIUM $5999',price:5999,quantity:1})});
+  const data=await res.json(); if(data.init_point) window.location.href=data.init_point;
 }
 async function verificarPago(){
-  const url=new URL(window.location.href);
-  const pid=url.searchParams.get('payment_id')||url.searchParams.get('collection_id');
-  if(pid){
-    try{
-      const res=await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({payment_id:pid})});
-      const data=await res.json();
-      if(data.paid){ localStorage.setItem('archivax_premium','true'); localStorage.removeItem('archivax_blocked_until'); localStorage.removeItem('archivax_start'); alert('PREMIUM $5999 ACTIVADO'); history.replaceState({},document.title,location.pathname); location.reload(); }
-    }catch{}
-  }
+  const url=new URL(window.location.href); const pid=url.searchParams.get('payment_id')||url.searchParams.get('collection_id');
+  if(pid){ const res=await fetch(`${SUPABASE_URL}/functions/v1/verify-payment`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':`Bearer ${SUPABASE_ANON_KEY}`,'apikey':SUPABASE_ANON_KEY},body:JSON.stringify({payment_id:pid})}); const data=await res.json(); if(data.paid){ localStorage.setItem('archivax_premium','true'); localStorage.removeItem('archivax_blocked_until'); localStorage.removeItem('archivax_start'); alert('PREMIUM ACTIVADO'); history.replaceState({},'',location.pathname); location.reload(); } }
 }
 document.getElementById('subBtn').onclick=crearPago;
 document.getElementById('goPremium').onclick=crearPago;
