@@ -7,7 +7,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:15px;overflow:hidden}
+body{background:#000;color:#0f0;font-family:monospace;display:flex;align-items:center;justify-content:center;min-height:100vh;padding:15px;overflow:hidden;flex-direction:column}
 .bg{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 20%, #111 0%, #000 70%);z-index:0}
 .box{position:relative;z-index:1;width:100%;max-width:340px;background:#0a0a0a;border:2px solid #0f0;padding:22px;box-shadow:0 0 20px rgba(0,255,0,.2)}
 h1{text-align:center;letter-spacing:4px;font-size:24px}
@@ -27,93 +27,95 @@ input:focus{border-color:#0f0;outline:none}
 <body>
 <div class="bg"></div>
 <div class="box">
-  <h1>ARCHIVAX</h1>
-  <div class="sub">archiviax.com.ar • SLS • EVP • SENSOR PARANORMAL</div>
-
-  <input id="email" type="email" placeholder="Email premium" autocomplete="email">
-  <input id="pass" type="password" placeholder="Contraseña única" autocomplete="current-password">
-  <button id="loginBtn" class="btn btn-main">★ ENTRAR PREMIUM</button>
-  <div id="msg"></div>
-
-  <button id="trialBtn" class="btn btn-sec">▶ PROBAR 30 MIN GRATIS</button>
-  <button id="buyBtn" class="btn btn-buy">¿No tenés premium? PAGAR $5999 / MES</button>
-
-  <div class="info">
-    Al pagar se crea automáticamente tu usuario y<br>
-    contraseña única y te llega por email.<br>
-    Esa cuenta solo funciona en tu celular.
-    <br><br>
-    <span id="fpInfo" class="badge">ID: verificando...</span>
-  </div>
+<h1>ARCHIVAX</h1>
+<div class="sub">archiviax.com.ar • SLS • EVP • SENSOR PARANORMAL</div>
+<input id="email" type="email" placeholder="Email premium" autocomplete="email">
+<input id="pass" type="password" placeholder="Contraseña única" autocomplete="current-password">
+<button id="loginBtn" class="btn btn-main">★ ENTRAR PREMIUM</button>
+<div id="msg"></div>
+<button id="trialBtn" class="btn btn-sec">▶ PROBAR 30 MIN GRATIS</button>
+<button id="buyBtn" class="btn btn-buy">¿No tenés premium? PAGAR $5999 / MES</button>
+<div class="info">
+Al pagar se crea automáticamente tu usuario y<br>
+contraseña única y te llega por email.<br>
+Esa cuenta solo funciona en tu celular.<br><br>
+<span id="fpInfo" class="badge">ID: verificando...</span>
+</div>
 </div>
 
+<footer style="position:relative;z-index:1;background:#000;border-top:1px solid #222;padding:20px 15px;text-align:center;font-family:monospace;font-size:11px;color:#666;line-height:1.6;width:100%;margin-top:30px">
+  <div style="margin-bottom:10px">
+    <a href="terminos-y-condiciones.html" style="color:#0f0;text-decoration:none;margin:0 8px">TÉRMINOS Y CONDICIONES</a> |
+    <a href="privacidad.html" style="color:#0f0;text-decoration:none;margin:0 8px">PRIVACIDAD</a> |
+    <a href="https://chat.whatsapp.com/LvOt036C0Kn8hyAVdRXmsr" style="color:#0f0;text-decoration:none;margin:0 8px">SOPORTE</a>
+  </div>
+  <div>© 2026 ARCHIVAX - archiviax.com.ar - Todos los derechos reservados.</div>
+  <div style="font-size:9px;margin-top:6px;color:#444">App con fines de entretenimiento e investigación. Los resultados son interpretativos.</div>
+</footer>
+
 <script>
-const SUPA_URL = 'TU_SUPABASE_URL' // <-- PONE TU URL DE SUPABASE
-const SUPA_ANON = 'TU_SUPABASE_ANON_KEY' // <-- PONE TU ANON KEY (nunca el SECRET)
-const MP_LINK = 'https://www.mercadopago.com.ar/checkout/v1/payment?pref_id=TU_PREF_ID' // <-- TU LINK DE PAGO
+// ===== CONFIG CON TUS DATOS REALES =====
+const SUPA_URL = 'https://yxfzvogiladjupikgqyt.supabase.co'
+const SUPA_ANON = 'sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
+const MP_LINK = 'https://www.mercadopago.com.ar/checkout/v1/payment?pref_id=TU_PREF_ID'
 const supa = supabase.createClient(SUPA_URL, SUPA_ANON)
 
 function getFingerprint(){
   try{
-    const c=document.createElement('canvas'); const x=c.getContext('2d');
-    x.textBaseline='top'; x.font='14px Arial'; x.fillText('archiviax.com.ar '+navigator.language,2,2);
+    const c=document.createElement('canvas');
+    const x=c.getContext('2d');
+    x.textBaseline='top';
+    x.font='14px Arial';
+    x.fillText('archiviax.com.ar '+navigator.language,2,2);
     return btoa(c.toDataURL().slice(-70)+navigator.hardwareConcurrency+screen.width).slice(0,32)
   }catch{ return 'fp_'+screen.width }
 }
 const FP = getFingerprint()
 document.getElementById('fpInfo').textContent='ID: '+FP.slice(0,12)
 
-// Si viene con ?blocked o ?expired
 const params=new URLSearchParams(location.search)
-if(params.get('blocked')==='1'){
-  document.getElementById('msg').innerHTML='<span style="color:red">⏳ Bloqueado 24hs por usar los 30 min gratis</span>'
-}
-if(params.get('expired')==='1'){
-  document.getElementById('msg').innerHTML='<span style="color:red">❌ Premium vencido, renová</span>'
-}
+if(params.get('blocked')==='1'){ document.getElementById('msg').innerHTML='<span style="color:red">⏳ Bloqueado 24hs por usar los 30 min gratis</span>' }
+if(params.get('expired')==='1'){ document.getElementById('msg').innerHTML='<span style="color:red">❌ Premium vencido, renová</span>' }
 
-// Si ya está logueado premium vigente, mandarlo directo a app.html
+// AUTO REDIRECT SI YA ES PREMIUM (usa user_metadata, no tabla subscriptions)
 async function autoRedirect(){
   const { data:{session} } = await supa.auth.getSession()
   if(session){
-    const { data:sub } = await supa.from('subscriptions').select('*').eq('user_id', session.user.id).single()
-    if(sub && new Date(sub.expires_at) > new Date()){
+    const meta = session.user.user_metadata || {}
+    if(meta.expires_at && new Date(meta.expires_at) > new Date()){
       location.href='app.html'
     }
   }
 }
 autoRedirect()
 
-// LOGIN PREMIUM - usuario y contraseña única que les llega por mail
+// LOGIN PREMIUM
 document.getElementById('loginBtn').onclick=async()=>{
   const email=document.getElementById('email').value.trim()
   const pass=document.getElementById('pass').value.trim()
   const msg=document.getElementById('msg')
   if(!email||!pass){ msg.innerHTML='<span style="color:red">Falta email y contraseña</span>'; return }
   msg.innerHTML='<span style="color:yellow">Verificando...</span>'
-
   const { data, error } = await supa.auth.signInWithPassword({ email, password: pass })
   if(error){ msg.innerHTML='<span style="color:red">❌ Usuario o contraseña incorrecta</span>'; return }
-
-  const { data:sub } = await supa.from('subscriptions').select('*').eq('user_id', data.user.id).single()
-  if(!sub || new Date(sub.expires_at) < new Date()){
-    msg.innerHTML='<span style="color:red">❌ Suscripción vencida. Renová 1 día antes y se extiende 30 días.</span>'
+  
+  const meta = data.user.user_metadata || {}
+  if(!meta.expires_at || new Date(meta.expires_at) < new Date()){
+    msg.innerHTML='<span style="color:red">❌ Suscripción vencida. Renová.</span>'
     await supa.auth.signOut()
     return
   }
-
-  // Bloqueo compartir cuenta
-  if(sub.fp && sub.fp!==FP && sub.fp!=='*'){
+  // Candado 1 celular (si ya tiene fp y no es el mismo, bloquea)
+  if(meta.fp && meta.fp!==FP){
     msg.innerHTML='<span style="color:orange">⚠️ Esta cuenta ya está vinculada a otro celular. No se puede compartir.</span>'
     await supa.auth.signOut()
     return
   }
-
-  msg.innerHTML=`<span style="color:#0f0">✅ Activo hasta ${new Date(sub.expires_at).toLocaleDateString()}</span>`
+  msg.innerHTML=`<span style="color:#0f0">✅ Activo hasta ${new Date(meta.expires_at).toLocaleDateString()}</span>`
   setTimeout(()=>{ location.href='app.html' },800)
 }
 
-// PROBAR GRATIS - 30 min / 24hs bloqueo por huella
+// TRIAL
 document.getElementById('trialBtn').onclick=()=>{
   const STORAGE_KEY='archiviax_v26'
   try{
@@ -128,8 +130,6 @@ document.getElementById('trialBtn').onclick=()=>{
   }catch{}
   location.href='app.html?mode=trial'
 }
-
-// PAGAR - le pasamos la huella a MP para atar la cuenta
 document.getElementById('buyBtn').onclick=()=>{
   window.open(MP_LINK+`&fp=${FP}`, '_blank')
 }
