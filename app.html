@@ -6,148 +6,88 @@
 <title>ARCHIVAX APP</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden;touch-action:manipulation}
-#video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000}
-#canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none}
-#watermark{position:fixed;bottom:130px;right:10px;z-index:12;color:rgba(255,255,255,.7);font-size:11px;font-weight:bold;background:rgba(0,0,0,.4);padding:3px 6px;pointer-events:none}
-#uiTop{position:fixed;top:0;left:0;width:100%;z-index:20;display:flex;gap:4px;padding:5px;background:rgba(0,0,0,.85)}
-.btn{flex:1;padding:12px 4px;border:1px solid #0f0;background:#000;color:#0f0;font-size:11px;font-weight:bold}
-.btn-main{background:#0f0;color:#000}
-#status{position:fixed;top:52px;left:0;width:100%;z-index:15;text-align:center;padding:6px;font-size:11px;background:rgba(0,0,0,.5);color:#0f0;pointer-events:none}
-#subtitle{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);z-index:15;background:rgba(0,0,0,.9);border:1px solid #ff0000;color:#ff0000;padding:10px 18px;font-size:14px;font-weight:bold;text-align:center;max-width:90%;display:none;border-radius:4px}
-#subtitle.show{display:block;animation:fade 4s ease forwards}
-@keyframes fade{0%{opacity:0}15%{opacity:1}85%{opacity:1}100%{opacity:0}}
-#controls{position:fixed;bottom:62px;left:0;width:100%;z-index:20;background:rgba(0,0,0,.85);padding:6px;display:flex;gap:8px;align-items:center}
-input[type=range]{flex:1;accent-color:#0f0}
-#uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:20;display:flex;gap:4px;padding:6px;background:#000;border-top:2px solid #0f0}
-</style>
+<style> *{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden;touch-action:manipulation} #video{position:fixed;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:1;background:#000} #canvas{position:fixed;top:0;left:0;width:100%;height:100%;z-index:2;pointer-events:none} #watermark{position:fixed;bottom:130px;right:10px;z-index:12;color:rgba(255,255,255,.7);font-size:11px;font-weight:bold;background:rgba(0,0,0,.4);padding:3px 6px;pointer-events:none} #uiTop{position:fixed;top:0;left:0;width:100%;z-index:20;display:flex;gap:4px;padding:5px;background:rgba(0,0,0,.85)}.btn{flex:1;padding:12px 4px;border:1px solid #0f0;background:#000;color:#0f0;font-size:11px;font-weight:bold}.btn-main{background:#0f0;color:#000} #status{position:fixed;top:52px;left:0;width:100%;z-index:15;text-align:center;padding:6px;font-size:11px;background:rgba(0,0,0,.5);color:#0f0;pointer-events:none} #subtitle{position:fixed;bottom:110px;left:50%;transform:translateX(-50%);z-index:15;background:rgba(0,0,0,.9);border:1px solid #ff0000;color:#ff0000;padding:10px 18px;font-size:14px;font-weight:bold;text-align:center;max-width:90%;display:none;border-radius:4px} #subtitle.show{display:block;animation:fade 4s ease forwards} @keyframes fade{0%{opacity:0}15%{opacity:1}85%{opacity:1}100%{opacity:0}} #controls{position:fixed;bottom:62px;left:0;width:100%;z-index:20;background:rgba(0,0,0,.85);padding:6px;display:flex;gap:8px;align-items:center} input[type=range]{flex:1;accent-color:#0f0} #uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:20;display:flex;gap:4px;padding:6px;background:#000;border-top:2px solid #0f0} </style>
 </head>
 <body>
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <div id="watermark">archiviax.com.ar</div>
-<div id="uiTop">
-<button id="logoutBtn" class="btn">SALIR</button>
-<button id="camBtn" class="btn">CAM ↺</button>
-<button id="zoomOut" class="btn" style="flex:0.4">ZOOM -</button>
-<button id="zoomIn" class="btn" style="flex:0.4">ZOOM +</button>
-</div>
+<div id="uiTop"> <button id="logoutBtn" class="btn">SALIR</button> <button id="camBtn" class="btn">CAM ↺</button> <button id="zoomOut" class="btn" style="flex:0.4">ZOOM -</button> <button id="zoomIn" class="btn" style="flex:0.4">ZOOM +</button> </div>
 <div id="status">VERIFICANDO ACCESO...</div>
 <div id="subtitle"></div>
-<div id="controls">
-<span style="font-size:10px">VOL</span>
-<input id="volSlider" type="range" min="0" max="100" value="40">
-<span id="volLabel" style="font-size:10px">40%</span>
-<span style="font-size:10px;margin-left:6px">SENS</span>
-<input id="sensSlider" type="range" min="10" max="100" value="45">
-</div>
-<div id="uiBottom">
-<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 EVP OFF</button>
-<button id="photoBtn" class="btn">📸 FOTO</button>
-<button id="recBtn" class="btn" style="color:red;border-color:red">● REC</button>
-</div>
-
+<div id="controls"> <span style="font-size:10px">VOL</span> <input id="volSlider" type="range" min="0" max="100" value="40"> <span id="volLabel" style="font-size:10px">40%</span> <span style="font-size:10px;margin-left:6px">SENS</span> <input id="sensSlider" type="range" min="10" max="100" value="45"> </div>
+<div id="uiBottom"> <button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 EVP OFF</button> <button id="photoBtn" class="btn">📸 FOTO</button> <button id="recBtn" class="btn" style="color:red;border-color:red">● REC</button> </div>
 <script>
-// ===== CONFIG =====
-const SUPA_URL='TU_SUPABASE_URL' // PONE TU URL
-const SUPA_ANON='TU_SUPABASE_ANON_KEY' // PONE TU ANON KEY (NUNCA EL SECRET)
+// ===== CONFIG FINAL - YA CON TUS DATOS =====
+const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
+const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
 const TRIAL_MIN = 30
 const BLOCK_HOURS = 24
 const STORAGE_KEY = 'archiviax_v26'
-
-function getFingerprint(){
-  try{
-    const c=document.createElement('canvas'); const x=c.getContext('2d');
-    x.textBaseline='top'; x.font='14px Arial'; x.fillText('archiviax.com.ar '+navigator.language,2,2);
-    return btoa(c.toDataURL().slice(-60)+navigator.hardwareConcurrency+screen.width+navigator.userAgent.length).slice(0,32)
-  }catch{ return 'fp_'+screen.width+'_'+navigator.language }
-}
-
-function saveState(s){
-  const d=JSON.stringify(s)
-  try{ localStorage.setItem(STORAGE_KEY,d); localStorage.setItem(STORAGE_KEY+'_b',d) }catch{}
-  try{ document.cookie=`${STORAGE_KEY}=${encodeURIComponent(d)}; max-age=2592000; path=/` }catch{}
-  try{
-    const req=indexedDB.open('ax_db',1)
-    req.onupgradeneeded=e=>e.target.result.createObjectStore('s')
-    req.onsuccess=e=>{ const db=e.target.result; const tx=db.transaction('s','readwrite'); tx.objectStore('s').put(d,'state') }
-  }catch{}
-}
-function loadState(){
-  try{
-    let d=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(STORAGE_KEY+'_b')
-    if(!d){ const m=document.cookie.match(new RegExp(STORAGE_KEY+'=([^;]+)')); if(m) d=decodeURIComponent(m[1]) }
-    return d?JSON.parse(d):null
-  }catch{ return null }
-}
-
+function getFingerprint(){ try{ const c=document.createElement('canvas'); const x=c.getContext('2d'); x.textBaseline='top'; x.font='14px Arial'; x.fillText('archiviax.com.ar '+navigator.language,2,2); return btoa(c.toDataURL().slice(-60)+navigator.hardwareConcurrency+screen.width+navigator.userAgent.length).slice(0,32) }catch{ return 'fp_'+screen.width+'_'+navigator.language } }
+function saveState(s){ const d=JSON.stringify(s) try{ localStorage.setItem(STORAGE_KEY,d); localStorage.setItem(STORAGE_KEY+'_b',d) }catch{} try{ document.cookie=`${STORAGE_KEY}=${encodeURIComponent(d)}; max-age=2592000; path=/` }catch{} try{ const req=indexedDB.open('ax_db',1) req.onupgradeneeded=e=>e.target.result.createObjectStore('s') req.onsuccess=e=>{ const db=e.target.result; const tx=db.transaction('s','readwrite'); tx.objectStore('s').put(d,'state') } }catch{} }
+function loadState(){ try{ let d=localStorage.getItem(STORAGE_KEY)||localStorage.getItem(STORAGE_KEY+'_b') if(!d){ const m=document.cookie.match(new RegExp(STORAGE_KEY+'=([^;]+)')); if(m) d=decodeURIComponent(m[1]) } return d?JSON.parse(d):null }catch{ return null } }
 let state = loadState() || { fp:getFingerprint(), usedMs:0, blockedUntil:0, firstUse:Date.now() }
 const supa = supabase.createClient(SUPA_URL, SUPA_ANON)
 
-// ===== GUARD DE ACCESO - BLOQUEO TOTAL SI NO TIENE PERMISO =====
+// ===== GUARD NUEVO - USA user_metadata (fp + expires_at) - SIN TABLA subscriptions =====
 async function guard(){
   const params=new URLSearchParams(location.search)
   const isTrialMode = params.get('mode')==='trial'
   const now=Date.now()
-
-  // 1. CHEQUEAR PREMIUM LOGUEADO
   const { data:{session} } = await supa.auth.getSession()
   if(session){
-    const { data:sub } = await supa.from('subscriptions').select('*').eq('user_id', session.user.id).single()
-    if(sub && new Date(sub.expires_at) > new Date()){
-      // Validar que no comparta cuenta (huella)
-      if(sub.fp && sub.fp!==state.fp && sub.fp!=='*'){
-        // Si ya usó en otro celu, bloqueamos compartir
-        await supa.auth.signOut()
-        alert('Esta cuenta premium ya está vinculada a otro celular. No se puede compartir.')
-        location.href='index.html'
-        return false
-      }
-      document.getElementById('status').textContent=`PREMIUM ACTIVO hasta ${new Date(sub.expires_at).toLocaleDateString()}`
-      return true // deja pasar, ilimitado
-    } else {
+    const meta = session.user.user_metadata || {}
+    // 1. Vencimiento
+    if(meta.expires_at && new Date() > new Date(meta.expires_at)){
       await supa.auth.signOut()
+      alert('Cuenta vencida')
       location.href='index.html?expired=1'
       return false
     }
+    // 2. Candado 1 celular
+    const currentFp = state.fp
+    if(!meta.fp || meta.fp===null){
+      await supa.auth.updateUser({ data: { fp: currentFp } })
+      document.getElementById('status').textContent=`PREMIUM ACTIVO hasta ${new Date(meta.expires_at).toLocaleDateString()} | VINCULADO`
+      return true
+    } else if(meta.fp!== currentFp){
+      await supa.auth.signOut()
+      alert('Esta cuenta ya está vinculada a otro celular.')
+      location.href='index.html'
+      return false
+    }
+    document.getElementById('status').textContent=`PREMIUM ACTIVO hasta ${new Date(meta.expires_at).toLocaleDateString()}`
+    return true
   }
-
-  // 2. CHEQUEAR TRIAL 30 MIN / 24 HS BLOQUEO
   if(isTrialMode || state.usedMs>0 || state.blockedUntil>0){
-    // Si está bloqueado 24hs
     if(state.blockedUntil && now < state.blockedUntil){
       const hrs=Math.ceil((state.blockedUntil-now)/3600000)
-      alert(`Bloqueado por ${hrs}hs. Usaste tus 30 min gratis. Pasa a premium para ilimitado.`)
+      alert(`Bloqueado por ${hrs}hs. Usaste tus 30 min gratis.`)
       location.href='index.html?blocked=1'
       return false
     }
-    // Si superó 30 min
     if(state.usedMs >= TRIAL_MIN*60*1000){
       state.blockedUntil=now+BLOCK_HOURS*3600000
       saveState(state)
-      alert('Se te acabaron los 30 min gratis. Bloqueado 24hs o pasá a premium.')
+      alert('Se te acabaron los 30 min gratis.')
       location.href='index.html?blocked=1'
       return false
     }
-    return true // trial ok
+    return true
   }
-
-  // 3. SIN NADA -> AL LOGIN
   location.href='index.html'
   return false
 }
 
 // ===== APP CAMARA - TU V23 INTACTO =====
-const video=document.getElementById('video'); const canvas=document.getElementById('canvas'); const ctx=canvas.getContext('2d'); const statusEl=document.getElementById('status'); const subtitleEl=document.getElementById('subtitle');
-let W,H,facing='environment',stream=null,pose=null,isStarted=false,track=null,zoom=1,noPersonCounter=0,ghost=null,recorder=null,recChunks=[],isRec=false,recCanvas=null,recCtx=null,recLoopId=null;
+const video=document.getElementById('video'); const canvas=document.getElementById('canvas'); const ctx=canvas.getContext('2d'); const statusEl=document.getElementById('status'); const subtitleEl=document.getElementById('subtitle'); let W,H,facing='environment',stream=null,pose=null,isStarted=false,track=null,zoom=1,noPersonCounter=0,ghost=null,recorder=null,recChunks=[],isRec=false,recCanvas=null,recCtx=null,recLoopId=null;
 function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight; if(recCanvas){recCanvas.width=W; recCanvas.height=H;}} resize(); window.addEventListener('resize',resize);
 function stopCamera(){ if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; } }
 async function startCamera(){
   const canPass = await guard()
   if(!canPass) return
-  if(isStarted) return; isStarted=true; stopCamera();
-  statusEl.textContent='INICIANDO...'
+  if(isStarted) return; isStarted=true; stopCamera(); statusEl.textContent='INICIANDO...'
   try{
     stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:facing},width:{ideal:1280},height:{ideal:720}},audio:true})
     video.srcObject=stream; await video.play(); track=stream.getVideoTracks()[0];
@@ -155,31 +95,13 @@ async function startCamera(){
     const { data:{session} } = await supa.auth.getSession()
     if(session){ statusEl.textContent='PREMIUM ILIMITADO SLS ACTIVO' }
     else { const rest=Math.max(0,TRIAL_MIN-Math.floor(state.usedMs/60000)); statusEl.textContent=`SLS ACTIVO | GRATIS: ${rest} MIN` }
-    await initPose()
-    startTrialTimer()
+    await initPose(); startTrialTimer()
   }catch(e){ isStarted=false; statusEl.textContent='ERROR: '+e.name }
 }
 async function initPose(){ pose=new Pose({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`}); pose.setOptions({modelComplexity:0,smoothLandmarks:true,minDetectionConfidence:0.4,minTrackingConfidence:0.4}); pose.onResults(onResults); async function loop(){ if(video.readyState>=2 && pose && stream){ await pose.send({image:video}); } if(stream) requestAnimationFrame(loop); } loop(); }
 function drawSkeleton(lm,color,joint,alpha,targetCtx=ctx){ const pairs=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]]; targetCtx.save(); targetCtx.globalAlpha=alpha; targetCtx.lineWidth=5; targetCtx.lineCap='round'; targetCtx.strokeStyle=color; targetCtx.shadowColor=color; targetCtx.shadowBlur=14; pairs.forEach(([a,b])=>{ const p1=lm[a],p2=lm[b]; if(p1&&p2&&p1.visibility>0.2&&p2.visibility>0.2){ targetCtx.beginPath(); targetCtx.moveTo(p1.x*W,p1.y*H); targetCtx.lineTo(p2.x*W,p2.y*H); targetCtx.stroke(); } }); lm.forEach((p,i)=>{ if(p.visibility>0.3){ targetCtx.fillStyle=i==0?'#FF0000':joint; targetCtx.beginPath(); targetCtx.arc(p.x*W,p.y*H,i==0?10:6,0,Math.PI*2); targetCtx.fill(); } }); targetCtx.restore(); }
 function onResults(res){ ctx.clearRect(0,0,W,H); const sens=parseInt(document.getElementById('sensSlider').value)/100; if(res.poseLandmarks){ noPersonCounter=0; ghost=null; drawSkeleton(res.poseLandmarks,'#00FF00','#FFFF00',1); } else { noPersonCounter++; const t=Date.now()*0.001; if(ghost && ghost.life>0){ const breath=Math.sin(t*1.2)*0.008, sway=Math.sin(t*0.6)*0.015; const humanLm=ghost.base.map(p=>({x:p.x+sway, y:p.y+breath, visibility:p.visibility})); drawSkeleton(humanLm.map(p=>({x:p.x+ghost.x,y:p.y,visibility:p.visibility})),ghost.color,ghost.joint,Math.min(1,ghost.life/100)); ghost.life--; if(ghost.life<=0){ ghost=null; noPersonCounter=0; } } else if(noPersonCounter>40 && Math.random()<(0.02+sens*0.06)){ const x=Math.random()*0.6+0.2,y=Math.random()*0.55+0.2,scale=0.38+Math.random()*0.55; const base=[]; for(let i=0;i<33;i++) base.push({x:x,y:y,visibility:0}); base[0]={x:x,y:y-0.18*scale,visibility:1}; base[11]={x:x-0.09*scale,y:y-0.08*scale,visibility:1}; base[12]={x:x+0.09*scale,y:y-0.08*scale,visibility:1}; base[13]={x:x-0.18*scale,y:y+0.02*scale,visibility:1}; base[14]={x:x+0.18*scale,y:y+0.02*scale,visibility:1}; base[15]={x:x-0.23*scale,y:y+0.13*scale,visibility:1}; base[16]={x:x+0.23*scale,y:y+0.13*scale,visibility:1}; base[23]={x:x-0.06*scale,y:y+0.18*scale,visibility:1}; base[24]={x:x+0.06*scale,y:y+0.18*scale,visibility:1}; base[25]={x:x-0.07*scale,y:y+0.38*scale,visibility:1}; base[26]={x:x+0.07*scale,y:y+0.38*scale,visibility:1}; base[27]={x:x-0.08*scale,y:y+0.58*scale,visibility:1}; base[28]={x:x+0.08*scale,y:y+0.58*scale,visibility:1}; const colors=[['#FF00FF','#00FFFF'],['#00FF00','#FFFF00']]; const col=colors[Math.floor(Math.random()*colors.length)]; ghost={base:base,x:0,color:col[0],joint:col[1],life:480}; } } }
-
-function startTrialTimer(){
-  setInterval(async()=>{
-    const { data:{session} } = await supa.auth.getSession()
-    if(session) return // premium no cuenta
-    state.usedMs+=1000
-    if(state.usedMs%10000<1000) saveState(state)
-    const rest=Math.max(0,TRIAL_MIN-Math.floor(state.usedMs/60000))
-    if(statusEl.textContent.includes('GRATIS')) statusEl.textContent=`SLS ACTIVO | GRATIS: ${rest} MIN`
-    if(state.usedMs >= TRIAL_MIN*60*1000){
-      state.blockedUntil=Date.now()+BLOCK_HOURS*3600000
-      saveState(state)
-      alert('Se acabaron los 30 min. Bloqueado 24hs.')
-      location.href='index.html?blocked=1'
-    }
-  },1000)
-}
-
+function startTrialTimer(){ setInterval(async()=>{ const { data:{session} } = await supa.auth.getSession(); if(session) return; state.usedMs+=1000; if(state.usedMs%10000<1000) saveState(state); const rest=Math.max(0,TRIAL_MIN-Math.floor(state.usedMs/60000)); if(statusEl.textContent.includes('GRATIS')) statusEl.textContent=`SLS ACTIVO | GRATIS: ${rest} MIN`; if(state.usedMs >= TRIAL_MIN*60*1000){ state.blockedUntil=Date.now()+BLOCK_HOURS*3600000; saveState(state); alert('Se acabaron los 30 min.'); location.href='index.html?blocked=1' } },1000) }
 canvas.addEventListener('click', ()=>{ if(!stream) startCamera(); }); video.addEventListener('click', ()=>{ if(!stream) startCamera(); });
 document.getElementById('camBtn').addEventListener('click', async (e)=>{ e.stopPropagation(); isStarted=false; stopCamera(); facing=facing==='environment'?'user':'environment'; await new Promise(r=>setTimeout(r,300)); startCamera(); });
 document.getElementById('zoomIn').addEventListener('click', (e)=>{ e.stopPropagation(); if(track?.getCapabilities?.()?.zoom){ const c=track.getCapabilities().zoom; zoom=Math.min(c.max,zoom+0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom=Math.min(3,zoom+0.1); video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; canvas.style.transform=`scale(${zoom})`; } });
@@ -187,8 +109,6 @@ document.getElementById('zoomOut').addEventListener('click', (e)=>{ e.stopPropag
 document.getElementById('photoBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(!stream) return; const c=document.createElement('canvas'); c.width=W; c.height=H; const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H); ct.fillStyle='rgba(255,255,255,0.7)'; ct.font='bold 18px monospace'; ct.textAlign='right'; ct.fillText('archiviax.com.ar', W-12, H-18); const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=c.toDataURL(); a.click(); });
 document.getElementById('recBtn').addEventListener('click', (e)=>{ e.stopPropagation(); if(!stream) return; if(!isRec){ recCanvas=document.createElement('canvas'); recCanvas.width=W; recCanvas.height=H; recCtx=recCanvas.getContext('2d'); const recStream=recCanvas.captureStream(30); stream.getAudioTracks().forEach(t=>recStream.addTrack(t)); recChunks=[]; recorder=new MediaRecorder(recStream,{mimeType:'video/webm;codecs=vp9'}); recorder.ondataavailable=ev=>{ if(ev.data.size>0) recChunks.push(ev.data); }; recorder.onstop=()=>{ const blob=new Blob(recChunks,{type:'video/webm'}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`ARCHIVAX_${Date.now()}.webm`; a.click(); URL.revokeObjectURL(url); cancelAnimationFrame(recLoopId); }; function drawRec(){ recCtx.drawImage(video,0,0,W,H); recCtx.drawImage(canvas,0,0,W,H); recCtx.fillStyle='rgba(0,0,0,0.45)'; recCtx.fillRect(W-185, H-32, 175, 22); recCtx.fillStyle='rgba(255,255,255,0.85)'; recCtx.font='bold 13px monospace'; recCtx.textAlign='right'; recCtx.fillText('archiviax.com.ar', W-12, H-16); if(subtitleEl.classList.contains('show')){ recCtx.fillStyle='rgba(0,0,0,0.85)'; recCtx.fillRect(W*0.05, H-90, W*0.9, 32); recCtx.strokeStyle='red'; recCtx.strokeRect(W*0.05, H-90, W*0.9, 32); recCtx.fillStyle='red'; recCtx.font='bold 14px monospace'; recCtx.textAlign='center'; recCtx.fillText(subtitleEl.textContent, W/2, H-70); } recLoopId=requestAnimationFrame(drawRec); } drawRec(); recorder.start(100); isRec=true; e.target.textContent='■ STOP'; } else { recorder.stop(); isRec=false; e.target.textContent='● REC'; } });
 document.getElementById('logoutBtn').addEventListener('click', async (e)=>{ e.stopPropagation(); await supa.auth.signOut(); localStorage.removeItem('ax_trial_start'); location.href='index.html' });
-
-// EVP
 let audioCtx=null, evpOn=false, sweepTimer=null, voiceTimer=null, whiteNode=null, gainNode=null, filter=null, volume=0.4;
 const FRASES=["si...","no...","hola...","aquí estoy...","ayuda...","vete...","atrás tuyo...","hace frío...","estoy aquí...","quién eres...","no te vayas...","cuidado...","salí de aquí...","tengo miedo...","mamá...","déjame...","¿me escuchas?...","te veo...","no puedo salir...","¿por qué viniste?...","no me dejes...","estoy perdido...","busco a mi familia...","no cruces...","detrás tuyo...","a tu lado...","mírame...","escúchame...","no estoy solo...","somos muchos...","él está aquí...","ella llora...","el niño...","no abras esa puerta...","vete ya...","es tarde...","vení...","acercate...","no tengas miedo...","te estaba esperando...","en el sótano...","arriba...","en la pieza...","bajo la cama...","en el espejo...","no mires...","cerrá los ojos...","corre...","escondete...","silencio...","shhh...","nos escuchan...","vienen...","ya llegaron...","es peligroso...","ayudame a salir...","sacame de aquí...","liberame..."];
 function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
@@ -197,9 +117,7 @@ function startPSB7(){ initAudio(); if(audioCtx.state==='suspended') audioCtx.res
 function stopPSB7(){ clearInterval(sweepTimer); clearTimeout(voiceTimer); if(whiteNode) try{whiteNode.stop()}catch{}; subtitleEl.classList.remove('show'); }
 document.getElementById('volSlider').addEventListener('input', (e)=>{ volume=e.target.value/100; document.getElementById('volLabel').textContent=e.target.value+'%'; if(gainNode) gainNode.gain.value=volume*0.10; });
 document.getElementById('evpBtn').addEventListener('click', (e)=>{ e.stopPropagation(); evpOn=!evpOn; if(evpOn){ initAudio(); startPSB7(); if(audioCtx && audioCtx.state==='suspended') audioCtx.resume(); e.target.textContent='📻 EVP ON'; e.target.style.background='yellow'; e.target.style.color='black'; } else { stopPSB7(); e.target.textContent='📻 EVP OFF'; e.target.style.background='black'; e.target.style.color='yellow'; } });
-
-// AUTO INICIAR CON GUARD
 setTimeout(startCamera,500)
 </script>
 </body>
-  </html>
+</html>
