@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX V15 EVP 100% REAL OFFLINE</title>
+<title>ARCHIVAX V17 - 40 SEG</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
@@ -30,14 +30,14 @@ input[type=range]{flex:1;accent-color:#0f0}
 <button id="zoomIn" class="btn" style="flex:0.4">ZOOM +</button>
 </div>
 
-<div id="status">TOCÁ PARA INICIAR - V15 SIN ERRORES</div>
+<div id="status">TOCÁ PARA INICIAR</div>
 
 <div id="controls">
 <span style="font-size:10px">VOL EVP</span>
 <input id="volSlider" type="range" min="0" max="100" value="100">
 <span id="volLabel" style="font-size:10px">100%</span>
 <span style="font-size:10px;margin-left:6px">SENS</span>
-<input id="sensSlider" type="range" min="10" max="100" value="40">
+<input id="sensSlider" type="range" min="10" max="100" value="45">
 </div>
 
 <div id="uiBottom">
@@ -62,7 +62,8 @@ async function startCamera(){
     video.srcObject=stream; await video.play(); track=stream.getVideoTracks()[0];
     video.style.transform=facing==='user'?'scaleX(-1)':'none';
     await initPose();
-  }catch(e){ isStarted=false; }
+    statusEl.textContent='SLS LISTO - TOCÁ EVP PARA VOCES CADA 40 SEG';
+  }catch(e){ isStarted=false; statusEl.textContent='Error: '+e.name; }
 }
 async function initPose(){
   pose=new Pose({locateFile:(f)=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/${f}`});
@@ -83,7 +84,6 @@ function onResults(res){
   const sens=parseInt(document.getElementById('sensSlider').value)/100;
   if(res.poseLandmarks){
     noPersonCounter=0; ghost=null; drawSkeleton(res.poseLandmarks,'#00FF00','#FFFF00',1);
-    if(!evpOn){ statusEl.textContent='✓ PERSONA REAL'; statusEl.classList.remove('voice'); }
   } else {
     noPersonCounter++;
     const t=Date.now()*0.001;
@@ -108,113 +108,93 @@ document.getElementById('camBtn').onclick=async()=>{ isStarted=false; stopCamera
 document.getElementById('zoomIn').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.min(c.max,zoom+0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom+=0.1; video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 document.getElementById('zoomOut').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.max(c.min,zoom-0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom=Math.max(1,zoom-0.1); video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 
-// ===== EVP 100% REAL OFFLINE - SIN AUDIOS EXTERNOS =====
-let audioCtx=null, evpOn=false, sweepTimer=null, whiteNode=null, gainNode=null, filter=null, volume=1.0;
-let spanishVoice=null;
+// ===== EVP CADA 40 SEGUNDOS - VOCES HUMANAS REALES =====
+let audioCtx=null, evpOn=false, sweepTimer=null, voiceTimer=null, whiteNode=null, gainNode=null, filter=null, volume=1.0;
 
-function initAudio(){
-  if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
-  // buscar voz española real del celu - es voz humana real, no robot
-  const voices=speechSynthesis.getVoices();
-  spanishVoice=voices.find(v=>v.lang.includes('es')&&v.name.toLowerCase().includes('google')) || voices.find(v=>v.lang.includes('es')) || voices[0];
-}
+const FRASES_REALES=[
+"si","no","hola","aquí estoy","ayuda","vete","atrás","frío","luz","estoy aquí",
+"quién eres","no te vayas","cuidado","salí de aquí","tengo miedo","mamá","déjame en paz","¿me escuchas?","te veo","aquí",
+"no puedo salir","hace frío aquí","¿por qué viniste?","no me dejes","estoy perdido","busco a mi familia","no cruces","detrás tuyo","a tu lado","mírame",
+"escúchame","no estoy solo","somos muchos","él está aquí","ella llora","el niño","no abras esa puerta","vete ya","te dije que te vayas","no quiero",
+"hola amigo","¿cómo te llamas?","¿qué hora es?","es tarde","ya es hora","vení","acercate","no tengas miedo","te estoy esperando","desde hace mucho",
+"en el sótano","arriba","en la pieza","bajo la cama","en el espejo","no mires","cerrá los ojos","abrí los ojos","¿ves eso?","ahí está",
+"corre","escondete","silencio","shhh","no hagas ruido","nos escuchan","vienen","ya llegaron","no mires atrás","corre ya",
+"te dije que no vengas","te lo advertí","es peligroso","no es seguro","salí corriendo","ayudame a salir","sacame de aquí","liberame","perdón","lo siento"
+];
 
-function speakWithRadioEffect(text){
+function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
+
+function playRealHumanVoice(text){
   if(!audioCtx) return;
   if(audioCtx.state==='suspended') audioCtx.resume();
-
-  // bajar ruido
-  if(gainNode) gainNode.gain.value=0.03;
-
+  if(gainNode) gainNode.gain.setValueAtTime(0.02, audioCtx.currentTime);
   const utter=new SpeechSynthesisUtterance(text);
-  if(spanishVoice) utter.voice=spanishVoice;
-  utter.lang='es-AR';
-  utter.rate=0.85+Math.random()*0.2;
-  utter.pitch=0.3+Math.random()*0.4; // grave como EVP real
-  utter.volume=1.0;
-
-  utter.onstart=()=>{
-    statusEl.textContent=`👻 VOZ REAL: "${text.toUpperCase()}"`;
-    statusEl.classList.add('voice');
-  };
+  const voices=speechSynthesis.getVoices();
+  let best=voices.find(v=>v.name.includes('Google')&&v.lang.startsWith('es'))||voices.find(v=>v.lang.startsWith('es'))||voices[0];
+  if(best) utter.voice=best;
+  utter.lang='es-AR'; utter.rate=0.70; utter.pitch=0.35; utter.volume=1.0;
+  utter.onstart=()=>{ statusEl.textContent=`👻 VOZ HUMANA: "${text.toUpperCase()}"`; statusEl.classList.add('voice'); };
   utter.onend=()=>{
-    if(gainNode) gainNode.gain.value=volume*0.15;
-    setTimeout(()=>{ statusEl.classList.remove('voice'); },400);
+    if(gainNode) gainNode.gain.setValueAtTime(volume*0.18, audioCtx.currentTime);
+    setTimeout(()=>{ statusEl.classList.remove('voice'); },800);
   };
-
-  speechSynthesis.speak(utter);
+  speechSynthesis.cancel();
+  setTimeout(()=>speechSynthesis.speak(utter),100);
 }
 
 function startPSB7(){
-  initAudio();
-  if(audioCtx.state==='suspended') audioCtx.resume();
-
-  // ruido AM/FM bajito
-  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1.2,audioCtx.sampleRate);
-  const d=buf.getChannelData(0);
-  for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.6;
-
+  initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
+  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1.5,audioCtx.sampleRate);
+  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.4;
   whiteNode=audioCtx.createBufferSource(); whiteNode.buffer=buf; whiteNode.loop=true;
-  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=8; filter.frequency.value=900;
-  gainNode=audioCtx.createGain(); gainNode.gain.value=volume*0.15;
+  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=5; filter.frequency.value=1000;
+  gainNode=audioCtx.createGain(); gainNode.gain.value=volume*0.18;
   whiteNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); whiteNode.start();
 
-  const AM_FREQS=[530,650,800,950,1100,1300,1500];
   const FM_FREQS=[88.5,90.1,91.9,93.5,95.1,96.9,99.1,101.3,103.5,105.7,107.1];
-  let idx=0, band='FM';
+  let idx=0;
 
-  // FRASES REALES QUE RESPONDEN - COMO EVP DE VERDAD
-  const frases=[
-    "si","no","hola","aquí estoy","ayuda","vete","atrás","frío","luz",
-    "estoy aquí","quién eres","no te vayas","cuidado","salí","miedo",
-    "mamá","déjame","¿me escuchas?","te veo","aquí"
-  ];
-
+  // barrido de radio rápido solo shhh
   sweepTimer=setInterval(()=>{
-    let list=band==='AM'?AM_FREQS:FM_FREQS;
-    idx=(idx+1)%list.length;
-    const freq=list[idx];
-    filter.frequency.value= 300+Math.random()*2500;
-
-    // 70% chance de voz real en cada frecuencia
-    if(Math.random()<0.70){
-      const frase=frases[Math.floor(Math.random()*frases.length)];
-      speakWithRadioEffect(frase);
-      statusEl.textContent=`📻 ${freq} ${band} - VOZ REAL "${frase}"`;
-    } else {
-      statusEl.textContent=`📻 ${freq} ${band} shhh - buscando...`;
-      statusEl.classList.remove('voice');
+    idx=(idx+1)%FM_FREQS.length;
+    filter.frequency.value=400+Math.random()*2500;
+    if(!statusEl.classList.contains('voice')){
+      statusEl.textContent=`📻 ${FM_FREQS[idx]} FM - shhh... próxima voz en 40 seg`;
     }
+  },180);
 
-    if(Math.random()<0.1) band=band==='AM'?'FM':'AM';
-
-  }, 600); // más lento para que se entienda la voz
+  // VOZ CADA 40 SEGUNDOS
+  function lanzarVozLenta(){
+    if(!evpOn) return;
+    const frase=FRASES_REALES[Math.floor(Math.random()*FRASES_REALES.length)];
+    playRealHumanVoice(frase);
+    voiceTimer=setTimeout(lanzarVozLenta, 40000); // 40 SEGUNDOS
+  }
+  voiceTimer=setTimeout(lanzarVozLenta, 4000); // primera a los 4 seg
 }
 
 function stopPSB7(){
-  clearInterval(sweepTimer);
+  clearInterval(sweepTimer); clearTimeout(voiceTimer);
   if(whiteNode) try{whiteNode.stop()}catch{};
   speechSynthesis.cancel();
-  statusEl.textContent='EVP APAGADO';
-  statusEl.classList.remove('voice');
+  statusEl.textContent='EVP APAGADO'; statusEl.classList.remove('voice');
 }
 
 document.getElementById('volSlider').oninput=(e)=>{
   volume=e.target.value/100;
   document.getElementById('volLabel').textContent=e.target.value+'%';
-  if(gainNode) gainNode.gain.value=volume*0.15;
+  if(gainNode) gainNode.gain.value=volume*0.18;
 };
 
 document.getElementById('evpBtn').onclick=()=>{
   evpOn=!evpOn;
   if(evpOn){
-    // cargar voces primero
-    if(speechSynthesis.getVoices().length===0){
+    let voices=speechSynthesis.getVoices();
+    if(voices.length===0){
       speechSynthesis.onvoiceschanged=()=>{ initAudio(); startPSB7(); };
-    } else {
-      initAudio(); startPSB7();
-    }
-    document.getElementById('evpBtn').textContent='📻 EVP ON - VOCES REALES';
+    } else { initAudio(); startPSB7(); }
+    if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
+    document.getElementById('evpBtn').textContent='📻 EVP ON - VOZ CADA 40 SEG';
     document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black';
   } else {
     stopPSB7();
@@ -227,10 +207,8 @@ document.getElementById('photoBtn').onclick=()=>{
   const c=document.createElement('canvas'); c.width=W; c.height=H; const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H);
   const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
 };
-
-// precargar voces
 speechSynthesis.getVoices();
-setTimeout(()=>{ speechSynthesis.getVoices(); },500);
+setTimeout(()=>speechSynthesis.getVoices(),500);
 </script>
 </body>
 </html>
