@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>ARCHIVAX V20 FINAL</title>
+<title>ARCHIVAX V21 SUBTITULOS</title>
 <script src="https://cdn.jsdelivr.net/npm/@mediapipe/pose@0.5/pose.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;overflow:hidden}
@@ -13,6 +13,9 @@
 .btn{flex:1;padding:11px;border:1px solid #0f0;background:#000;color:#0f0;font-size:11px;font-weight:bold}
 .btn-main{background:#0f0;color:#000}
 #status{position:fixed;top:52px;left:0;width:100%;z-index:10;text-align:center;padding:6px;font-size:11px;background:rgba(0,0,0,.5);color:#0f0}
+#subtitle{position:fixed;bottom:105px;left:50%;transform:translateX(-50%);z-index:15;background:rgba(0,0,0,.85);border:1px solid #ff0000;color:#ff0000;padding:10px 18px;font-size:14px;font-weight:bold;letter-spacing:1px;text-align:center;max-width:90%;display:none;border-radius:4px;text-shadow:0 0 8px #ff0000}
+#subtitle.show{display:block;animation:fadeInOut 4s ease}
+@keyframes fadeInOut{0%{opacity:0}15%{opacity:1}85%{opacity:1}100%{opacity:0}}
 #controls{position:fixed;bottom:62px;left:0;width:100%;z-index:10;background:rgba(0,0,0,.85);padding:6px;display:flex;gap:8px;align-items:center}
 input[type=range]{flex:1;accent-color:#0f0}
 #uiBottom{position:fixed;bottom:0;left:0;width:100%;z-index:10;display:flex;gap:4px;padding:6px;background:#000;border-top:2px solid #0f0}
@@ -30,11 +33,12 @@ input[type=range]{flex:1;accent-color:#0f0}
 </div>
 
 <div id="status">SLS ACTIVO</div>
+<div id="subtitle"></div>
 
 <div id="controls">
 <span style="font-size:10px">VOL</span>
-<input id="volSlider" type="range" min="0" max="100" value="100">
-<span id="volLabel" style="font-size:10px">100%</span>
+<input id="volSlider" type="range" min="0" max="100" value="40">
+<span id="volLabel" style="font-size:10px">40%</span>
 <span style="font-size:10px;margin-left:6px">SENS</span>
 <input id="sensSlider" type="range" min="10" max="100" value="45">
 </div>
@@ -50,6 +54,7 @@ const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 const statusEl=document.getElementById('status');
+const subtitleEl=document.getElementById('subtitle');
 let W,H,facing='environment',stream=null,pose=null,isStarted=false,track=null,zoom=1;
 let noPersonCounter=0,ghost=null;
 function resize(){W=canvas.width=innerWidth;H=canvas.height=innerHeight} resize(); addEventListener('resize',resize);
@@ -106,66 +111,14 @@ document.getElementById('camBtn').onclick=async()=>{ isStarted=false; stopCamera
 document.getElementById('zoomIn').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.min(c.max,zoom+0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom+=0.1; video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 document.getElementById('zoomOut').onclick=()=>{ if(track?.getCapabilities?.().zoom){ const c=track.getCapabilities().zoom; zoom=Math.max(c.min,zoom-0.5); track.applyConstraints({advanced:[{zoom}]}); } else { zoom=Math.max(1,zoom-0.1); video.style.transform=(facing==='user'?'scaleX(-1) ':'')+`scale(${zoom})`; } };
 
-let audioCtx=null, evpOn=false, sweepTimer=null, voiceTimer=null, whiteNode=null, gainNode=null, filter=null, volume=1.0;
-const FRASES=["si...","no...","hola...","aquí estoy...","ayuda...","vete...","atrás tuyo...","hace frío...","estoy aquí...","quién eres...","no te vayas...","cuidado...","salí de aquí...","tengo miedo...","mamá...","déjame...","¿me escuchas?...","te veo...","no puedo salir...","¿por qué viniste?...","no me dejes...","estoy perdido...","busco a mi familia...","no cruces...","detrás tuyo...","a tu lado...","mírame...","escúchame...","no estoy solo...","somos muchos...","él está aquí...","ella llora...","el niño...","no abras esa puerta...","vete ya...","hola amigo...","¿cómo te llamas?...","es tarde...","ya es hora...","vení...","acercate...","no tengas miedo...","te estaba esperando...","en el sótano...","arriba...","en la pieza...","bajo la cama...","en el espejo...","no mires...","cerrá los ojos...","abrí los ojos...","corre...","escondete...","silencio...","shhh...","no hagas ruido...","nos escuchan...","vienen...","ya llegaron...","no mires atrás...","es peligroso...","salí corriendo...","ayudame a salir...","sacame de aquí...","liberame...","perdón..."];
+// ===== EVP SOLO SUBTITULOS CADA 40 SEG - SIN VOZ =====
+let audioCtx=null, evpOn=false, sweepTimer=null, voiceTimer=null, whiteNode=null, gainNode=null, filter=null, volume=0.4;
 
-function initAudio(){ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); }
-function playSusurro(text){
-  if(!audioCtx) return;
-  if(audioCtx.state==='suspended') audioCtx.resume();
-  if(gainNode) gainNode.gain.setValueAtTime(0.01, audioCtx.currentTime);
-  const utter=new SpeechSynthesisUtterance(text);
-  const voices=speechSynthesis.getVoices();
-  let best=voices.find(v=>v.name.toLowerCase().includes('google')&&v.lang.startsWith('es'))||voices.find(v=>v.lang.startsWith('es'))||voices[0];
-  if(best) utter.voice=best;
-  utter.lang='es-AR'; utter.rate=0.45; utter.pitch=0.12; utter.volume=0.6;
-  utter.onend=()=>{ if(gainNode) gainNode.gain.setValueAtTime(volume*0.12, audioCtx.currentTime); };
-  speechSynthesis.cancel();
-  setTimeout(()=>speechSynthesis.speak(utter),200);
-}
-function startPSB7(){
-  initAudio(); if(audioCtx.state==='suspended') audioCtx.resume();
-  const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1.5,audioCtx.sampleRate);
-  const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.3;
-  whiteNode=audioCtx.createBufferSource(); whiteNode.buffer=buf; whiteNode.loop=true;
-  filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.Q.value=6; filter.frequency.value=900;
-  gainNode=audioCtx.createGain(); gainNode.gain.value=volume*0.12;
-  whiteNode.connect(filter); filter.connect(gainNode); gainNode.connect(audioCtx.destination); whiteNode.start();
-  sweepTimer=setInterval(()=>{ filter.frequency.value=350+Math.random()*2200; },220);
-  function vozCada40(){
-    if(!evpOn) return;
-    const frase=FRASES[Math.floor(Math.random()*FRASES.length)];
-    playSusurro(frase);
-    voiceTimer=setTimeout(vozCada40, 40000);
-  }
-  voiceTimer=setTimeout(vozCada40, 4000);
-}
-function stopPSB7(){
-  clearInterval(sweepTimer); clearTimeout(voiceTimer);
-  if(whiteNode) try{whiteNode.stop()}catch{};
-  speechSynthesis.cancel();
-}
-document.getElementById('volSlider').oninput=(e)=>{ volume=e.target.value/100; document.getElementById('volLabel').textContent=e.target.value+'%'; if(gainNode) gainNode.gain.value=volume*0.12; };
-document.getElementById('evpBtn').onclick=()=>{
-  evpOn=!evpOn;
-  if(evpOn){
-    let v=speechSynthesis.getVoices();
-    if(v.length===0){ speechSynthesis.onvoiceschanged=()=>{ initAudio(); startPSB7(); }; }
-    else { initAudio(); startPSB7(); }
-    if(audioCtx && audioCtx.state==='suspended') audioCtx.resume();
-    document.getElementById('evpBtn').textContent='📻 EVP ON';
-    document.getElementById('evpBtn').style.background='yellow'; document.getElementById('evpBtn').style.color='black';
-  } else {
-    stopPSB7();
-    document.getElementById('evpBtn').textContent='📻 EVP OFF';
-    document.getElementById('evpBtn').style.background='black'; document.getElementById('evpBtn').style.color='yellow';
-  }
-};
-document.getElementById('photoBtn').onclick=()=>{
-  const c=document.createElement('canvas'); c.width=W; c.height=H; const ct=c.getContext('2d'); ct.drawImage(video,0,0,W,H); ct.drawImage(canvas,0,0,W,H);
-  const a=document.createElement('a'); a.download=`ARCHIVAX_${Date.now()}.png`; a.href=c.toDataURL(); a.click();
-};
-speechSynthesis.getVoices();
-</script>
-</body>
-</html>
+const FRASES=[
+"si...","no...","hola...","aquí estoy...","ayuda...","vete...","atrás tuyo...","hace frío...","estoy aquí...","quién eres...",
+"no te vayas...","cuidado...","salí de aquí...","tengo miedo...","mamá...","déjame...","¿me escuchas?...","te veo...",
+"no puedo salir...","¿por qué viniste?...","no me dejes...","estoy perdido...","busco a mi familia...","no cruces...","detrás tuyo...","a tu lado...",
+"mírame...","escúchame...","no estoy solo...","somos muchos...","él está aquí...","ella llora...","el niño...","no abras esa puerta...","vete ya...",
+"hola amigo...","¿cómo te llamas?...","es tarde...","ya es hora...","vení...","acercate...","no tengas miedo...","te estaba esperando...",
+"en el sótano...","arriba...","en la pieza...","bajo la cama...","en el espejo...","no mires...","cerrá los ojos...","abrí los ojos...",
+"corre...","escondete...","silencio...","shhh...","no hagas ruido...","nos escuchan...","vienen...","ya llegaron...","no mires atrás...","es peligroso...","salí corriendo...","ayudame a salir...","sacame de aquí...","liber
