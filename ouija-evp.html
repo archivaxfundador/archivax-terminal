@@ -2,191 +2,168 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
-<title>OUIJA EVP REAL - ARCHIVAX</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<title>OUIJA EVP REAL</title>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#d4a74c;font-family:serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
-.top{padding:10px;background:#000;border-bottom:2px solid #d4a74c;display:flex;justify-content:space-between;align-items:center;z-index:20}
-.btn{border:1px solid #d4a74c;background:#000;color:#d4a74c;padding:10px 14px;font-size:12px;font-weight:bold;font-family:monospace;cursor:pointer}
-.board-wrap{flex:1;position:relative;background:radial-gradient(ellipse at center,#1a1205 0%,#000 80%);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.board{width:96%;max-width:400px;aspect-ratio:1.25/1;background:linear-gradient(180deg,#2b1d0a,#120b02);border:3px solid #d4a74c;border-radius:12px;position:relative;box-shadow:0 0 30px rgba(212,167,76,.4), inset 0 0 40px rgba(0,0,0,.9);padding:12px}
-.row{display:flex;justify-content:space-around;margin:7px 0;z-index:2;position:relative}
-.letter{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:19px;color:#d4a74c;text-shadow:0 0 5px #d4a74c;border-radius:50%}
-.letter.active{background:#d4a74c;color:#000;box-shadow:0 0 15px #d4a74c;transform:scale(1.35)}
-.word-row{display:flex;justify-content:space-between;padding:0 10px}
-.word{font-size:24px;font-weight:bold;letter-spacing:4px}
-.goodbye{text-align:center;margin-top:8px;font-size:12px;letter-spacing:8px;border-top:1px solid #d4a74c;padding-top:6px}
-#planchette{position:absolute;width:70px;height:88px;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;pointer-events:none;filter:drop-shadow(0 0 10px #d4a74c)}
-.p-body{width:100%;height:100%;background:radial-gradient(ellipse at center,#3d2e14,#1a1205);clip-path:polygon(50% 0%, 0% 60%, 0% 100%, 100% 100%, 100% 60%);border:2px solid #d4a74c;display:flex;align-items:center;justify-content:center}
-.p-eye{width:30px;height:30px;border:2px solid #d4a74c;border-radius:50%;background:rgba(0,0,0,.9);box-shadow:inset 0 0 10px #d4a74c}
-.moving{animation:shake 0.12s infinite}
-@keyframes shake{0%{margin-left:-1px}50%{margin-left:1px}100%{margin-left:0}}
-.subtitle{position:absolute;bottom:85px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.95);border:1px solid red;color:#ff4444;padding:10px 16px;font-family:monospace;font-size:13px;font-weight:bold;text-align:center;min-width:220px;max-width:92%;z-index:15;border-radius:4px;display:none}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;color:#d4a74c;font-family:serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
+.top{padding:12px;background:#000;border-bottom:2px solid #d4a74c;display:flex;justify-content:space-between;align-items:center}
+.btn{border:1px solid #d4a74c;background:#000;color:#d4a74c;padding:10px 14px;font-size:12px;font-weight:bold;font-family:monospace}
+.board-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#1a1205,#000);position:relative;padding:10px}
+.board{width:100%;max-width:390px;background:linear-gradient(#2b1d0a,#120b02);border:3px solid #d4a74c;border-radius:12px;padding:14px;position:relative;box-shadow:0 0 25px rgba(212,167,76,.5)}
+.row{display:flex;justify-content:space-around;margin:8px 0}
+.letter{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;border-radius:50%;transition:.2s}
+.letter.active{background:#d4a74c;color:#000;box-shadow:0 0 15px #d4a74c;transform:scale(1.4)}
+.word{font-size:22px;font-weight:bold;letter-spacing:3px}
+#planchette{position:absolute;width:70px;height:85px;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;pointer-events:none;filter:drop-shadow(0 0 12px #d4a74c);transition:left.6s cubic-bezier(.4,0,.2,1), top.6s cubic-bezier(.4,0,.2,1)}
+.p-body{width:100%;height:100%;background:#1a1205;border:2px solid #d4a74c;clip-path:polygon(50% 0%,0% 60%,0% 100%,100% 100%,100% 60%);display:flex;align-items:center;justify-content:center}
+.p-eye{width:30px;height:30px;border:2px solid #d4a74c;border-radius:50%;background:#000;box-shadow:inset 0 0 10px #d4a74c}
+.subtitle{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);background:#000;border:1px solid red;color:#ff4444;padding:10px 14px;font-family:monospace;font-size:13px;font-weight:bold;text-align:center;width:92%;z-index:20;display:none;border-radius:4px}
 .subtitle.show{display:block}
-.qDisplay{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:rgba(212,167,76,.15);border:1px solid #d4a74c;color:#d4a74c;padding:6px 12px;font-family:monospace;font-size:11px;z-index:15;display:none}
-.controls{padding:10px;background:#000;border-top:2px solid #d4a74c;display:flex;gap:8px;z-index:20}
+.controls{padding:12px;background:#000;border-top:2px solid #d4a74c;display:flex;gap:8px}
+#evpBtn{flex:1;font-size:15px;padding:16px;background:#d4a74c;color:#000;font-weight:bold;border:none}
+#evpBtn.off{background:#000;color:#d4a74c;border:1px solid #d4a74c}
 </style>
 </head>
 <body>
 <div class="top">
-<button class="btn" onclick="window.location.href='menu.html'">← MENU</button>
-<div style="font-size:11px">OUIJA EVP - IA</div>
-<div id="status" style="font-size:10px">OFF</div>
+<button class="btn" onclick="location.href='menu.html'">← MENU</button>
+<div>OUIJA EVP</div>
+<div id="status" style="font-size:10px">LISTO</div>
 </div>
 
-<div class="board-wrap" id="wrap">
+<div class="board-wrap">
 <div class="board" id="board">
-<div class="word-row"><div class="word" id="W_SI">SI</div><div class="word" id="W_NO">NO</div></div>
+<div style="display:flex;justify-content:space-between"><div class="word" id="W_SI">SI</div><div class="word" id="W_NO">NO</div></div>
 <div class="row" id="r1"></div>
 <div class="row" id="r2"></div>
 <div class="row" id="r3"></div>
 <div class="row" id="r4"></div>
 <div class="row" id="r5"></div>
-<div class="word-row"><div class="word" id="W_ADIOS">ADIOS</div></div>
+<div class="row" id="r6"></div>
+<div style="text-align:center;margin-top:6px;letter-spacing:8px;font-size:12px;border-top:1px solid #d4a74c;padding-top:6px">ADIOS</div>
 <div id="planchette"><div class="p-body"><div class="p-eye"></div></div></div>
 </div>
-<div class="qDisplay" id="qDisplay"></div>
-<div class="subtitle" id="subtitle">TOCÁ INVOCAR Y PREGUNTÁ EN VOZ ALTA</div>
+<div class="subtitle" id="subtitle">TOCÁ INVOCAR</div>
 </div>
 
 <div class="controls">
-<button id="evpBtn" class="btn" style="flex:1;color:yellow;border-color:yellow;font-size:14px;padding:15px">🔮 TOCA PARA INVOCAR</button>
-<button id="clearBtn" class="btn">LIMPIAR</button>
+<button id="evpBtn" class="off">🔮 TOCA PARA INVOCAR</button>
+<button class="btn" id="clearBtn">LIMPIAR</button>
 </div>
 
 <script>
-const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
-const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
-const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
+const r1=document.getElementById('r1'),r2=document.getElementById('r2'),r3=document.getElementById('r3'),r4=document.getElementById('r4'),r5=document.getElementById('r5'),r6=document.getElementById('r6')
+function add(el,txt){txt.split('').forEach(c=>{let d=document.createElement('div');d.className='letter';d.textContent=c;el.appendChild(d)})}
+add(r1,'ABCDE');add(r2,'FGHIJ');add(r3,'KLMNO');add(r4,'PQRST');add(r5,'UVWXYZ');add(r6,'01234');
+(function(){let row=document.createElement('div');row.className='row';document.getElementById('board').appendChild(row);add(row,'56789')})()
 
-const r1=document.getElementById('r1'),r2=document.getElementById('r2'),r3=document.getElementById('r3'),r4=document.getElementById('r4'),r5=document.getElementById('r5')
-function add(el,txt){txt.split('').forEach(c=>{const d=document.createElement('div');d.className='letter';d.dataset.l=c;d.textContent=c;el.appendChild(d)})}
-add(r1,'ABCDE');add(r2,'FGHIJ');add(r3,'KLMNO');add(r4,'PQRST');add(r5,'UVWXYZ');
-(function(){const row=document.createElement('div');row.className='row';row.id='rn';document.getElementById('board').insertBefore(row,document.getElementById('W_ADIOS').parentElement);add(row,'0123456789')})()
-
-const allPos={}
+const allPos={}, board=document.getElementById('board'), planchette=document.getElementById('planchette'), sub=document.getElementById('subtitle'), statusEl=document.getElementById('status')
 function cachePos(){
  document.querySelectorAll('.letter,.word').forEach(el=>{
-  const br=document.getElementById('board').getBoundingClientRect();
-  const r=el.getBoundingClientRect();
-  allPos[el.textContent.trim()]={x:r.left-br.left+r.width/2-35, y:r.top-br.top+r.height/2-44, el}
- });
-}
-const planchette=document.getElementById('planchette'), sub=document.getElementById('subtitle'), qDisplay=document.getElementById('qDisplay'), statusEl=document.getElementById('status')
-let recognition, evpMode=0
-
-const BIB={nombres:["ANA","LUCAS","ELENA","SOFIA","MIGUEL","JAVIER","TOMAS","LUNA"],resp:["SI","NO","ADIOS","HOLA","AYUDA","VETE","AQUI","MIEDO","FRIO","MAMA","ATRAS","CUIDADO","ESTOY","PERDIDO","SOMOS"]}
-
-function mostrar(t){sub.textContent=t;sub.classList.add('show');setTimeout(()=>sub.classList.remove('show'),4500)}
-function mostrarQ(t){qDisplay.textContent=`🎤 "${t}"`;qDisplay.style.display='block';setTimeout(()=>qDisplay.style.display='none',3000)}
-
-function moveTo(text){
- return new Promise(res=>{
-  const pos=allPos[text]
-  if(!pos){res();return}
-  planchette.classList.add('moving')
-  document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))
-  if(pos.el && pos.el.classList.contains('letter')) pos.el.classList.add('active')
-  const sx=planchette.offsetLeft, sy=planchette.offsetTop
-  const ex=pos.x, ey=pos.y
-  const start=performance.now(), dur=750+Math.random()*350
-  function anim(now){
-   const p=Math.min(1,(now-start)/dur)
-   const e=1-Math.pow(1-p,3)
-   planchette.style.left=(sx+(ex-sx)*e + (Math.random()-0.5)*2)+'px'
-   planchette.style.top=(sy+(ey-sy)*e + (Math.random()-0.5)*2)+'px'
-   if(p<1) requestAnimationFrame(anim)
-   else{planchette.classList.remove('moving');res()}
-  }
-  requestAnimationFrame(anim)
+  let br=board.getBoundingClientRect(), r=el.getBoundingClientRect()
+  allPos[el.textContent.trim()]={x:r.left-br.left+r.width/2-35, y:r.top-br.top+r.height/2-42, el}
  })
 }
+
+const NOMBRES=["ANA","LUCAS","ELENA","SOFIA","MIGUEL","JAVIER","TOMAS","LUNA","SARA","PEDRO"]
+const RESP=["SI","NO","ADIOS","HOLA","AYUDA","VETE","AQUI","MIEDO","FRIO","MAMA","ATRAS","CUIDADO","ESTOY","PERDIDO","SOMOS","MUCHOS"]
+
+function mostrar(t){sub.textContent=t;sub.classList.add('show');setTimeout(()=>sub.classList.remove('show'),4000)}
+
+async function moveTo(txt){
+ let pos=allPos[txt]
+ if(!pos) return
+ document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))
+ if(pos.el && pos.el.classList.contains('letter')) pos.el.classList.add('active')
+ planchette.style.left=pos.x+'px'
+ planchette.style.top=pos.y+'px'
+ await new Promise(r=>setTimeout(r,700))
+}
 function hablar(txt){
- speechSynthesis.getVoices()
- const g=['HOMBRE','MUJER','NIÑO','NIÑA','ENTE'][Math.floor(Math.random()*5)]
- const u=new SpeechSynthesisUtterance(txt);u.lang='es-AR';u.volume=1
- if(g==='HOMBRE'){u.pitch=0.25;u.rate=0.7}
- else if(g==='MUJER'){u.pitch=1.25;u.rate=0.82}
- else if(g==='NIÑO'){u.pitch=1.55;u.rate=0.9}
- else if(g==='NIÑA'){u.pitch=1.85;u.rate=1}
- else{u.pitch=0.08;u.rate=0.58}
+ if(!('speechSynthesis' in window)) return
  speechSynthesis.cancel()
- setTimeout(()=>speechSynthesis.speak(u),80)
+ let u=new SpeechSynthesisUtterance(txt)
+ u.lang='es-ES' // ES-ES anda en todos, ES-AR no
+ u.volume=1
+ let g=['HOMBRE','MUJER','NIÑO'][Math.floor(Math.random()*3)]
+ if(g==='HOMBRE'){u.pitch=0.4;u.rate=0.75}
+ else if(g==='MUJER'){u.pitch=1.2;u.rate=0.85}
+ else{u.pitch=1.6;u.rate=0.95}
+ speechSynthesis.speak(u)
  return g
 }
-async function spellWord(word){
- word=word.toUpperCase().replace(/[^A-Z0-9]/g,'')
- for(let c of word){
+async function deletrear(palabra){
+ palabra=palabra.toUpperCase()
+ statusEl.textContent='DELETREANDO: '+palabra
+ for(let c of palabra){
   await moveTo(c)
   hablar(c)
-  await new Promise(r=>setTimeout(r,550))
+  await new Promise(r=>setTimeout(r,450))
  }
- const gen=hablar(word)
- mostrar(`"${word}" - ${gen}`)
+ let gen=hablar(palabra)
+ mostrar('"'+palabra+'" - '+gen)
+ statusEl.textContent='LISTO - TOCA OTRA VEZ'
 }
-async function getAnswer(preg){
- try{
-  if(navigator.onLine){
-   const {data,error}=await supa.functions.invoke('evp-ghost',{body:{question:`Responde con SOLO 1 palabra corta en mayusculas para ouija (max 7 letras). Pregunta: ${preg}`}})
-   if(!error && data?.answer){
-    let a=data.answer.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8)
-    if(a.length>=2) return a
-   }
-  }
- }catch(e){}
- const low=preg.toLowerCase()
- if(low.includes('nombre')||low.includes('quien')||low.includes('llamas')) return BIB.nombres[Math.floor(Math.random()*BIB.nombres.length)]
- if(low.includes('estas')||low.includes('aqui')||low.includes('si')) return Math.random()>0.5?'SI':'NO'
- return BIB.resp[Math.floor(Math.random()*BIB.resp.length)]
-}
+
+let modo=0, rec=null
 function initRec(){
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition
- if(!SR){mostrar('Micro no soportado en este navegador');return null}
- const rec=new SR();rec.lang='es-AR';rec.continuous=false;rec.interimResults=false
- rec.onresult=async(ev)=>{
-  const pregunta=ev.results[0][0].transcript.trim()
-  if(pregunta.length<2) return
-  mostrarQ(pregunta);statusEl.textContent='INVOCANDO...'
-  const ans=await getAnswer(pregunta)
-  statusEl.textContent=`DELETREANDO: ${ans}`
-  await spellWord(ans)
-  statusEl.textContent='PREGUNTA OTRA VEZ - TOCA INVOCAR'
+ let SR=window.SpeechRecognition||window.webkitSpeechRecognition
+ if(!SR) return null
+ let r=new SR()
+ r.lang='es-ES'
+ r.continuous=false
+ r.interimResults=false
+ r.onresult=async(ev)=>{
+  let pregunta=ev.results[0][0].transcript.trim()
+  mostrar('Preguntaste: '+pregunta)
+  let resp
+  let low=pregunta.toLowerCase()
+  if(low.includes('nombre')||low.includes('quien')||low.includes('llamas')) resp=NOMBRES[Math.floor(Math.random()*NOMBRES.length)]
+  else if(low.includes('estas')||low.includes('aqui')) resp=Math.random()>0.5?'SI':'NO'
+  else resp=RESP[Math.floor(Math.random()*RESP.length)]
+  await deletrear(resp)
  }
- rec.onend=()=>{/* no auto loop para que no se trabe */}
- return rec
+ r.onerror=()=>{statusEl.textContent='ERROR MICRO - HAGO DEMO'; setTimeout(()=>deletrear(NOMBRES[0]),500)}
+ r.onend=()=>{modo=0;document.getElementById('evpBtn').textContent='🔮 TOCA PARA INVOCAR';document.getElementById('evpBtn').classList.add('off');statusEl.textContent='LISTO'}
+ return r
 }
 
 document.getElementById('evpBtn').addEventListener('click',async()=>{
  cachePos()
- if(!recognition) recognition=initRec()
- if(evpMode===0){
-  evpMode=1
-  try{recognition.start()}catch{}
-  document.getElementById('evpBtn').textContent='🎙️ ESCUCHANDO... HABLA FUERTE'
-  document.getElementById('evpBtn').style.background='#d4a74c'
-  document.getElementById('evpBtn').style.color='#000'
+ if(modo===0){
+  modo=1
+  document.getElementById('evpBtn').textContent='🎙️ ESCUCHANDO... HABLA AHORA'
+  document.getElementById('evpBtn').classList.remove('off')
   statusEl.textContent='ESCUCHANDO...'
-  mostrar('Pregunta: ¿Cómo te llamas? ¿Estás aquí?')
-  speechSynthesis.getVoices()
+  mostrar('Di: ¿Cómo te llamas? ¿Estás aquí?')
+  if(!rec) rec=initRec()
+  if(rec){
+   try{rec.start()}catch(e){
+    // Si falla micro, hace demo igual para que veas que anda
+    statusEl.textContent='MODO DEMO - SIN MICRO'
+    setTimeout(()=>deletrear('ANA'),800)
+   }
+  }else{
+   statusEl.textContent='MODO DEMO'
+   setTimeout(()=>deletrear('HOLA'),800)
+  }
  }else{
-  evpMode=0
-  try{recognition.stop()}catch{}
+  modo=0
+  if(rec) try{rec.stop()}catch{}
   document.getElementById('evpBtn').textContent='🔮 TOCA PARA INVOCAR'
-  document.getElementById('evpBtn').style.background='#000'
-  document.getElementById('evpBtn').style.color='#d4a74c'
-  statusEl.textContent='OFF'
+  document.getElementById('evpBtn').classList.add('off')
+  statusEl.textContent='LISTO'
  }
 })
 
 document.getElementById('clearBtn').addEventListener('click',()=>{
  planchette.style.left='50%';planchette.style.top='50%'
  document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))
- sub.classList.remove('show')
- setTimeout(cachePos,100)
 })
-setTimeout(cachePos,800)
+
+setTimeout(cachePos,600)
 window.addEventListener('resize',cachePos)
-window.speechSynthesis.onvoiceschanged=()=>{speechSynthesis.getVoices()}
+if('speechSynthesis' in window){speechSynthesis.getVoices()}
 </script>
 </body>
 </html>
