@@ -5,45 +5,42 @@
 <title>OUIJA EVP REAL</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#d4a74c;font-family:serif;height:100vh;display:flex;flex-direction:column;overflow:hidden}
-.top{padding:12px;background:#000;border-bottom:2px solid #d4a74c;display:flex;justify-content:space-between;align-items:center}
-.btn{border:1px solid #d4a74c;background:#000;color:#d4a74c;padding:10px 14px;font-size:12px;font-weight:bold;font-family:monospace}
-.board-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#1a1205,#000);position:relative;padding:10px}
-.board{width:100%;max-width:390px;background:linear-gradient(#2b1d0a,#120b02);border:3px solid #d4a74c;border-radius:12px;padding:14px;position:relative;box-shadow:0 0 25px rgba(212,167,76,.5)}
-.row{display:flex;justify-content:space-around;margin:8px 0}
-.letter{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:bold;border-radius:50%;transition:.2s}
-.letter.active{background:#d4a74c;color:#000;box-shadow:0 0 15px #d4a74c;transform:scale(1.4)}
-.word{font-size:22px;font-weight:bold;letter-spacing:3px}
-#planchette{position:absolute;width:70px;height:85px;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;pointer-events:none;filter:drop-shadow(0 0 12px #d4a74c);transition:left.6s cubic-bezier(.4,0,.2,1), top.6s cubic-bezier(.4,0,.2,1)}
+body{background:#000;color:#d4a74c;font-family:serif;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.top{padding:10px;background:#000;border-bottom:2px solid #d4a74c;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
+.btn{border:1px solid #d4a74c;background:#000;color:#d4a74c;padding:8px 12px;font-size:11px;font-family:monospace}
+.board-wrap{flex:1;display:flex;align-items:center;justify-content:center;background:radial-gradient(circle,#1a1205,#000);position:relative;overflow:hidden;padding:5px}
+.board{width:100%;max-width:380px;max-height:82vh;background:linear-gradient(#2b1d0a,#120b02);border:3px solid #d4a74c;border-radius:12px;padding:10px;position:relative;box-shadow:0 0 25px rgba(212,167,76,.5)}
+.row{display:flex;justify-content:space-around;margin:5px 0}
+.letter{width:32px;height:30px;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;border-radius:50%}
+.letter.active{background:#d4a74c;color:#000;box-shadow:0 0 12px #d4a74c;transform:scale(1.3)}
+.word{font-size:20px;font-weight:bold;letter-spacing:3px}
+#planchette{position:absolute;width:64px;height:78px;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;filter:drop-shadow(0 0 10px #d4a74c);transition:left.6s,top.6s}
 .p-body{width:100%;height:100%;background:#1a1205;border:2px solid #d4a74c;clip-path:polygon(50% 0%,0% 60%,0% 100%,100% 100%,100% 60%);display:flex;align-items:center;justify-content:center}
-.p-eye{width:30px;height:30px;border:2px solid #d4a74c;border-radius:50%;background:#000;box-shadow:inset 0 0 10px #d4a74c}
-.subtitle{position:absolute;bottom:15px;left:50%;transform:translateX(-50%);background:#000;border:1px solid red;color:#ff4444;padding:10px 14px;font-family:monospace;font-size:13px;font-weight:bold;text-align:center;width:92%;z-index:20;display:none;border-radius:4px}
+.p-eye{width:26px;height:26px;border:2px solid #d4a74c;border-radius:50%;background:#000}
+.subtitle{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#000;border:1px solid red;color:#ff4444;padding:8px 12px;font-family:monospace;font-size:12px;width:92%;text-align:center;z-index:20;display:none}
 .subtitle.show{display:block}
-.controls{padding:12px;background:#000;border-top:2px solid #d4a74c;display:flex;gap:8px}
-#evpBtn{flex:1;font-size:15px;padding:16px;background:#d4a74c;color:#000;font-weight:bold;border:none}
+/* ESTO ARREGLA LOS BOTONES QUE NO SE VEIAN */
+.controls{flex-shrink:0;height:85px;background:#000;border-top:2px solid #d4a74c;display:flex;gap:8px;padding:10px;padding-bottom:max(10px, env(safe-area-inset-bottom));position:relative;z-index:30}
+#evpBtn{flex:1;font-size:16px;font-weight:bold;background:#d4a74c;color:#000;border:none;border-radius:6px}
 #evpBtn.off{background:#000;color:#d4a74c;border:1px solid #d4a74c}
+#clearBtn{width:80px;border-radius:6px}
 </style>
 </head>
 <body>
 <div class="top">
 <button class="btn" onclick="location.href='menu.html'">← MENU</button>
-<div>OUIJA EVP</div>
+<div style="font-size:11px">OUIJA EVP - IA</div>
 <div id="status" style="font-size:10px">LISTO</div>
 </div>
 
 <div class="board-wrap">
 <div class="board" id="board">
-<div style="display:flex;justify-content:space-between"><div class="word" id="W_SI">SI</div><div class="word" id="W_NO">NO</div></div>
-<div class="row" id="r1"></div>
-<div class="row" id="r2"></div>
-<div class="row" id="r3"></div>
-<div class="row" id="r4"></div>
-<div class="row" id="r5"></div>
-<div class="row" id="r6"></div>
-<div style="text-align:center;margin-top:6px;letter-spacing:8px;font-size:12px;border-top:1px solid #d4a74c;padding-top:6px">ADIOS</div>
+<div style="display:flex;justify-content:space-between"><div class="word">SI</div><div class="word">NO</div></div>
+<div class="row" id="r1"></div><div class="row" id="r2"></div><div class="row" id="r3"></div><div class="row" id="r4"></div><div class="row" id="r5"></div><div class="row" id="r6"></div>
+<div style="text-align:center;letter-spacing:6px;font-size:11px;border-top:1px solid #d4a74c;margin-top:4px;padding-top:4px">ADIOS</div>
 <div id="planchette"><div class="p-body"><div class="p-eye"></div></div></div>
+<div class="subtitle" id="subtitle"></div>
 </div>
-<div class="subtitle" id="subtitle">TOCÁ INVOCAR</div>
 </div>
 
 <div class="controls">
@@ -55,115 +52,20 @@ body{background:#000;color:#d4a74c;font-family:serif;height:100vh;display:flex;f
 const r1=document.getElementById('r1'),r2=document.getElementById('r2'),r3=document.getElementById('r3'),r4=document.getElementById('r4'),r5=document.getElementById('r5'),r6=document.getElementById('r6')
 function add(el,txt){txt.split('').forEach(c=>{let d=document.createElement('div');d.className='letter';d.textContent=c;el.appendChild(d)})}
 add(r1,'ABCDE');add(r2,'FGHIJ');add(r3,'KLMNO');add(r4,'PQRST');add(r5,'UVWXYZ');add(r6,'01234');
-(function(){let row=document.createElement('div');row.className='row';document.getElementById('board').appendChild(row);add(row,'56789')})()
+let row=document.createElement('div');row.className='row';document.getElementById('board').appendChild(row);add(row,'56789')
 
-const allPos={}, board=document.getElementById('board'), planchette=document.getElementById('planchette'), sub=document.getElementById('subtitle'), statusEl=document.getElementById('status')
-function cachePos(){
- document.querySelectorAll('.letter,.word').forEach(el=>{
-  let br=board.getBoundingClientRect(), r=el.getBoundingClientRect()
-  allPos[el.textContent.trim()]={x:r.left-br.left+r.width/2-35, y:r.top-br.top+r.height/2-42, el}
- })
-}
-
-const NOMBRES=["ANA","LUCAS","ELENA","SOFIA","MIGUEL","JAVIER","TOMAS","LUNA","SARA","PEDRO"]
-const RESP=["SI","NO","ADIOS","HOLA","AYUDA","VETE","AQUI","MIEDO","FRIO","MAMA","ATRAS","CUIDADO","ESTOY","PERDIDO","SOMOS","MUCHOS"]
-
+const allPos={}, boardEl=document.getElementById('board'), planchette=document.getElementById('planchette'), sub=document.getElementById('subtitle'), statusEl=document.getElementById('status')
+function cachePos(){document.querySelectorAll('.letter,.word').forEach(el=>{let br=boardEl.getBoundingClientRect(), r=el.getBoundingClientRect();allPos[el.textContent.trim()]={x:r.left-br.left+r.width/2-32, y:r.top-br.top+r.height/2-39, el}})}
+const NOMBRES=["ANA","LUCAS","ELENA","SOFIA","MIGUEL","JAVIER","LUNA"],RESP=["SI","NO","ADIOS","HOLA","AYUDA","VETE","AQUI","MIEDO","FRIO"]
 function mostrar(t){sub.textContent=t;sub.classList.add('show');setTimeout(()=>sub.classList.remove('show'),4000)}
-
-async function moveTo(txt){
- let pos=allPos[txt]
- if(!pos) return
- document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))
- if(pos.el && pos.el.classList.contains('letter')) pos.el.classList.add('active')
- planchette.style.left=pos.x+'px'
- planchette.style.top=pos.y+'px'
- await new Promise(r=>setTimeout(r,700))
-}
-function hablar(txt){
- if(!('speechSynthesis' in window)) return
- speechSynthesis.cancel()
- let u=new SpeechSynthesisUtterance(txt)
- u.lang='es-ES' // ES-ES anda en todos, ES-AR no
- u.volume=1
- let g=['HOMBRE','MUJER','NIÑO'][Math.floor(Math.random()*3)]
- if(g==='HOMBRE'){u.pitch=0.4;u.rate=0.75}
- else if(g==='MUJER'){u.pitch=1.2;u.rate=0.85}
- else{u.pitch=1.6;u.rate=0.95}
- speechSynthesis.speak(u)
- return g
-}
-async function deletrear(palabra){
- palabra=palabra.toUpperCase()
- statusEl.textContent='DELETREANDO: '+palabra
- for(let c of palabra){
-  await moveTo(c)
-  hablar(c)
-  await new Promise(r=>setTimeout(r,450))
- }
- let gen=hablar(palabra)
- mostrar('"'+palabra+'" - '+gen)
- statusEl.textContent='LISTO - TOCA OTRA VEZ'
-}
-
-let modo=0, rec=null
-function initRec(){
- let SR=window.SpeechRecognition||window.webkitSpeechRecognition
- if(!SR) return null
- let r=new SR()
- r.lang='es-ES'
- r.continuous=false
- r.interimResults=false
- r.onresult=async(ev)=>{
-  let pregunta=ev.results[0][0].transcript.trim()
-  mostrar('Preguntaste: '+pregunta)
-  let resp
-  let low=pregunta.toLowerCase()
-  if(low.includes('nombre')||low.includes('quien')||low.includes('llamas')) resp=NOMBRES[Math.floor(Math.random()*NOMBRES.length)]
-  else if(low.includes('estas')||low.includes('aqui')) resp=Math.random()>0.5?'SI':'NO'
-  else resp=RESP[Math.floor(Math.random()*RESP.length)]
-  await deletrear(resp)
- }
- r.onerror=()=>{statusEl.textContent='ERROR MICRO - HAGO DEMO'; setTimeout(()=>deletrear(NOMBRES[0]),500)}
- r.onend=()=>{modo=0;document.getElementById('evpBtn').textContent='🔮 TOCA PARA INVOCAR';document.getElementById('evpBtn').classList.add('off');statusEl.textContent='LISTO'}
- return r
-}
-
-document.getElementById('evpBtn').addEventListener('click',async()=>{
- cachePos()
- if(modo===0){
-  modo=1
-  document.getElementById('evpBtn').textContent='🎙️ ESCUCHANDO... HABLA AHORA'
-  document.getElementById('evpBtn').classList.remove('off')
-  statusEl.textContent='ESCUCHANDO...'
-  mostrar('Di: ¿Cómo te llamas? ¿Estás aquí?')
-  if(!rec) rec=initRec()
-  if(rec){
-   try{rec.start()}catch(e){
-    // Si falla micro, hace demo igual para que veas que anda
-    statusEl.textContent='MODO DEMO - SIN MICRO'
-    setTimeout(()=>deletrear('ANA'),800)
-   }
-  }else{
-   statusEl.textContent='MODO DEMO'
-   setTimeout(()=>deletrear('HOLA'),800)
-  }
- }else{
-  modo=0
-  if(rec) try{rec.stop()}catch{}
-  document.getElementById('evpBtn').textContent='🔮 TOCA PARA INVOCAR'
-  document.getElementById('evpBtn').classList.add('off')
-  statusEl.textContent='LISTO'
- }
-})
-
-document.getElementById('clearBtn').addEventListener('click',()=>{
- planchette.style.left='50%';planchette.style.top='50%'
- document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))
-})
-
-setTimeout(cachePos,600)
-window.addEventListener('resize',cachePos)
-if('speechSynthesis' in window){speechSynthesis.getVoices()}
+async function moveTo(txt){let pos=allPos[txt];if(!pos)return;document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'));if(pos.el&&pos.el.classList.contains('letter'))pos.el.classList.add('active');planchette.style.left=pos.x+'px';planchette.style.top=pos.y+'px';await new Promise(r=>setTimeout(r,650))}
+function hablar(txt){if(!('speechSynthesis' in window))return;speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(txt);u.lang='es-ES';u.pitch=0.4+Math.random();u.rate=0.8;speechSynthesis.speak(u)}
+async function deletrear(p){p=p.toUpperCase();statusEl.textContent='DELETREANDO: '+p;for(let c of p){await moveTo(c);hablar(c);await new Promise(r=>setTimeout(r,400))}hablar(p);mostrar('"'+p+'"');statusEl.textContent='LISTO'}
+let modo=0,rec=null
+function initRec(){let SR=window.SpeechRecognition||window.webkitSpeechRecognition;if(!SR)return null;let r=new SR();r.lang='es-ES';r.continuous=false;r.onresult=async(ev)=>{let pregunta=ev.results[0][0].transcript.trim();mostrar(pregunta);let low=pregunta.toLowerCase();let resp=low.includes('nombre')?NOMBRES[Math.floor(Math.random()*NOMBRES.length)]:RESP[Math.floor(Math.random()*RESP.length)];await deletrear(resp)};r.onend=()=>{modo=0;document.getElementById('evpBtn').textContent='🔮 TOCA PARA INVOCAR';document.getElementById('evpBtn').classList.add('off');statusEl.textContent='LISTO'};return r}
+document.getElementById('evpBtn').addEventListener('click',async()=>{cachePos();if(modo===0){modo=1;document.getElementById('evpBtn').textContent='🎙️ ESCUCHANDO... HABLA';document.getElementById('evpBtn').classList.remove('off');statusEl.textContent='ESCUCHANDO...';mostrar('Di: ¿Cómo te llamas?');if(!rec)rec=initRec();if(rec){try{rec.start()}catch(e){setTimeout(()=>deletrear('ANA'),600)}}else{setTimeout(()=>deletrear('HOLA'),600)}}else{modo=0;if(rec)try{rec.stop()}catch{};document.getElementById('evpBtn').textContent='🔮 TOCA PARA INVOCAR';document.getElementById('evpBtn').classList.add('off');statusEl.textContent='LISTO'}})
+document.getElementById('clearBtn').addEventListener('click',()=>{planchette.style.left='50%';planchette.style.top='50%';document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))})
+setTimeout(cachePos,500)
 </script>
 </body>
 </html>
