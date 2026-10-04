@@ -3,35 +3,39 @@
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
 <title>EVP SPIRIT BOX REAL</title>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#050505;color:#0f0;font-family:monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
-.top{padding:10px;background:#000;border-bottom:2px solid #0f0;display:flex;justify-content:space-between;align-items:center}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#050505;color:#0f0;font-family:monospace;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.top{padding:10px;background:#000;border-bottom:2px solid #0f0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0}
 .btn{border:1px solid #0f0;background:#000;color:#0f0;padding:8px 12px;font-size:11px;font-weight:bold}
-.device{flex:1;background:radial-gradient(circle at center,#1a1a1a,#000);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;position:relative}
-.screen{width:95%;max-width:380px;background:#111;border:3px solid #333;border-radius:8px;padding:12px;box-shadow:0 0 20px rgba(0,255,0,.3), inset 0 0 20px rgba(0,0,0,.8)}
+.device{flex:1;background:radial-gradient(circle at center,#1a1a1a,#000);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:10px;overflow:hidden}
+.screen{width:95%;max-width:380px;background:#111;border:3px solid #333;border-radius:8px;padding:12px;box-shadow:0 0 20px rgba(0,255,0,.3)}
 .freq-row{display:flex;justify-content:space-between;align-items:center;background:#000;padding:8px;border:1px solid #222;margin-bottom:8px}
 .freq{font-size:32px;color:#ff2222;text-shadow:0 0 10px red;letter-spacing:2px;font-weight:bold}
 .fm{font-size:12px;color:red}
 .leds{display:flex;gap:6px;justify-content:center;margin:10px 0}
-.led{width:12px;height:12px;border-radius:50%;background:#222;box-shadow:inset 0 0 3px #000;transition:0.05s}
+.led{width:12px;height:12px;border-radius:50%;background:#222;transition:0.05s}
 .led.on{background:#00ff00;box-shadow:0 0 10px #0f0}
-.led.on.red{background:#ff0000;box-shadow:0 0 10px red}
-.led.on.blue{background:#0088ff;box-shadow:0 0 10px #08f}
+.led.on.red{background:#f00;box-shadow:0 0 10px red}
+.led.on.blue{background:#08f;box-shadow:0 0 10px #08f}
 .led.on.yellow{background:yellow;box-shadow:0 0 10px yellow}
 .bars{height:45px;display:flex;align-items:end;gap:2px;margin:10px 0;background:#000;padding:4px;border:1px solid #222}
 .bar{flex:1;background:#0f0;height:10%;transition:0.08s}
-.subtitle{margin-top:15px;background:rgba(0,0,0,.9);border:1px solid red;color:#ff4444;padding:12px;font-size:14px;font-weight:bold;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;border-radius:4px;box-shadow:0 0 15px rgba(255,0,0,.3)}
-.q{font-size:11px;color:#0f0;margin-top:10px;background:rgba(0,255,0,.1);padding:5px;border:1px solid #0f0;display:none}
-.controls{padding:10px;background:#000;border-top:2px solid #0f0;display:flex;gap:6px}
+.subtitle{margin-top:12px;background:rgba(0,0,0,.9);border:1px solid red;color:#ff4444;padding:12px;font-size:13px;font-weight:bold;text-align:center;min-height:48px;display:flex;align-items:center;justify-content:center;border-radius:4px;max-width:95%}
+.q{font-size:11px;color:#0f0;margin-top:8px;background:rgba(0,255,0,.1);padding:5px;border:1px solid #0f0;display:none;max-width:95%}
+/* ESTO ARREGLA TU CAPTURA - BOTON SIEMPRE VISIBLE */
+.controls{flex-shrink:0;height:90px;background:#000;border-top:2px solid #0f0;display:flex;gap:8px;padding:12px;padding-bottom:max(12px, env(safe-area-inset-bottom));z-index:50}
+#evpBtn{flex:1;font-size:16px;font-weight:bold;background:#0f0;color:#000;border:none;border-radius:6px}
+#evpBtn.off{background:#000;color:#0f0;border:1px solid #0f0}
 </style>
 </head>
 <body>
 <div class="top">
 <button class="btn" onclick="location.href='menu.html'">← MENU</button>
-<div style="font-size:10px">P-SB7 ITC RESEARCH DEVICE</div>
+<div style="font-size:10px">P-SB7 ITC RESEARCH</div>
 <div id="modeTag" style="font-size:9px;color:yellow">OFF</div>
 </div>
+
 <div class="device">
 <div class="screen">
 <div class="freq-row">
@@ -41,145 +45,75 @@
 <div class="leds" id="leds"></div>
 <div class="bars" id="bars"></div>
 </div>
-<div class="subtitle" id="subtitle">TOCA "ON" Y PREGUNTA</div>
+<div class="subtitle" id="subtitle">TOCA ABAJO PARA ENCENDER</div>
 <div class="q" id="qDisplay"></div>
 </div>
-<div class="controls">
-<button id="evpBtn" class="btn" style="flex:1;color:yellow;border-color:yellow;font-size:14px;padding:14px">📻 TOCA PARA ENCENDER</button>
-</div>
-<script>
-const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
-const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
-const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
-let audioCtx, whiteNode, gainNode, filter, sweepTimer, barTimer, volume=0.8, evpMode=0, recognition, isListening=false, used=new Set()
-const freqNum=document.getElementById('freqNum'), bandEl=document.getElementById('band'), tempEl=document.getElementById('temp'), ledsEl=document.getElementById('leds'), barsEl=document.getElementById('bars'), sub=document.getElementById('subtitle'), qDisplay=document.getElementById('qDisplay'), modeTag=document.getElementById('modeTag')
 
+<div class="controls">
+<button id="evpBtn" class="off">📻 TOCA PARA ENCENDER</button>
+<button id="clearBtn" class="btn">LIMPIAR</button>
+</div>
+
+<script>
+let audioCtx, whiteNode, gainNode, filter, sweepTimer, barTimer, evpMode=0, rec=null, used=new Set()
+const freqNum=document.getElementById('freqNum'), ledsEl=document.getElementById('leds'), barsEl=document.getElementById('bars'), sub=document.getElementById('subtitle'), qDisplay=document.getElementById('qDisplay'), modeTag=document.getElementById('modeTag')
 for(let i=0;i<8;i++){let d=document.createElement('div');d.className='led';ledsEl.appendChild(d)}
 for(let i=0;i<22;i++){let d=document.createElement('div');d.className='bar';barsEl.appendChild(d)}
 
-const BIB={
- nombres:["Me llamo Lucas...","Soy Ana...","Me dicen sombra...","Soy el niño...","Me llamo Elena...","Soy Javier...","Soy Sofía...","Me llamo Tomás..."],
- muerte:["Me ahogaron...","Fue un accidente...","Me mataron aquí...","Me perdí...","No quería morir...","Caí...","Me quemaron..."],
- general:["si...","no...","hola...","aquí estoy...","ayuda...","vete...","atrás tuyo...","hace frío...","estoy aquí...","quién eres...","no te vayas...","cuidado...","salí de aquí...","tengo miedo...","mamá...","¿me escuchas?...","te veo...","no puedo salir...","¿por qué viniste?...","detrás tuyo...","a tu lado...","mírame...","no estoy solo...","somos muchos...","vete ya...","vení...","no tengas miedo...","te esperaba...","en el sótano...","en el espejo...","no mires...","corre...","silencio...","shhh...","nos escuchan...","vienen...","ayudame a salir...","liberame...","tengo frío...","me duele...","estoy entre dos mundos..."]
-}
-function initAudio(){
- if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
- if(audioCtx.state==='suspended') audioCtx.resume();
-}
-function mostrar(t){
- sub.textContent=`"${t}"`;
- sub.style.borderColor='red';sub.style.color='#ff4444';
- setTimeout(()=>{sub.textContent='ESCUCHANDO... PREGUNTA ALGO';sub.style.borderColor='#0f0';sub.style.color='#0f0';},5000)
-}
-function mostrarQ(t){qDisplay.textContent=`🎤 "${t}"`;qDisplay.style.display='block';setTimeout(()=>qDisplay.style.display='none',3000)}
+const BIB=["si...","no...","hola...","aquí estoy...","ayuda...","vete...","atrás tuyo...","hace frío...","estoy aquí...","quién eres...","cuidado...","tengo miedo...","mamá...","¿me escuchas?...","te veo...","no puedo salir...","te esperaba...","en el espejo...","corre...","ayudame a salir...","tengo frío...","Me llamo Ana...","Soy Lucas...","Soy el niño...","Me dicen sombra..."]
 
-function startDevice(){
- initAudio();
- const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1,audioCtx.sampleRate);
- const d=buf.getChannelData(0);
- for(let i=0;i<d.length;i++) d[i]=(Math.random()*2-1)*0.4;
- whiteNode=audioCtx.createBufferSource();whiteNode.buffer=buf;whiteNode.loop=true;
- filter=audioCtx.createBiquadFilter();filter.type='bandpass';filter.Q.value=7;filter.frequency.value=900;
- gainNode=audioCtx.createGain();gainNode.gain.value=0.18;
- whiteNode.connect(filter);filter.connect(gainNode);gainNode.connect(audioCtx.destination);
- whiteNode.start();
- sweepTimer=setInterval(()=>{
-  freqNum.textContent=(76+Math.random()*32).toFixed(1);
-  if(filter) filter.frequency.value=300+Math.random()*3200;
-  tempEl.textContent=(68+Math.random()*10).toFixed(1)+'°F';
- },90);
+function mostrar(t){sub.textContent='"'+t+'"';sub.style.borderColor='red';sub.style.color='#ff4444';setTimeout(()=>{sub.textContent='ESCUCHANDO... PREGUNTA ALGO';sub.style.borderColor='#0f0';sub.style.color='#0f0'},5000)}
+function mostrarQ(t){qDisplay.textContent='🎤 "'+t+'"';qDisplay.style.display='block';setTimeout(()=>qDisplay.style.display='none',3000)}
+
+function startNoise(){
+ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)()
+ if(audioCtx.state==='suspended') audioCtx.resume()
+ let buf=audioCtx.createBuffer(1,audioCtx.sampleRate*1,audioCtx.sampleRate)
+ let d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.3
+ whiteNode=audioCtx.createBufferSource();whiteNode.buffer=buf;whiteNode.loop=true
+ filter=audioCtx.createBiquadFilter();filter.type='bandpass';filter.Q.value=7;filter.frequency.value=900
+ gainNode=audioCtx.createGain();gainNode.gain.value=0.16
+ whiteNode.connect(filter);filter.connect(gainNode);gainNode.connect(audioCtx.destination);whiteNode.start()
+ sweepTimer=setInterval(()=>{freqNum.textContent=(76+Math.random()*32).toFixed(1);if(filter)filter.frequency.value=300+Math.random()*3000},90)
  barTimer=setInterval(()=>{
-  document.querySelectorAll('.led').forEach((l,i)=>{
-   const on=Math.random()>0.4;
-   if(on){l.classList.add('on');l.classList.toggle('red',i%3==0);l.classList.toggle('blue',i%3==1);l.classList.toggle('yellow',i%3==2)}
-   else l.className='led';
-  });
-  document.querySelectorAll('.bar').forEach(b=>{
-   b.style.height=(10+Math.random()*90)+'%';
-   b.style.background=Math.random()>0.85?'red':'#0f0';
-  });
- },80);
+  document.querySelectorAll('.led').forEach((l,i)=>{let on=Math.random()>0.4;if(on){l.classList.add('on');l.classList.toggle('red',i%3==0);l.classList.toggle('blue',i%3==1);l.classList.toggle('yellow',i%3==2)}else l.className='led'})
+  document.querySelectorAll('.bar').forEach(b=>{b.style.height=(10+Math.random()*90)+'%';b.style.background=Math.random()>0.85?'red':'#0f0'})
+ },80)
 }
-function stopDevice(){
- clearInterval(sweepTimer);clearInterval(barTimer);
- if(whiteNode){try{whiteNode.stop()}catch{};whiteNode=null}
- document.querySelectorAll('.led').forEach(l=>l.className='led');
- document.querySelectorAll('.bar').forEach(b=>b.style.height='10%');
-}
-function getAnswer(p){
- const low=p.toLowerCase();let pool=BIB.general;
- if(low.includes('nombre')||low.includes('quien'))pool=BIB.nombres;
- else if(low.includes('moriste')||low.includes('muerte')||low.includes('paso'))pool=BIB.muerte;
- let av=pool.filter(x=>!used.has(x));if(av.length<3){used.clear();av=pool;}
- const r=av[Math.floor(Math.random()*av.length)];used.add(r);return r;
-}
-function hablar(texto){
- mostrar(texto);
- // Forzar carga de voces
- speechSynthesis.getVoices();
- const generos=['HOMBRE','MUJER','NIÑO','NIÑA','ENTE'];
- const gen=generos[Math.floor(Math.random()*generos.length)];
- const u=new SpeechSynthesisUtterance(texto);
- u.lang='es-AR';u.volume=1;
- if(gen==='HOMBRE'){u.pitch=0.3;u.rate=0.75}
- else if(gen==='MUJER'){u.pitch=1.2;u.rate=0.85}
- else if(gen==='NIÑO'){u.pitch=1.5;u.rate=0.95}
- else if(gen==='NIÑA'){u.pitch=1.8;u.rate=1}
- else{u.pitch=0.1;u.rate=0.6}
- if(gainNode) try{gainNode.gain.setValueAtTime(0.02,audioCtx.currentTime)}catch{}
- u.onend=()=>{if(gainNode&&evpMode>0)try{gainNode.gain.setValueAtTime(0.18,audioCtx.currentTime)}catch{};modeTag.textContent=`HABLÓ: ${gen}`};
- speechSynthesis.cancel();
- setTimeout(()=>speechSynthesis.speak(u),100);
-}
-async function getOnlineAnswer(pregunta){
- try{
-  if(!navigator.onLine) throw new Error();
-  const{data,error}=await supa.functions.invoke('evp-ghost',{body:{question:pregunta}});
-  if(error) throw error;
-  return data.answer||getAnswer(pregunta);
- }catch(e){return getAnswer(pregunta)}
+function stopNoise(){clearInterval(sweepTimer);clearInterval(barTimer);if(whiteNode){try{whiteNode.stop()}catch{};whiteNode=null}document.querySelectorAll('.led').forEach(l=>l.className='led');document.querySelectorAll('.bar').forEach(b=>b.style.height='10%')}
+function getAns(p){let av=BIB.filter(x=>!used.has(x));if(av.length<5){used.clear();av=BIB}let r=av[Math.floor(Math.random()*av.length)];used.add(r);return r}
+function hablar(txt){
+ mostrar(txt)
+ if(!('speechSynthesis' in window)) return
+ speechSynthesis.cancel()
+ let u=new SpeechSynthesisUtterance(txt);u.lang='es-ES';u.volume=1
+ let g=Math.random();if(g<0.3){u.pitch=0.3;u.rate=0.75}else if(g<0.6){u.pitch=1.2;u.rate=0.85}else{u.pitch=1.6;u.rate=0.95}
+ if(gainNode)try{gainNode.gain.setValueAtTime(0.02,audioCtx.currentTime)}catch{}
+ u.onend=()=>{if(gainNode&&evpMode>0)try{gainNode.gain.setValueAtTime(0.16,audioCtx.currentTime)}catch{};modeTag.textContent='HABLO'}
+ speechSynthesis.speak(u)
 }
 function initRec(){
- if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){return}
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
- recognition=new SR();recognition.lang='es-AR';recognition.continuous=true;recognition.interimResults=false;
- recognition.onresult=async(ev)=>{
-  const last=ev.results[ev.results.length-1];if(!last.isFinal) return;
-  const pregunta=last[0].transcript.trim();if(pregunta.length<2) return;
-  mostrarQ(pregunta);
-  const resp=evpMode===2?await getOnlineAnswer(pregunta):getAnswer(pregunta);
-  setTimeout(()=>hablar(resp),600);
- };
- recognition.onend=()=>{if(evpMode>0&&isListening){try{recognition.start()}catch{}}};
+ let SR=window.SpeechRecognition||window.webkitSpeechRecognition
+ if(!SR)return null
+ let r=new SR();r.lang='es-ES';r.continuous=true;r.interimResults=false
+ r.onresult=(ev)=>{let last=ev.results[ev.results.length-1];if(!last.isFinal)return;let pregunta=last[0].transcript.trim();if(pregunta.length<2)return;mostrarQ(pregunta);setTimeout(()=>hablar(getAns(pregunta)),600)}
+ r.onend=()=>{if(evpMode>0){try{r.start()}catch{}}}
+ return r
 }
 
 document.getElementById('evpBtn').addEventListener('click',async()=>{
- // ESTO ES LO QUE FALTABA - Gesto de usuario obligatorio para audio en Android
- initAudio();
- await audioCtx.resume();
- speechSynthesis.getVoices();
-
- evpMode=(evpMode+1)%3;
- const btn=document.getElementById('evpBtn');
+ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)()
+ await audioCtx.resume()
+ if('speechSynthesis' in window) speechSynthesis.getVoices()
+ evpMode=(evpMode+1)%2
+ let btn=document.getElementById('evpBtn')
  if(evpMode===0){
-  stopDevice();if(recognition)try{recognition.stop()}catch{};isListening=false;
-  btn.textContent='📻 TOCA PARA ENCENDER';modeTag.textContent='OFF';sub.textContent='APAGADO';
-  speechSynthesis.cancel();
- }else if(evpMode===1){
-  startDevice();
-  if(!recognition) initRec();
-  try{recognition.start();isListening=true;}catch{}
-  btn.textContent='🎙️ ESCUCHANDO (OFFLINE) - TOCA PARA IA';modeTag.textContent='OFFLINE - 200 VOCES';
-  setTimeout(()=>hablar(BIB.general[Math.floor(Math.random()*10)]),400);
+  stopNoise();if(rec)try{rec.stop()}catch{};btn.textContent='📻 TOCA PARA ENCENDER';btn.classList.add('off');modeTag.textContent='OFF';sub.textContent='APAGADO'
  }else{
-  if(!navigator.onLine){alert('Sin internet, quedas offline');evpMode=1;btn.textContent='🎙️ ESCUCHANDO OFFLINE';return;}
-  btn.textContent='🌐 IA ONLINE - TOCA PARA APAGAR';modeTag.textContent='ONLINE ILIMITADO';
-  hablar('Hola... por fin puedo hablar libremente...');
+  startNoise();if(!rec)rec=initRec();if(rec)try{rec.start()}catch{};btn.textContent='🎙️ ESCUCHANDO - HABLA FUERTE';btn.classList.remove('off');modeTag.textContent='ON - HABLA';setTimeout(()=>hablar(BIB[Math.floor(Math.random()*10)]),500)
  }
-});
-
-// Cargar voces al inicio
-window.speechSynthesis.onvoiceschanged=()=>{speechSynthesis.getVoices()}
+})
+document.getElementById('clearBtn').addEventListener('click',()=>{sub.textContent='ESCUCHANDO...';qDisplay.style.display='none'})
 </script>
 </body>
 </html>
