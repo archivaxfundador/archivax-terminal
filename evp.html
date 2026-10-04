@@ -1,102 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVAX - EVP EXTREMO</title>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0,user-scalable=no">
+<title>EVP SPIRIT BOX REAL</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body{margin:0;background:black;color:#ff0000;font-family:monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}
-.box{width:90%;max-width:380px;border:1px solid #ff0000;border-radius:16px;padding:20px;text-align:center;box-shadow:0 0 20px rgba(255,0,0,0.3)}
-#wave{width:100%;height:100px;background:#0a0a0a;border:1px solid #330000;border-radius:10px;margin:15px 0}
-.btn{padding:14px 20px;border-radius:50px;border:1px solid #ff0000;background:black;color:#ff0000;font-weight:bold;margin:5px;cursor:pointer}
-.btn-rec{background:#ff0000;color:black}
-#transcript{min-height:60px;background:rgba(255,0,0,0.1);border-radius:10px;padding:10px;font-size:13px;margin-top:15px;color:white}
+*{margin:0;padding:0;box-sizing:border-box}body{background:#050505;color:#0f0;font-family:monospace;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+.top{padding:10px;background:#000;border-bottom:2px solid #0f0;display:flex;justify-content:space-between;align-items:center}
+.btn{border:1px solid #0f0;background:#000;color:#0f0;padding:8px 12px;font-size:11px;font-weight:bold}
+.device{flex:1;background:radial-gradient(circle at center,#1a1a1a,#000);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:15px;position:relative}
+.screen{width:95%;max-width:380px;background:#111;border:3px solid #333;border-radius:8px;padding:12px;box-shadow:0 0 20px rgba(0,255,0,.3), inset 0 0 20px rgba(0,0,0,.8)}
+.freq-row{display:flex;justify-content:space-between;align-items:center;background:#000;padding:8px;border:1px solid #222;margin-bottom:8px}
+.freq{font-size:32px;color:#ff2222;text-shadow:0 0 10px red;letter-spacing:2px;font-weight:bold}
+.fm{font-size:12px;color:red}
+.leds{display:flex;gap:6px;justify-content:center;margin:10px 0}
+.led{width:12px;height:12px;border-radius:50%;background:#222;box-shadow:inset 0 0 3px #000;transition:0.05s}
+.led.on{background:#00ff00;box-shadow:0 0 10px #0f0}
+.led.on.red{background:#ff0000;box-shadow:0 0 10px red}
+.led.on.blue{background:#0088ff;box-shadow:0 0 10px #08f}
+.led.on.yellow{background:yellow;box-shadow:0 0 10px yellow}
+.bars{height:45px;display:flex;align-items:end;gap:2px;margin:10px 0;background:#000;padding:4px;border:1px solid #222}
+.bar{flex:1;background:#0f0;height:10%;transition:0.08s}
+.subtitle{margin-top:15px;background:rgba(0,0,0,.9);border:1px solid red;color:#ff4444;padding:12px;font-size:14px;font-weight:bold;text-align:center;min-height:50px;display:flex;align-items:center;justify-content:center;border-radius:4px;box-shadow:0 0 15px rgba(255,0,0,.3)}
+.q{font-size:11px;color:#0f0;margin-top:10px;background:rgba(0,255,0,.1);padding:5px;border:1px solid #0f0;display:none}
+.controls{padding:10px;background:#000;border-top:2px solid #0f0;display:flex;gap:6px}
+.controls.btn{flex:1;padding:14px 5px}
+input[type=range]{flex:1;accent-color:#0f0}
 </style>
 </head>
 <body>
-<div class="box">
-  <h2 style="margin:0">ARCHIVAX EVP</h2>
-  <p style="font-size:10px;color:#666">MODO EXTREMO - SIN ECO - SIN LIGHT</p>
-  <canvas id="wave"></canvas>
-  <div id="transcript">🎙️ Esperando... Silencio total</div>
-  <div style="margin-top:15px">
-    <button class="btn" onclick="location.href='/'">← SALIR</button>
-    <button class="btn btn-rec" id="btnRec" onclick="toggleRec()">● REC</button>
-    <button class="btn" onclick="toggleGanancia()">⚡ X5</button>
-  </div>
-  <p style="font-size:9px;color:#333;margin-top:15px">archiviax.com.ar - Todo se guarda en tu celular</p>
+<div class="top">
+<button class="btn" onclick="location.href='menu.html'">← MENU</button>
+<div style="font-size:10px">P-SB7 ITC RESEARCH DEVICE</div>
+<div id="modeTag" style="font-size:9px;color:yellow">OFF</div>
+</div>
+
+<div class="device">
+<div class="screen">
+<div class="freq-row">
+<div><div style="font-size:9px;color:#888">FREQUENCY</div><div id="freqNum" class="freq">87.5</div></div>
+<div style="text-align:right"><div id="band" class="fm">FM 100ms</div><div style="font-size:9px;color:#888" id="temp">73.4°F</div></div>
+</div>
+<div class="leds" id="leds"></div>
+<div class="bars" id="bars"></div>
+<div style="display:flex;gap:4px;margin-top:8px">
+<button class="btn" style="flex:1;font-size:9px">SWEEP RATE</button>
+<button class="btn" style="flex:1;font-size:9px">VOL+</button>
+<button class="btn" style="flex:1;font-size:9px">AM/FM</button>
+</div>
+</div>
+
+<div class="subtitle" id="subtitle">TOCA "ON" Y PREGUNTA</div>
+<div class="q" id="qDisplay"></div>
+</div>
+
+<div class="controls">
+<button id="evpBtn" class="btn" style="color:yellow;border-color:yellow">📻 OFF</button>
+<button id="volBtn" class="btn" onclick="volume=volume>0.6?0.3:0.8;document.getElementById('volLab').textContent=Math.round(volume*100)+'%'">VOL <span id="volLab">80%</span></button>
 </div>
 
 <script>
-let audioContext, analyser, gainNode, recorder, chunks=[];
-let grabando = false;
-let ganancia = 5.5;
+const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
+const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
+const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
 
-async function iniciarEVP(){
-  const stream = await navigator.mediaDevices.getUserMedia({
-    audio: { echoCancellation:false, noiseSuppression:false, autoGainControl:false, sampleRate:48000, channelCount:1 }
+let audioCtx, whiteNode, gainNode, filter, sweepTimer, barTimer, volume=0.8, evpMode=0, recognition, isListening=false, used=new Set()
+const freqNum=document.getElementById('freqNum'), bandEl=document.getElementById('band'), tempEl=document.getElementById('temp'), ledsEl=document.getElementById('leds'), barsEl=document.getElementById('bars'), sub=document.getElementById('subtitle'), qDisplay=document.getElementById('qDisplay'), modeTag=document.getElementById('modeTag')
+
+// Crear LEDs y barras
+for(let i=0;i<8;i++){let d=document.createElement('div');d.className='led';ledsEl.appendChild(d)}
+for(let i=0;i<22;i++){let d=document.createElement('div');d.className='bar';barsEl.appendChild(d)}
+
+const BIB={
+ nombres:["Me llamo Lucas...","Soy Ana...","Me dicen sombra...","Soy el niño...","Me llamo Elena...","Soy Javier...","Soy Sofía...","Me llamo Tomás..."],
+ muerte:["Me ahogaron...","Fue un accidente...","Me mataron aquí...","Me perdí...","No quería morir...","Caí...","Me quemaron..."],
+ general:["si...","no...","hola...","aquí estoy...","ayuda...","vete...","atrás tuyo...","hace frío...","estoy aquí...","quién eres...","no te vayas...","cuidado...","salí de aquí...","tengo miedo...","mamá...","¿me escuchas?...","te veo...","no puedo salir...","¿por qué viniste?...","detrás tuyo...","a tu lado...","mírame...","no estoy solo...","somos muchos...","vete ya...","vení...","no tengas miedo...","te esperaba...","en el sótano...","en el espejo...","no mires...","corre...","silencio...","shhh...","nos escuchan...","vienen...","ayudame a salir...","liberame...","tengo frío...","me duele...","estoy entre dos mundos..."]
+}
+
+function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
+function mostrar(t){sub.textContent=`"${t}"`;sub.style.borderColor='red';sub.style.color='#ff4444';sub.style.boxShadow='0 0 15px red';setTimeout(()=>{sub.textContent='ESCUCHANDO...';sub.style.borderColor='#0f0';sub.style.color='#0f0';sub.style.boxShadow='0 0 10px #0f0';},5000)}
+function mostrarQ(t){qDisplay.textContent=`🎤 "${t}"`;qDisplay.style.display='block';setTimeout(()=>qDisplay.style.display='none',3000)}
+
+function startDevice(){
+ initAudio();if(audioCtx.state==='suspended')audioCtx.resume();
+ const buf=audioCtx.createBuffer(1,audioCtx.sampleRate*2,audioCtx.sampleRate);const d=buf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*0.4;
+ whiteNode=audioCtx.createBufferSource();whiteNode.buffer=buf;whiteNode.loop=true;
+ filter=audioCtx.createBiquadFilter();filter.type='bandpass';filter.Q.value=7;filter.frequency.value=900;
+ gainNode=audioCtx.createGain();gainNode.gain.value=volume*0.18;
+ whiteNode.connect(filter);filter.connect(gainNode);gainNode.connect(audioCtx.destination);whiteNode.start();
+ // Frecuencia falsa que barre como equipo real
+ sweepTimer=setInterval(()=>{
+  const f=(76+Math.random()*32).toFixed(1);
+  freqNum.textContent=f;
+  filter.frequency.value=300+Math.random()*3200;
+  tempEl.textContent=(68+Math.random()*10).toFixed(1)+'°F';
+  bandEl.textContent=Math.random()>0.5?'FM 100ms':'FM 200ms';
+ },90);
+ // Luces y barras falsas
+ barTimer=setInterval(()=>{
+  document.querySelectorAll('.led').forEach((l,i)=>{
+   l.className='led '+(Math.random()>0.6?'on '+(i%3==0?'red':i%3==1?'blue':'yellow'):'');
   });
+  document.querySelectorAll('.bar').forEach(b=>{
+   b.style.height=(10+Math.random()*90)+'%';
+   b.style.background=Math.random()>0.8?'red':'#0f0';
+  });
+ },80);
+}
+function stopDevice(){clearInterval(sweepTimer);clearInterval(barTimer);if(whiteNode)try{whiteNode.stop()}catch{};document.querySelectorAll('.led').forEach(l=>l.className='led');document.querySelectorAll('.bar').forEach(b=>b.style.height='10%');}
 
-  audioContext = new AudioContext({sampleRate:48000});
-  const src = audioContext.createMediaStreamSource(stream);
-
-  const highpass = audioContext.createBiquadFilter(); highpass.type="highpass"; highpass.frequency.value=120;
-  const bandpass = audioContext.createBiquadFilter(); bandpass.type="bandpass"; bandpass.frequency.value=1100; bandpass.Q.value=0.8;
-  const compressor = audioContext.createDynamicsCompressor(); compressor.threshold.value=-48; compressor.ratio.value=20; compressor.attack.value=0; compressor.release.value=0.25;
-
-  gainNode = audioContext.createGain(); gainNode.gain.value=ganancia;
-  analyser = audioContext.createAnalyser(); analyser.fftSize=2048;
-
-  src.connect(highpass); highpass.connect(bandpass); bandpass.connect(compressor); compressor.connect(gainNode); gainNode.connect(analyser);
-
-  // Visual
-  const canvas = document.getElementById('wave'); const ctx = canvas.getContext('2d');
-  canvas.width=340; canvas.height=100;
-  function draw(){
-    requestAnimationFrame(draw);
-    const data = new Uint8Array(analyser.frequencyBinCount); analyser.getByteTimeDomainData(data);
-    ctx.fillStyle="#0a0a0a"; ctx.fillRect(0,0,canvas.width,canvas.height);
-    ctx.strokeStyle="#ff0000"; ctx.lineWidth=2; ctx.beginPath();
-    let x=0; for(let i=0;i<data.length;i++){ let y=data[i]/128*canvas.height/2; if(i==0)ctx.moveTo(x,y); else ctx.lineTo(x,y); x+=canvas.width/data.length; } ctx.stroke();
-  } draw();
-
-  // Transcripcion EVP
-  const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if(Speech){
-    const rec = new Speech(); rec.lang="es-AR"; rec.continuous=true; rec.interimResults=true;
-    rec.onresult = e => {
-      let t = e.results[e.results.length-1][0].transcript;
-      let conf = e.results[e.results.length-1][0].confidence;
-      if(conf > 0.55){
-        document.getElementById('transcript').innerHTML = `👻 <b>VOZ DETECTADA:</b> "${t.toUpperCase()}" <br><span style="font-size:9px;color:#ff0000">Conf: ${(conf*100).toFixed(0)}%</span>`;
-        // Guarda log
-        let logs = JSON.parse(localStorage.getItem('archiviax-evp')||"[]");
-        logs.push({texto:t, fecha:Date.now()}); localStorage.setItem('archiviax-evp', JSON.stringify(logs));
-      }
-    };
-    rec.start();
+function getAnswer(p){
+ const low=p.toLowerCase();let pool=BIB.general;
+ if(low.includes('nombre')||low.includes('quien'))pool=BIB.nombres;
+ else if(low.includes('moriste')||low.includes('muerte')||low.includes('paso'))pool=BIB.muerte;
+ let av=pool.filter(x=>!used.has(x));if(av.length<3){used.clear();av=pool;}
+ const r=av[Math.floor(Math.random()*av.length)];used.add(r);return r;
+}
+function hablar(texto){
+ mostrar(texto);
+ const generos=['HOMBRE','MUJER','NIÑO','NIÑA','ENTE'];const gen=generos[Math.floor(Math.random()*generos.length)];
+ const u=new SpeechSynthesisUtterance(texto);u.lang='es-AR';
+ if(gen==='HOMBRE'){u.pitch=0.2;u.rate=0.7}else if(gen==='MUJER'){u.pitch=1.3;u.rate=0.82}else if(gen==='NIÑO'){u.pitch=1.6;u.rate=0.95}else if(gen==='NIÑA'){u.pitch=1.9;u.rate=1.0}else{u.pitch=0.05;u.rate=0.55}
+ if(gainNode)gainNode.gain.linearRampToValueAtTime(volume*0.02,audioCtx.currentTime+0.05);
+ u.onend=()=>{if(gainNode&&evpMode>0)gainNode.gain.linearRampToValueAtTime(volume*0.18,audioCtx.currentTime+0.3);modeTag.textContent=`HABLÓ: ${gen}`;};
+ speechSynthesis.speak(u);
+}
+async function getOnlineAnswer(pregunta){
+ try{
+  if(!navigator.onLine)throw new Error();
+  const{data,error}=await supa.functions.invoke('evp-ghost',{body:{question:pregunta}});
+  if(error)throw error;return data.answer||getAnswer(pregunta);
+ }catch(e){return `${getAnswer(pregunta)}... te escuché preguntar...`;}
+}
+function initRec(){
+ if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window))return;
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new SR();recognition.lang='es-AR';recognition.continuous=true;recognition.interimResults=false;
+ recognition.onresult=async(ev)=>{
+  const last=ev.results[ev.results.length-1];if(last.isFinal){
+   const pregunta=last[0].transcript.trim();if(pregunta.length<2)return;
+   mostrarQ(pregunta);
+   const resp=evpMode===2?await getOnlineAnswer(pregunta):getAnswer(pregunta);
+   setTimeout(()=>hablar(resp),700+Math.random()*800);
   }
-
-  recorder = new MediaRecorder(stream);
-  recorder.ondataavailable=e=>chunks.push(e.data);
-  recorder.onstop=()=>{
-    const blob = new Blob(chunks, {type:'audio/webm'});
-    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`EVP_ARCHIVAX_${Date.now()}.webm`; a.click();
-    chunks=[];
-  }
+ };
+ recognition.onerror=()=>{if(evpMode>0&&isListening)setTimeout(()=>{try{recognition.start()}catch{}},1000);};
 }
 
-function toggleRec(){
-  if(!grabando){ recorder.start(); document.getElementById('btnRec').innerHTML="■ STOP"; grabando=true; }
-  else{ recorder.stop(); document.getElementById('btnRec').innerHTML="● REC"; grabando=false; }
-}
-function toggleGanancia(){
-  ganancia = ganancia==5.5? 8 : 5.5;
-  gainNode.gain.value=ganancia;
-  alert(`Ganancia EVP: X${ganancia} EXTREMO`);
-}
-
-iniciarEVP();
+document.getElementById('evpBtn').addEventListener('click',async()=>{
+ evpMode=(evpMode+1)%3;
+ const btn=document.getElementById('evpBtn');
+ if(evpMode===0){
+  stopDevice();if(recognition)try{recognition.stop()}catch{};isListening=false;
+  btn.textContent='📻 OFF';modeTag.textContent='OFF';sub.textContent='APAGADO';
+ }else if(evpMode===1){
+  initAudio();if(audioCtx.state==='suspended')await audioCtx.resume();startDevice();
+  if(!recognition)initRec();try{recognition.start();isListening=true;}catch{}
+  btn.textContent='🎙️ ESCUCHANDO OFFLINE';modeTag.textContent='OFFLINE - 200 VOCES';hablar(BIB.general[Math.floor(Math.random()*10)]);
+ }else{
+  if(!navigator.onLine){alert('Sin internet, quedas offline');evpMode=1;return;}
+  btn.textContent='🌐 IA ONLINE';modeTag.textContent='ONLINE ILIMITADO';hablar('Hola... puedo hablar libremente ahora...');
+ }
+});
 </script>
 </body>
 </html>
