@@ -5,63 +5,53 @@
 <title>OUIJA EVP REAL - ARCHIVAX</title>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#d4a74c;font-family:serif;overflow:hidden;height:100vh;display:flex;flex-direction:column;touch-action:none}
-.top{padding:8px;background:#000;border-bottom:2px solid #d4a74c;display:flex;justify-content:space-between;align-items:center;z-index:20}
-.btn{border:1px solid #d4a74c;background:#000;color:#d4a74c;padding:8px 12px;font-size:11px;font-weight:bold;font-family:monospace}
+*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#d4a74c;font-family:serif;overflow:hidden;height:100vh;display:flex;flex-direction:column}
+.top{padding:10px;background:#000;border-bottom:2px solid #d4a74c;display:flex;justify-content:space-between;align-items:center;z-index:20}
+.btn{border:1px solid #d4a74c;background:#000;color:#d4a74c;padding:10px 14px;font-size:12px;font-weight:bold;font-family:monospace;cursor:pointer}
 .board-wrap{flex:1;position:relative;background:radial-gradient(ellipse at center,#1a1205 0%,#000 80%);display:flex;align-items:center;justify-content:center;overflow:hidden}
-.board{width:96%;max-width:420px;aspect-ratio:1.3/1;background:linear-gradient(180deg,#2b1d0a,#120b02);border:3px solid #d4a74c;border-radius:12px;position:relative;box-shadow:0 0 30px rgba(212,167,76,.4), inset 0 0 40px rgba(0,0,0,.9);padding:10px}
-.board::before{content:"";position:absolute;inset:0;background:url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100"><filter id="n"><feTurbulence baseFrequency="0.9"/></filter><rect width="100%" height="100%" filter="url(%23n)" opacity="0.03"/></svg>');pointer-events:none}
-.row{display:flex;justify-content:space-around;margin:6px 0;position:relative;z-index:2}
-.letter{width:32px;height:32px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:18px;color:#d4a74c;text-shadow:0 0 5px #d4a74c;border-radius:50%;transition:0.2s}
-.letter.active{background:#d4a74c;color:#000;box-shadow:0 0 15px #d4a74c;transform:scale(1.3)}
-.word-yes-no{display:flex;justify-content:space-between;padding:0 15px;margin-bottom:4px}
-.word{font-size:22px;font-weight:bold;letter-spacing:3px;color:#d4a74c}
-.num-row{display:flex;justify-content:center;gap:12px;margin-top:6px}
-.goodbye{text-align:center;margin-top:10px;font-size:12px;letter-spacing:6px;color:#d4a74c;border-top:1px solid #d4a74c;padding-top:6px}
-
-#planchette{position:absolute;width:70px;height:90px;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;pointer-events:none;transition:none;filter:drop-shadow(0 0 10px #d4a74c)}
-#planchette.body{width:100%;height:100%;background:radial-gradient(ellipse at center,#3d2e14,#1a1205);clip-path:polygon(50% 0%, 0% 60%, 0% 100%, 100% 100%, 100% 60%);border:2px solid #d4a74c;position:relative;display:flex;align-items:center;justify-content:center}
-#planchette.eye{width:28px;height:28px;border:2px solid #d4a74c;border-radius:50%;background:rgba(0,0,0,.8);box-shadow:inset 0 0 10px #d4a74c}
-#planchette.moving{animation:shake 0.15s infinite}
-@keyframes shake{0%{transform:translate(-50%,-50%) translateX(-1px)}50%{transform:translate(-50%,-50%) translateX(1px)}100%{transform:translate(-50%,-50%) translateX(0)}}
-
-.subtitle{position:absolute;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.92);border:1px solid red;color:#ff4444;padding:10px 16px;font-family:monospace;font-size:13px;font-weight:bold;text-align:center;min-width:200px;max-width:90%;z-index:15;border-radius:4px;display:none}
+.board{width:96%;max-width:400px;aspect-ratio:1.25/1;background:linear-gradient(180deg,#2b1d0a,#120b02);border:3px solid #d4a74c;border-radius:12px;position:relative;box-shadow:0 0 30px rgba(212,167,76,.4), inset 0 0 40px rgba(0,0,0,.9);padding:12px}
+.row{display:flex;justify-content:space-around;margin:7px 0;z-index:2;position:relative}
+.letter{width:34px;height:34px;display:flex;align-items:center;justify-content:center;font-weight:bold;font-size:19px;color:#d4a74c;text-shadow:0 0 5px #d4a74c;border-radius:50%}
+.letter.active{background:#d4a74c;color:#000;box-shadow:0 0 15px #d4a74c;transform:scale(1.35)}
+.word-row{display:flex;justify-content:space-between;padding:0 10px}
+.word{font-size:24px;font-weight:bold;letter-spacing:4px}
+.goodbye{text-align:center;margin-top:8px;font-size:12px;letter-spacing:8px;border-top:1px solid #d4a74c;padding-top:6px}
+#planchette{position:absolute;width:70px;height:88px;left:50%;top:50%;transform:translate(-50%,-50%);z-index:10;pointer-events:none;filter:drop-shadow(0 0 10px #d4a74c)}
+.p-body{width:100%;height:100%;background:radial-gradient(ellipse at center,#3d2e14,#1a1205);clip-path:polygon(50% 0%, 0% 60%, 0% 100%, 100% 100%, 100% 60%);border:2px solid #d4a74c;display:flex;align-items:center;justify-content:center}
+.p-eye{width:30px;height:30px;border:2px solid #d4a74c;border-radius:50%;background:rgba(0,0,0,.9);box-shadow:inset 0 0 10px #d4a74c}
+.moving{animation:shake 0.12s infinite}
+@keyframes shake{0%{margin-left:-1px}50%{margin-left:1px}100%{margin-left:0}}
+.subtitle{position:absolute;bottom:85px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,.95);border:1px solid red;color:#ff4444;padding:10px 16px;font-family:monospace;font-size:13px;font-weight:bold;text-align:center;min-width:220px;max-width:92%;z-index:15;border-radius:4px;display:none}
 .subtitle.show{display:block}
-.qDisplay{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:rgba(212,167,76,.15);border:1px solid #d4a74c;color:#d4a74c;padding:6px 12px;font-family:monospace;font-size:11px;z-index:15;display:none;border-radius:3px}
-.controls{padding:10px;background:#000;border-top:2px solid #d4a74c;display:flex;gap:6px;z-index:20}
-.candle{position:absolute;width:4px;height:40px;background:linear-gradient(#ffec8b,#ff5500);left:10%;top:20%;border-radius:2px;opacity:0.6;animation:flick 0.2s infinite}
-.candle2{left:90%;top:25%;animation-delay:0.1s}
-@keyframes flick{0%{opacity:0.5;transform:scaleY(0.95)}50%{opacity:0.8;transform:scaleY(1.05)}100%{opacity:0.6;transform:scaleY(1)}}
+.qDisplay{position:absolute;top:70px;left:50%;transform:translateX(-50%);background:rgba(212,167,76,.15);border:1px solid #d4a74c;color:#d4a74c;padding:6px 12px;font-family:monospace;font-size:11px;z-index:15;display:none}
+.controls{padding:10px;background:#000;border-top:2px solid #d4a74c;display:flex;gap:8px;z-index:20}
 </style>
 </head>
 <body>
 <div class="top">
-<button class="btn" onclick="location.href='menu.html'">← MENU</button>
-<div style="font-size:10px;font-family:monospace;color:#d4a74c">OUIJA EVP - IA FANTASMA</div>
-<div id="status" style="font-size:9px;font-family:monospace">OFF</div>
+<button class="btn" onclick="window.location.href='menu.html'">← MENU</button>
+<div style="font-size:11px">OUIJA EVP - IA</div>
+<div id="status" style="font-size:10px">OFF</div>
 </div>
 
 <div class="board-wrap" id="wrap">
-<div class="candle"></div><div class="candle candle2"></div>
-
 <div class="board" id="board">
-<div class="word-yes-no"><div class="word" id="yes">SI</div><div class="word" id="no">NO</div></div>
-<div class="row" id="row1"></div>
-<div class="row" id="row2"></div>
-<div class="row" id="row3"></div>
-<div class="num-row" id="nums"></div>
-<div class="goodbye">ADIOS</div>
-
-<div id="planchette"><div class="body"><div class="eye"></div></div></div>
+<div class="word-row"><div class="word" id="W_SI">SI</div><div class="word" id="W_NO">NO</div></div>
+<div class="row" id="r1"></div>
+<div class="row" id="r2"></div>
+<div class="row" id="r3"></div>
+<div class="row" id="r4"></div>
+<div class="row" id="r5"></div>
+<div class="word-row"><div class="word" id="W_ADIOS">ADIOS</div></div>
+<div id="planchette"><div class="p-body"><div class="p-eye"></div></div></div>
 </div>
-
 <div class="qDisplay" id="qDisplay"></div>
-<div class="subtitle" id="subtitle">TOCÁ INVOCAR Y PREGUNTÁ</div>
+<div class="subtitle" id="subtitle">TOCÁ INVOCAR Y PREGUNTÁ EN VOZ ALTA</div>
 </div>
 
 <div class="controls">
-<button id="evpBtn" class="btn" style="flex:1;color:yellow;border-color:yellow">🔮 INVOCAR</button>
-<button id="clearBtn" class="btn" style="flex:0.5">LIMPIAR</button>
+<button id="evpBtn" class="btn" style="flex:1;color:yellow;border-color:yellow;font-size:14px;padding:15px">🔮 TOCA PARA INVOCAR</button>
+<button id="clearBtn" class="btn">LIMPIAR</button>
 </div>
 
 <script>
@@ -69,121 +59,121 @@ const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
 const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
 const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
 
-const letters1="ABCDEFG".split(""), letters2="HIJKLMN".split(""), letters3="OPQRSTU".split(""), letters4="VWXYZ".split("")
-const row1=document.getElementById('row1'), row2=document.getElementById('row2'), row3=document.getElementById('row3'), numsRow=document.getElementById('nums')
+const r1=document.getElementById('r1'),r2=document.getElementById('r2'),r3=document.getElementById('r3'),r4=document.getElementById('r4'),r5=document.getElementById('r5')
+function add(el,txt){txt.split('').forEach(c=>{const d=document.createElement('div');d.className='letter';d.dataset.l=c;d.textContent=c;el.appendChild(d)})}
+add(r1,'ABCDE');add(r2,'FGHIJ');add(r3,'KLMNO');add(r4,'PQRST');add(r5,'UVWXYZ');
+(function(){const row=document.createElement('div');row.className='row';row.id='rn';document.getElementById('board').insertBefore(row,document.getElementById('W_ADIOS').parentElement);add(row,'0123456789')})()
+
 const allPos={}
-function addRow(el,arr){arr.forEach(l=>{const d=document.createElement('div');d.className='letter';d.id='L_'+l;d.textContent=l;el.appendChild(d)})}
-addRow(row1,"ABCDE".split("")); addRow(row1,"FG".split(""));
-addRow(row2,"HIJKLMN".split(""));
-addRow(row3,"OPQRSTU".split(""));
-const row4=document.createElement('div');row4.className='row';document.getElementById('board').insertBefore(row4,numsRow);addRow(row4,"VWXYZ".split(""))
-"0123456789".split("").forEach(n=>{const d=document.createElement('div');d.className='letter';d.id='L_'+n;d.textContent=n;d.style.fontSize='14px';numsRow.appendChild(d)})
-
-function cachePos(){document.querySelectorAll('.letter,.word').forEach(el=>{const r=el.getBoundingClientRect();const br=document.getElementById('board').getBoundingClientRect();allPos[el.textContent.trim()]={x:r.left-br.left+r.width/2, y:r.top-br.top+r.height/2, el}})}
-setTimeout(cachePos,500);window.addEventListener('resize',cachePos)
-
-const planchette=document.getElementById('planchette'), sub=document.getElementById('subtitle'), qDisplay=document.getElementById('qDisplay'), statusEl=document.getElementById('status')
-let audioCtx, recognition, evpMode=0, isMoving=false
-
-const BIB={
- nombres:["ANA","LUCAS","ELENA","SOFIA","MIGUEL","JAVIER","TOMAS","LUNA"],
- respuestas:["SI","NO","ADIOS","HOLA","AYUDA","VETE","AQUI","MIEDO","FRIO","MAMA","EL","ELLA","NIÑO","SOMOS","MUCHOS","ATRAS","CUIDADO","NO PUEDO","ESTOY","PERDIDO"]
+function cachePos(){
+ document.querySelectorAll('.letter,.word').forEach(el=>{
+  const br=document.getElementById('board').getBoundingClientRect();
+  const r=el.getBoundingClientRect();
+  allPos[el.textContent.trim()]={x:r.left-br.left+r.width/2-35, y:r.top-br.top+r.height/2-44, el}
+ });
 }
+const planchette=document.getElementById('planchette'), sub=document.getElementById('subtitle'), qDisplay=document.getElementById('qDisplay'), statusEl=document.getElementById('status')
+let recognition, evpMode=0
 
-function initAudio(){if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)()}
-function mostrar(t){sub.textContent=t;sub.classList.add('show');setTimeout(()=>sub.classList.remove('show'),4000)}
+const BIB={nombres:["ANA","LUCAS","ELENA","SOFIA","MIGUEL","JAVIER","TOMAS","LUNA"],resp:["SI","NO","ADIOS","HOLA","AYUDA","VETE","AQUI","MIEDO","FRIO","MAMA","ATRAS","CUIDADO","ESTOY","PERDIDO","SOMOS"]}
+
+function mostrar(t){sub.textContent=t;sub.classList.add('show');setTimeout(()=>sub.classList.remove('show'),4500)}
 function mostrarQ(t){qDisplay.textContent=`🎤 "${t}"`;qDisplay.style.display='block';setTimeout(()=>qDisplay.style.display='none',3000)}
 
-function moveTo(text, duration=900){
+function moveTo(text){
  return new Promise(res=>{
   const pos=allPos[text]
   if(!pos){res();return}
-  isMoving=true;planchette.classList.add('moving')
+  planchette.classList.add('moving')
   document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))
-  if(pos.el) pos.el.classList.add('active')
-  const start=performance.now()
-  const startX=planchette.offsetLeft, startY=planchette.offsetTop
-  const endX=pos.x, endY=pos.y
+  if(pos.el && pos.el.classList.contains('letter')) pos.el.classList.add('active')
+  const sx=planchette.offsetLeft, sy=planchette.offsetTop
+  const ex=pos.x, ey=pos.y
+  const start=performance.now(), dur=750+Math.random()*350
   function anim(now){
-   const p=Math.min(1,(now-start)/duration)
-   const ease=1-Math.pow(1-p,3)
-   const curX=startX+(endX-startX)*ease + (Math.random()-0.5)*3
-   const curY=startY+(endY-startY)*ease + (Math.random()-0.5)*3
-   planchette.style.left=curX+'px';planchette.style.top=curY+'px'
+   const p=Math.min(1,(now-start)/dur)
+   const e=1-Math.pow(1-p,3)
+   planchette.style.left=(sx+(ex-sx)*e + (Math.random()-0.5)*2)+'px'
+   planchette.style.top=(sy+(ey-sy)*e + (Math.random()-0.5)*2)+'px'
    if(p<1) requestAnimationFrame(anim)
-   else{planchette.classList.remove('moving');isMoving=false;res()}
+   else{planchette.classList.remove('moving');res()}
   }
   requestAnimationFrame(anim)
  })
 }
-
-function hablar(texto, gen='auto'){
- if(gen==='auto'){const g=['HOMBRE','MUJER','NIÑO','NIÑA','ENTE'];gen=g[Math.floor(Math.random()*g.length)]}
- const u=new SpeechSynthesisUtterance(texto);u.lang='es-AR'
- if(gen==='HOMBRE'){u.pitch=0.2;u.rate=0.75}else if(gen==='MUJER'){u.pitch=1.3;u.rate=0.8}else if(gen==='NIÑO'){u.pitch=1.6;u.rate=0.9}else if(gen==='NIÑA'){u.pitch=1.9;u.rate=1.0}else{u.pitch=0.05;u.rate=0.6}
- speechSynthesis.speak(u)
+function hablar(txt){
+ speechSynthesis.getVoices()
+ const g=['HOMBRE','MUJER','NIÑO','NIÑA','ENTE'][Math.floor(Math.random()*5)]
+ const u=new SpeechSynthesisUtterance(txt);u.lang='es-AR';u.volume=1
+ if(g==='HOMBRE'){u.pitch=0.25;u.rate=0.7}
+ else if(g==='MUJER'){u.pitch=1.25;u.rate=0.82}
+ else if(g==='NIÑO'){u.pitch=1.55;u.rate=0.9}
+ else if(g==='NIÑA'){u.pitch=1.85;u.rate=1}
+ else{u.pitch=0.08;u.rate=0.58}
+ speechSynthesis.cancel()
+ setTimeout(()=>speechSynthesis.speak(u),80)
+ return g
 }
-
 async function spellWord(word){
- word=word.toUpperCase().replace(/[^A-Z0-9 ]/g,'')
+ word=word.toUpperCase().replace(/[^A-Z0-9]/g,'')
  for(let c of word){
-  if(c===' ') {await new Promise(r=>setTimeout(r,600)); continue}
-  await moveTo(c, 700+Math.random()*400)
+  await moveTo(c)
   hablar(c)
-  await new Promise(r=>setTimeout(r,500))
+  await new Promise(r=>setTimeout(r,550))
  }
- const finalGen=['HOMBRE','MUJER','NIÑO','NIÑA','ENTE'][Math.floor(Math.random()*5)]
- mostrar(`"${word}" - ${finalGen}`)
- hablar(word, finalGen)
+ const gen=hablar(word)
+ mostrar(`"${word}" - ${gen}`)
 }
-
-async function getOuijaAnswer(pregunta){
- const p=pregunta.toLowerCase()
- // ONLINE - IA REAL
+async function getAnswer(preg){
  try{
   if(navigator.onLine){
-   const {data,error}=await supa.functions.invoke('evp-ghost',{
-    body:{question:`Responde SOLO con 1 palabra corta (max 7 letras) en mayúsculas para una ouija. Pregunta: ${pregunta}. Ejemplos: SI, NO, ANA, AYUDA, FRIO. Responde solo la palabra:`}
-   })
-   if(!error && data && data.answer){
-    let ans=data.answer.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8)
-    if(ans.length>=2) return ans
+   const {data,error}=await supa.functions.invoke('evp-ghost',{body:{question:`Responde con SOLO 1 palabra corta en mayusculas para ouija (max 7 letras). Pregunta: ${preg}`}})
+   if(!error && data?.answer){
+    let a=data.answer.toUpperCase().replace(/[^A-Z0-9]/g,'').slice(0,8)
+    if(a.length>=2) return a
    }
   }
  }catch(e){}
- // OFFLINE INTELIGENTE
- if(p.includes('nombre')||p.includes('quien')||p.includes('como te llamas')) return BIB.nombres[Math.floor(Math.random()*BIB.nombres.length)]
- if(p.includes('si')||p.includes('estas')||p.includes('aquí')||p.includes('aqui')) return Math.random()>0.5?"SI":"NO"
- return BIB.respuestas[Math.floor(Math.random()*BIB.respuestas.length)]
+ const low=preg.toLowerCase()
+ if(low.includes('nombre')||low.includes('quien')||low.includes('llamas')) return BIB.nombres[Math.floor(Math.random()*BIB.nombres.length)]
+ if(low.includes('estas')||low.includes('aqui')||low.includes('si')) return Math.random()>0.5?'SI':'NO'
+ return BIB.resp[Math.floor(Math.random()*BIB.resp.length)]
 }
-
 function initRec(){
- if(!('webkitSpeechRecognition'in window||'SpeechRecognition'in window)){mostrar('Micro no soportado');return}
- const SR=window.SpeechRecognition||window.webkitSpeechRecognition;recognition=new SR();recognition.lang='es-AR';recognition.continuous=false;recognition.interimResults=false
- recognition.onresult=async(ev)=>{
-  const pregunta=ev.results[0][0].transcript.trim();if(pregunta.length<2)return
+ const SR=window.SpeechRecognition||window.webkitSpeechRecognition
+ if(!SR){mostrar('Micro no soportado en este navegador');return null}
+ const rec=new SR();rec.lang='es-AR';rec.continuous=false;rec.interimResults=false
+ rec.onresult=async(ev)=>{
+  const pregunta=ev.results[0][0].transcript.trim()
+  if(pregunta.length<2) return
   mostrarQ(pregunta);statusEl.textContent='INVOCANDO...'
-  const respuesta=await getOuijaAnswer(pregunta)
-  statusEl.textContent=`DELETREANDO: ${respuesta}`
-  await spellWord(respuesta)
-  statusEl.textContent='PREGUNTA OTRA VEZ'
+  const ans=await getAnswer(pregunta)
+  statusEl.textContent=`DELETREANDO: ${ans}`
+  await spellWord(ans)
+  statusEl.textContent='PREGUNTA OTRA VEZ - TOCA INVOCAR'
  }
- recognition.onend=()=>{if(evpMode===1){setTimeout(()=>{try{recognition.start()}catch{}},800)}}
+ rec.onend=()=>{/* no auto loop para que no se trabe */}
+ return rec
 }
 
 document.getElementById('evpBtn').addEventListener('click',async()=>{
- initAudio();if(audioCtx.state==='suspended')await audioCtx.resume()
- evpMode=evpMode===0?1:0
- const btn=document.getElementById('evpBtn')
- if(evpMode===1){
-  cachePos()
-  if(!recognition) initRec()
+ cachePos()
+ if(!recognition) recognition=initRec()
+ if(evpMode===0){
+  evpMode=1
   try{recognition.start()}catch{}
-  btn.textContent='🎙️ ESCUCHANDO... HABLA';btn.style.background='#d4a74c';btn.style.color='#000'
-  statusEl.textContent='ESCUCHANDO...';mostrar('Pregunta en voz alta... ¿Cómo te llamas?')
+  document.getElementById('evpBtn').textContent='🎙️ ESCUCHANDO... HABLA FUERTE'
+  document.getElementById('evpBtn').style.background='#d4a74c'
+  document.getElementById('evpBtn').style.color='#000'
+  statusEl.textContent='ESCUCHANDO...'
+  mostrar('Pregunta: ¿Cómo te llamas? ¿Estás aquí?')
+  speechSynthesis.getVoices()
  }else{
-  if(recognition)try{recognition.stop()}catch{}
-  btn.textContent='🔮 INVOCAR';btn.style.background='#000';btn.style.color='#d4a74c'
+  evpMode=0
+  try{recognition.stop()}catch{}
+  document.getElementById('evpBtn').textContent='🔮 TOCA PARA INVOCAR'
+  document.getElementById('evpBtn').style.background='#000'
+  document.getElementById('evpBtn').style.color='#d4a74c'
   statusEl.textContent='OFF'
  }
 })
@@ -192,7 +182,11 @@ document.getElementById('clearBtn').addEventListener('click',()=>{
  planchette.style.left='50%';planchette.style.top='50%'
  document.querySelectorAll('.letter').forEach(l=>l.classList.remove('active'))
  sub.classList.remove('show')
+ setTimeout(cachePos,100)
 })
+setTimeout(cachePos,800)
+window.addEventListener('resize',cachePos)
+window.speechSynthesis.onvoiceschanged=()=>{speechSynthesis.getVoices()}
 </script>
 </body>
 </html>
