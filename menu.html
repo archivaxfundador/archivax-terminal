@@ -1,106 +1,69 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ARCHIVAX - MENU</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:monospace;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:20px}
-h1{color:#f00;letter-spacing:4px;font-size:28px;margin-bottom:6px;text-shadow:0 0 20px #f00}
-.sub{color:#666;font-size:10px;margin-bottom:30px;letter-spacing:2px}
-.card{width:100%;max-width:340px;background:#0a0a0a;border:1px solid #222;border-radius:16px;padding:20px;margin-bottom:16px}
-input{width:100%;background:#111;border:1px solid #333;color:#fff;padding:14px;border-radius:10px;margin-bottom:10px;font-family:monospace;outline:none}
-input:focus{border-color:#f00}
-.btn{width:100%;padding:16px;border:none;border-radius:12px;font-weight:900;font-size:14px;cursor:pointer;margin-bottom:10px;display:block;text-align:center;text-decoration:none}
-.btn-red{background:#f00;color:#fff;box-shadow:0 0 20px rgba(255,0,0,0.4)}
-.btn-dark{background:#111;border:1px solid #333;color:#888}
-.btn-ghost{background:transparent;border:1px dashed #444;color:#555;font-size:11px}
-.btn:active{transform:scale(0.97)}
-.row{display:flex;gap:10px}
-.row .btn{flex:1}
-.info{font-size:9px;color:#444;text-align:center;margin-top:10px;line-height:1.4}
+*{margin:0;padding:0;box-sizing:border-box}body{background:#000;color:#0f0;font-family:monospace;min-height:100vh;padding:20px}
+.header{text-align:center;border:2px solid #0f0;padding:15px;margin-bottom:20px;background:rgba(0,255,0,.05)}
+.header h1{font-size:24px;letter-spacing:3px}.header p{font-size:10px;color:#888;margin-top:5px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.card{border:1px solid #0f0;background:linear-gradient(180deg,#111,#000);padding:18px;text-align:center;cursor:pointer;position:relative;transition:0.2s}
+.card:active{transform:scale(0.97);background:#0f0;color:#000}
+.card.icon{font-size:38px;margin-bottom:8px}
+.card h3{font-size:13px;margin-bottom:4px}.card p{font-size:9px;color:#888}
+.card.disabled{border-color:#333;color:#333;opacity:0.5;pointer-events:none}
+.card.disabled p{color:#333}
+.badge{position:absolute;top:5px;right:5px;background:yellow;color:#000;font-size:8px;padding:2px 5px;font-weight:bold}
+.badge.soon{background:#333;color:#888}
+.footer{margin-top:25px;text-align:center;font-size:9px;color:#444}
+#status{margin-top:10px;font-size:10px;color:#0f0;text-align:center}
 </style>
 </head>
 <body>
+<div class="header">
 <h1>ARCHIVAX</h1>
-<div class="sub">EXPERIENCIA PARANORMAL REAL</div>
-
-<div class="card">
-<input id="email" type="email" placeholder="Email" autocomplete="email">
-<input id="pass" type="password" placeholder="Contraseña" autocomplete="current-password">
-<button class="btn btn-red" onclick="login()">INICIAR SESIÓN</button>
-<div class="row">
-<button class="btn btn-dark" onclick="registro()">REGISTRO</button>
-<button class="btn btn-dark" onclick="invitado()">INVITADO 10 MIN</button>
-</div>
-<button class="btn btn-ghost" onclick="entrarDirecto()">ENTRAR DIRECTO A CÁMARA (sin login)</button>
-<div id="msg" class="info"></div>
+<p>PARANORMAL RESEARCH SYSTEM v2.7</p>
+<div id="status">VERIFICANDO ACCESO...</div>
 </div>
 
-<div class="card" style="border-color:#f00">
-<button class="btn btn-red" onclick="location.href='/camara.html'">👁️ IR A CÁMARA AHORA</button>
-<div class="info">Si los botones de arriba no andan, usa este. Entra directo a /camara.html<br>
-Estado: <span id="estado">-</span></div>
+<div class="grid">
+<div class="card" onclick="location.href='app.html'">
+<div class="badge">SLS + EVP</div>
+<div class="icon">📷</div>
+<h3>CÁMARA SLS</h3>
+<p>Stickman + Fantasma + EVP</p>
 </div>
+
+<div class="card" onclick="location.href='evp.html'">
+<div class="badge" style="background:red;color:white">REAL</div>
+<div class="icon">📻</div>
+<h3>EVP SPIRIT BOX</h3>
+<p>P-SB7 + Voces H/M/Niño</p>
+</div>
+
+<div class="card" onclick="location.href='ouija-evp.html'">
+<div class="icon">🔮</div>
+<h3>OUIJA EVP</h3>
+<p>Ouija + Respuestas IA</p>
+</div>
+
+<div class="card disabled" onclick="location.href='llamada.html'">
+<div class="badge soon">PRONTO</div>
+<div class="icon">📞</div>
+<h3>LLAMADA</h3>
+<p>En construcción</p>
+</div>
+</div>
+
+<div class="footer">archiviax.com.ar - Sistema Premium Activado</div>
 
 <script>
-// SIMPLE Y A PRUEBA DE ERRORES - SIN DEPENDENCIAS
-function log(t){ document.getElementById('msg').innerText=t; document.getElementById('estado').innerText=t; console.log(t); }
-
-function login(){
- try{
-  let e=document.getElementById('email').value.trim();
-  let p=document.getElementById('pass').value.trim();
-  if(!e||!p){ log('Poné email y contraseña'); return; }
-  localStorage.setItem('archivax_email',e);
-  localStorage.setItem('archivax_role','registered');
-  localStorage.setItem('archivax_login','1');
-  log('Login OK como registrado');
-  setTimeout(()=>location.href='/camara.html',400);
- }catch(err){ log('Error login: '+err.message); }
-}
-
-function registro(){
- try{
-  let e=document.getElementById('email').value.trim();
-  let p=document.getElementById('pass').value.trim();
-  if(!e||!p){ log('Para registro poné email y contraseña'); return; }
-  localStorage.setItem('archivax_email',e);
-  localStorage.setItem('archivax_role','registered');
-  localStorage.setItem('archivax_login','1');
-  log('Registro OK - Entrando...');
-  setTimeout(()=>location.href='/camara.html',400);
- }catch(err){ log('Error registro: '+err.message); }
-}
-
-function invitado(){
- try{
-  if(localStorage.getItem('archivax_guest_blocked')==='1'){ log('Ya usaste 10 min de invitado. Registrate.'); return; }
-  localStorage.setItem('archivax_role','guest');
-  localStorage.setItem('archivax_login','0');
-  localStorage.setItem('archivax_guest_start',Date.now());
-  log('Entrando como invitado 10 min');
-  setTimeout(()=>location.href='/camara.html',300);
- }catch(err){ log('Error invitado: '+err.message); }
-}
-
-function entrarDirecto(){
- try{
-  localStorage.setItem('archivax_role','guest');
-  localStorage.setItem('archivax_guest_start',Date.now());
-  location.href='/camara.html';
- }catch(err){ location.href='/camara.html'; }
-}
-
-// Mostrar estado al cargar
-try{
- let role=localStorage.getItem('archivax_role')||'ninguno';
- let blocked=localStorage.getItem('archivax_guest_blocked');
- document.getElementById('estado').innerText='Rol: '+role+' Bloqueado: '+(blocked||'no');
-}catch(e){
- document.getElementById('estado').innerText='localStorage bloqueado, pero botón IR A CÁMARA funciona igual';
-}
+const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
+const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
+const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
+async function check(){const{data:{session}}=await supa.auth.getSession();const el=document.getElementById('status');if(session){const meta=session.user.user_metadata||{};el.textContent=`PREMIUM ACTIVO HASTA ${new Date(meta.expires_at).toLocaleDateString()}`}else{el.textContent='MODO PRUEBA 30 MIN - GRATIS';}}check();
 </script>
 </body>
 </html>
