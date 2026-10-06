@@ -1,28 +1,19 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 <title>ARCHIVAX - Acceso Premium</title>
+
+<link rel="manifest" href="./manifest.json">
+<meta name="theme-color" content="#00ff00">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="./icon-512.png">
+<link rel="apple-touch-icon" href="./icon-512.png">
+<meta name="description" content="Llamadas paranormales reales, historias de terror y chat con entidades. Atrevete a llamar.">
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<style>
-*{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#0f0;font-family:monospace;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:0;overflow-y:auto}
-.bg{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 20%, #111 0%, #000 70%);z-index:0}
-.box{position:relative;z-index:1;width:100%;max-width:340px;background:#0a0a0a;border:2px solid #0f0;padding:22px;box-shadow:0 0 20px rgba(0,255,0,.2);margin-top:30px}
-h1{text-align:center;letter-spacing:4px;font-size:24px}
-.sub{text-align:center;font-size:9px;color:#555;margin-bottom:18px;letter-spacing:1px}
-input{width:100%;padding:14px;background:#000;border:1px solid #333;color:#0f0;margin-bottom:10px;font-family:monospace;font-size:14px;letter-spacing:1px}
-input:focus{border-color:#0f0;outline:none}
-.btn{width:100%;padding:15px;font-weight:bold;border:none;font-family:monospace;font-size:13px;cursor:pointer;letter-spacing:1px}
-.btn-main{background:#0f0;color:#000}
-.btn-sec{background:#000;border:1px solid #666;color:#aaa;margin-top:12px}
-.btn-buy{background:transparent;color:#ff0;font-size:11px;text-decoration:underline;margin-top:12px;padding:10px}
-#msg{min-height:18px;font-size:11px;text-align:center;margin:8px 0}
-.info{font-size:9px;color:#444;text-align:center;margin-top:18px;line-height:13px}
-.badge{display:inline-block;background:#111;border:1px solid #333;color:#666;font-size:8px;padding:2px 6px;margin-top:10px}
-footer{position:relative;z-index:1;width:100%;margin-top:40px;background:#000;border-top:1px solid #0f0;padding:20px 15px;text-align:center;font-size:10px;color:#666;line-height:1.6}
-footer a{color:#0f0;text-decoration:none;margin:0 8px}
-</style>
+<style> *{margin:0;padding:0;box-sizing:border-box} body{background:#000;color:#0f0;font-family:monospace;display:flex;flex-direction:column;align-items:center;min-height:100vh;padding:0;overflow-y:auto} .bg{position:fixed;top:0;left:0;width:100%;height:100%;background:radial-gradient(circle at 50% 20%, #111 0%, #000 70%);z-index:0} .box{position:relative;z-index:1;width:100%;max-width:340px;background:#0a0a0a;border:2px solid #0f0;padding:22px;box-shadow:0 0 20px rgba(0,255,0,.2);margin-top:30px} h1{text-align:center;letter-spacing:4px;font-size:24px} .sub{text-align:center;font-size:9px;color:#555;margin-bottom:18px;letter-spacing:1px} input{width:100%;padding:14px;background:#000;border:1px solid #333;color:#0f0;margin-bottom:10px;font-family:monospace;font-size:14px;letter-spacing:1px} input:focus{border-color:#0f0;outline:none} .btn{width:100%;padding:15px;font-weight:bold;border:none;font-family:monospace;font-size:13px;cursor:pointer;letter-spacing:1px} .btn-main{background:#0f0;color:#000} .btn-sec{background:#000;border:1px solid #666;color:#aaa;margin-top:12px} .btn-buy{background:transparent;color:#ff0;font-size:11px;text-decoration:underline;margin-top:12px;padding:10px} #msg{min-height:18px;font-size:11px;text-align:center;margin:8px 0} .info{font-size:9px;color:#444;text-align:center;margin-top:18px;line-height:13px} .badge{display:inline-block;background:#111;border:1px solid #333;color:#666;font-size:8px;padding:2px 6px;margin-top:10px} footer{position:relative;z-index:1;width:100%;margin-top:40px;background:#000;border-top:1px solid #0f0;padding:20px 15px;text-align:center;font-size:10px;color:#666;line-height:1.6} footer a{color:#0f0;text-decoration:none;margin:0 8px} </style>
 </head>
 <body>
 <div class="bg"></div>
@@ -38,51 +29,10 @@ footer a{color:#0f0;text-decoration:none;margin:0 8px}
 <div class="info">Al pagar se crea automáticamente tu usuario y<br>contraseña única y te llega por email.<br>Esa cuenta solo funciona en tu celular.<br><br><span id="fpInfo" class="badge">ID: verificando...</span></div>
 </div>
 <footer>
-<div style="margin-bottom:10px">
-<a href="terminos-y-condiciones.html">TÉRMINOS Y CONDICIONES</a> | <a href="privacidad.html">PRIVACIDAD</a> | <a href="https://chat.whatsapp.com/LvOt036C0Kn8hyAVdRXmsr">SOPORTE</a>
-</div>
+<div style="margin-bottom:10px"> <a href="terminos-y-condiciones.html">TÉRMINOS Y CONDICIONES</a> | <a href="privacidad.html">PRIVACIDAD</a> | <a href="https://chat.whatsapp.com/LvOt036C0Kn8hyAVdRXmsr">SOPORTE</a> </div>
 <div>© 2026 ARCHIVAX - archiviax.com.ar - Todos los derechos reservados.</div>
 <div style="font-size:9px;margin-top:6px;color:#555">App con fines de entretenimiento e investigación. Los resultados son interpretativos.</div>
 </footer>
-<script>
-const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
-const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
-const MP_LINK='https://www.mercadopago.com.ar/checkout/v1/payment?pref_id=TU_PREF_ID'
-const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
-function getFingerprint(){try{const c=document.createElement('canvas');const x=c.getContext('2d');x.textBaseline='top';x.font='14px Arial';x.fillText('archiviax.com.ar '+navigator.language,2,2);return btoa(c.toDataURL().slice(-70)+navigator.hardwareConcurrency+screen.width).slice(0,32)}catch{return 'fp_'+screen.width}}
-const FP=getFingerprint()
-document.getElementById('fpInfo').textContent='ID: '+FP.slice(0,12)
-const params=new URLSearchParams(location.search)
-if(params.get('blocked')==='1'){document.getElementById('msg').innerHTML='<span style="color:red">⏳ Bloqueado 24hs por usar los 30 min gratis</span>'}
-if(params.get('expired')==='1'){document.getElementById('msg').innerHTML='<span style="color:red">❌ Premium vencido, renová</span>'}
-
-// CAMBIO 1: Ahora va al MENU, no a la camara directa
-async function autoRedirect(){const {data:{session}}=await supa.auth.getSession();if(session){const meta=session.user.user_metadata||{};if(meta.expires_at && new Date(meta.expires_at)>new Date()){location.href='menu.html'}}}
-autoRedirect()
-
-document.getElementById('loginBtn').onclick=async()=>{
- const email=document.getElementById('email').value.trim();const pass=document.getElementById('pass').value.trim();const msg=document.getElementById('msg');
- if(!email||!pass){msg.innerHTML='<span style="color:red">Falta email y contraseña</span>';return}
- msg.innerHTML='<span style="color:yellow">Verificando...</span>';
- const {data,error}=await supa.auth.signInWithPassword({email,password:pass});
- if(error){msg.innerHTML='<span style="color:red">❌ Usuario o contraseña incorrecta</span>';return}
- const meta=data.user.user_metadata||{};
- if(!meta.expires_at||new Date(meta.expires_at)<new Date()){msg.innerHTML='<span style="color:red">❌ Suscripción vencida.</span>';await supa.auth.signOut();return}
- if(meta.fp&&meta.fp!==FP){msg.innerHTML='<span style="color:orange">⚠️ Esta cuenta ya está vinculada a otro celular.</span>';await supa.auth.signOut();return}
- msg.innerHTML=`<span style="color:#0f0">✅ Activo hasta ${new Date(meta.expires_at).toLocaleDateString()}</span>`;
- // CAMBIO 2: Premium entra al MENU
- setTimeout(()=>{location.href='menu.html'},800)
-}
-
-document.getElementById('trialBtn').onclick=()=>{
- const STORAGE_KEY='archiviax_v26';
- try{let state=null;try{state=JSON.parse(localStorage.getItem(STORAGE_KEY))}catch{}
- const now=Date.now();if(state?.blockedUntil&&now<state.blockedUntil){const hrs=Math.ceil((state.blockedUntil-now)/3600000);document.getElementById('msg').innerHTML=`<span style="color:red">⏳ Bloqueado ${hrs}hs.</span>`;return}}catch{}
- // CAMBIO 3: Gratis entra al MENU con ?mode=trial
- location.href='menu.html?mode=trial'
-}
-
-document.getElementById('buyBtn').onclick=()=>{window.open(MP_LINK+`&fp=${FP}`,'_blank')}
-</script>
+<script> const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co' const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc' const MP_LINK='https://www.mercadopago.com.ar/checkout/v1/payment?pref_id=TU_PREF_ID' const supa=supabase.createClient(SUPA_URL,SUPA_ANON) function getFingerprint(){try{const c=document.createElement('canvas');const x=c.getContext('2d');x.textBaseline='top';x.font='14px Arial';x.fillText('archiviax.com.ar '+navigator.language,2,2);return btoa(c.toDataURL().slice(-70)+navigator.hardwareConcurrency+screen.width).slice(0,32)}catch{return 'fp_'+screen.width}} const FP=getFingerprint() document.getElementById('fpInfo').textContent='ID: '+FP.slice(0,12) const params=new URLSearchParams(location.search) if(params.get('blocked')==='1'){document.getElementById('msg').innerHTML='<span style="color:red">⏳ Bloqueado 24hs por usar los 30 min gratis</span>'} if(params.get('expired')==='1'){document.getElementById('msg').innerHTML='<span style="color:red">❌ Premium vencido, renová</span>'} async function autoRedirect(){const {data:{session}}=await supa.auth.getSession();if(session){const meta=session.user.user_metadata||{};if(meta.expires_at && new Date(meta.expires_at)>new Date()){location.href='menu.html'}}} autoRedirect() document.getElementById('loginBtn').onclick=async()=>{ const email=document.getElementById('email').value.trim();const pass=document.getElementById('pass').value.trim();const msg=document.getElementById('msg'); if(!email||!pass){msg.innerHTML='<span style="color:red">Falta email y contraseña</span>';return} msg.innerHTML='<span style="color:yellow">Verificando...</span>'; const {data,error}=await supa.auth.signInWithPassword({email,password:pass}); if(error){msg.innerHTML='<span style="color:red">❌ Usuario o contraseña incorrecta</span>';return} const meta=data.user.user_metadata||{}; if(!meta.expires_at||new Date(meta.expires_at)<new Date()){msg.innerHTML='<span style="color:red">❌ Suscripción vencida.</span>';await supa.auth.signOut();return} if(meta.fp&&meta.fp!==FP){msg.innerHTML='<span style="color:orange">⚠️ Esta cuenta ya está vinculada a otro celular.</span>';await supa.auth.signOut();return} msg.innerHTML=`<span style="color:#0f0">✅ Activo hasta ${new Date(meta.expires_at).toLocaleDateString()}</span>`; setTimeout(()=>{location.href='menu.html'},800) } document.getElementById('trialBtn').onclick=()=>{ const STORAGE_KEY='archiviax_v26'; try{let state=null;try{state=JSON.parse(localStorage.getItem(STORAGE_KEY))}catch{} const now=Date.now();if(state?.blockedUntil&&now<state.blockedUntil){const hrs=Math.ceil((state.blockedUntil-now)/3600000);document.getElementById('msg').innerHTML=`<span style="color:red">⏳ Bloqueado ${hrs}hs.</span>`;return}}catch{} location.href='menu.html?mode=trial' } document.getElementById('buyBtn').onclick=()=>{window.open(MP_LINK+`&fp=${FP}`,'_blank')} </script>
 </body>
 </html>
