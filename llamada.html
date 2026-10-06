@@ -1,41 +1,32 @@
-<!DOCTYPE html>
-<html>
-<head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVAX - LA LINEA</title>
-<style>body{margin:0;background:#000;color:#ff0000;font-family:monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh}.phone{width:300px;height:500px;border:2px solid #ff0000;border-radius:30px;padding:20px;text-align:center;box-shadow:0 0 30px rgba(255,0,0,0.4)}.btn{padding:15px 30px;border-radius:50px;border:1px solid #ff0000;background:#ff0000;color:black;font-weight:bold;margin-top:20px;cursor:pointer} #estado{margin:20px 0;color:#666;font-size:12px} #respuesta{color:white;font-size:16px;min-height:40px;margin-top:15px} </style>
-</head>
-<body>
-<div class="phone">
-  <h2>☎️ LA LINEA</h2>
-  <div id="estado">Línea cerrada</div>
-  <div id="respuesta"></div>
-  <button class="btn" id="btnLlamar" onclick="iniciarLlamada()">LLAMAR AL OTRO LADO</button>
-  <button class="btn" style="background:black;color:#ff0000;margin-top:10px" onclick="location.href='/'">COLGAR</button>
-  <p style="font-size:9px;color:#333;margin-top:30px">archiviax.com.ar</p>
-</div>
 <script>
-let audioCtx, analyser;
-async function iniciarLlamada(){
-  document.getElementById('estado').innerHTML="📞 Marcando... tuuu... tuuu...";
-  const audio = new Audio('https://actions.google.com/sounds/v1/alarms/phone_tone.ogg'); audio.loop=true; audio.play();
-  setTimeout(async()=>{
-    audio.pause();
-    document.getElementById('estado').innerHTML="🔴 CONECTADO - ESTÁTICA EVP";
-    const stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
-    audioCtx = new AudioContext(); const src = audioCtx.createMediaStreamSource(stream);
-    const gain = audioCtx.createGain(); gain.gain.value=6; src.connect(gain); gain.connect(audioCtx.destination);
+const VOZ_URL = "https://yxfzvogiladjupikgqyt.supabase.co/functions/v1/voz";
+const SUPABASE_KEY = "sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc";
 
-    // Speech para escuchar respuestas
-    const SR = window.SpeechRecognition||window.webkitSpeechRecognition;
-    if(SR){ const r = new SR(); r.lang="es-AR"; r.continuous=true; r.interimResults=false; r.onresult=e=>{
-      let txt = e.results[e.results.length-1][0].transcript;
-      document.getElementById('respuesta').innerHTML = `👻 Dice: "<b>${txt.toUpperCase()}</b>"`;
-      // Susurro IA que repite
-      let utter = new SpeechSynthesisUtterance(txt); utter.rate=0.7; utter.pitch=0.3; utter.volume=0.8; speechSynthesis.speak(utter);
-    }; r.start(); }
-  },3000);
+async function hablar(texto, tipo) {
+  const res = await fetch(VOZ_URL, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "apikey": SUPABASE_KEY,
+      "Authorization": "Bearer " + SUPABASE_KEY
+    },
+    body: JSON.stringify({ texto, tipo })
+  });
+
+  if (!res.ok) {
+    alert("Error voz: " + await res.text());
+    return;
+  }
+
+  const blob = await res.blob();
+  const audio = new Audio(URL.createObjectURL(blob));
+  audio.play();
 }
+
+// PRUEBA RAPIDA - ponelo en un boton:
+// hablar("¿Por qué me despertaste?", "DEMONIO")
 </script>
-</body>
-</html>
+
+<button onclick="hablar('No deberías haber marcado ese número...', 'DEMONIO')">PROBAR DEMONIO</button>
+<button onclick="hablar('Hola mi vida, soy la abuela...', 'ANCIANA')">PROBAR ANCIANA</button>
+<button onclick="hablar('Hola, ¿quieres jugar conmigo?', 'NINA')">PROBAR NIÑA</button>
