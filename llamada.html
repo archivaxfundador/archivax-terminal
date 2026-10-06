@@ -1,30 +1,41 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover">
 <title>LLAMADA - ARCHIVAX</title>
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-body{background:#000;color:#fff;font-family:monospace;height:100vh;display:flex;flex-direction:column}
-.top{padding:12px 15px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center;background:#050505}
+body{background:#000;color:#fff;font-family:monospace;height:100vh;height:100dvh;display:flex;flex-direction:column;overflow:hidden}
+.top{padding:12px 15px;border-bottom:1px solid #222;display:flex;justify-content:space-between;align-items:center;background:#050505;flex-shrink:0}
 .top button{background:#111;border:1px solid #0f0;color:#0f0;padding:6px 12px;cursor:pointer;font-size:11px}
 .list{flex:1;overflow-y:auto;padding:10px;background:#000}
 .item{display:flex;gap:12px;align-items:center;padding:12px;border:1px solid #222;background:#0a0a0a;margin-bottom:8px;cursor:pointer}
-.item img{width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #333}
+.item img{width:55px;height:55px;border-radius:50%;object-fit:cover;border:2px solid #333;background:#111}
 .item h3{font-size:12px;letter-spacing:1px}.item p{font-size:9px;color:#666;margin-top:3px}
 #precall{position:fixed;inset:0;background:#000;display:none;flex-direction:column;z-index:5}
-.preAvatar{width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid #333;margin:30px auto;display:block}
+.preAvatar{width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid #333;margin:30px auto;display:block;background:#111}
 .preInfo{text-align:center;padding:20px}
-.preInfo h2{font-size:22px;letter-spacing:3px}.preInfo p{font-size:10px;color:#666;margin-top:8px}
-.callActions{display:flex;justify-content:center;gap:60px;padding:30px 20px;margin-top:auto}
-.btnCall{width:78px;height:78px;border-radius:50%;border:none;cursor:pointer;font-size:32px;display:flex;align-items:center;justify-content:center}
-.btnGreen{background:#0f0;color:#000;box-shadow:0 0 20px rgba(0,255,0,0.4)}.btnRed{background:#ff0000;color:#fff}
-#incall{position:fixed;inset:0;background:radial-gradient(#111,#000);display:none;flex-direction:column;align-items:center;justify-content:space-between;padding:25px;z-index:10}
-.callAvatarBig{width:140px;height:140px;border-radius:50%;object-fit:cover;border:3px solid #0f0;margin-top:30px;box-shadow:0 0 30px rgba(0,255,0,0.2)}
-.timer{color:#0f0;font-size:15px;margin-top:12px;letter-spacing:3px}
-.talking{color:#0f0;font-size:12px;max-width:310px;text-align:center;min-height:60px;margin-top:25px;line-height:1.5}
-.keypad{display:grid;grid-template-columns:repeat(3,65px);gap:14px;margin:15px 0}
-.key{width:65px;height:65px;border-radius:50%;border:1px solid #333;background:#111;display:flex;align-items:center;justify-content:center;font-size:18px;color:#555}
+.callActions{display:flex;justify-content:center;gap:60px;padding:20px;margin-top:auto;padding-bottom:40px}
+.btnCall{width:75px;height:75px;border-radius:50%;border:none;cursor:pointer;font-size:32px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.btnGreen{background:#0f0;color:#000;box-shadow:0 0 20px rgba(0,255,0,0.4)}.btnRed{background:#ff0000;color:#fff;box-shadow:0 0 20px rgba(255,0,0,0.3)}
+
+/* PANTALLA DE LLAMADA ARREGLADA */
+#incall{position:fixed;inset:0;background:#000;display:none;flex-direction:column;z-index:10;height:100dvh}
+.incall-top{flex:1;display:flex;flex-direction:column;align-items:center;padding:20px 20px 10px;overflow-y:auto}
+.callAvatarBig{width:110px;height:110px;border-radius:50%;object-fit:cover;border:3px solid #0f0;margin-top:10px;background:#111}
+.timer{color:#0f0;font-size:14px;margin-top:10px;letter-spacing:3px}
+.talking{color:#0f0;font-size:12px;max-width:320px;text-align:center;min-height:40px;margin-top:15px;line-height:1.4;padding:0 10px}
+.chat-box{width:100%;max-width:350px;margin-top:15px;max-height:120px;overflow-y:auto;padding:10px;font-size:10px;color:#888;text-align:left}
+.chat-box div{margin-bottom:8px}.chat-box .user{color:#fff}.chat-box .entity{color:#0f0}
+
+/* BARRA INFERIOR SIEMPRE VISIBLE */
+.bottom-bar{flex-shrink:0;background:#0a0a0a;border-top:1px solid #222;padding:10px 15px 25px;padding-bottom:calc(25px + env(safe-area-inset-bottom));display:flex;flex-direction:column;gap:12px}
+.input-row{display:flex;gap:8px;width:100%;max-width:400px;margin:0 auto}
+.input-row input{flex:1;background:#111;border:1px solid #333;color:#fff;padding:12px 14px;border-radius:25px;font-family:monospace;font-size:12px;outline:none}
+.input-row input:focus{border-color:#0f0}
+.input-row button{background:#0f0;border:none;color:#000;width:45px;height:45px;border-radius:50%;cursor:pointer;font-size:18px;flex-shrink:0}
+.keypad{display:grid;grid-template-columns:repeat(3,52px);gap:10px;justify-content:center;opacity:0.15}
+.key{width:52px;height:52px;border-radius:50%;border:1px solid #333;background:#111;display:flex;align-items:center;justify-content:center;font-size:16px;color:#555}
 </style>
 </head>
 <body>
@@ -34,18 +45,15 @@ body{background:#000;color:#fff;font-family:monospace;height:100vh;display:flex;
 <span style="font-size:8px;color:#444">ENCRIPTADO</span>
 </div>
 
-<div class="list" id="lista">
-<!-- Se llenan con JS para usar las fotos base64 -->
-</div>
+<div class="list" id="lista"></div>
 
 <div id="precall">
 <div class="top"><button onclick="closePre()">← ATRÁS</button><span style="font-size:9px;color:#666">DETALLE</span><span></span></div>
 <img id="preImg" class="preAvatar" src="">
 <div class="preInfo">
-<h2 id="preName">DEMONIO</h2>
-<p id="preNum">+54 11 666-0000</p>
-<p style="color:#444;margin-top:25px;font-size:9px">TOQUE EL BOTON VERDE PARA LLAMAR</p>
-<p style="color:#222;margin-top:5px;font-size:8px">ARCHIVAX SECURE LINE</p>
+<h2 id="preName" style="font-size:22px;letter-spacing:3px">DEMONIO</h2>
+<p id="preNum" style="font-size:11px;color:#666;margin-top:8px">+54 11 666-0000</p>
+<p style="color:#444;margin-top:30px;font-size:9px">TOCA EL BOTON VERDE PARA INICIAR</p>
 </div>
 <div class="callActions">
 <button class="btnCall btnRed" onclick="closePre()">✕</button>
@@ -54,19 +62,28 @@ body{background:#000;color:#fff;font-family:monospace;height:100vh;display:flex;
 </div>
 
 <div id="incall">
-<div style="text-align:center">
+<div class="incall-top">
 <img id="callImg" class="callAvatarBig" src="">
-<h2 id="callName" style="margin-top:18px;font-size:20px;letter-spacing:2px">DEMONIO</h2>
+<h2 id="callName" style="margin-top:12px;font-size:20px;letter-spacing:3px">DEMONIO</h2>
 <p class="timer" id="timer">00:00</p>
 <p class="talking" id="talking"></p>
-</div>
-<div class="keypad">
+<div class="chat-box" id="chatBox"></div>
+<div class="keypad" style="margin-top:15px">
 <div class="key">1</div><div class="key">2</div><div class="key">3</div>
 <div class="key">4</div><div class="key">5</div><div class="key">6</div>
 <div class="key">7</div><div class="key">8</div><div class="key">9</div>
 </div>
-<div class="callActions" style="margin-top:0">
-<button class="btnCall btnRed" onclick="endCall()">✕</button>
+</div>
+
+<div class="bottom-bar">
+<div class="input-row">
+<input type="text" id="preguntaInput" placeholder="Preguntale algo..." onkeypress="if(event.key==='Enter')enviarPregunta()">
+<button onclick="enviarPregunta()">➤</button>
+</div>
+<div style="display:flex;justify-content:center;gap:20px;align-items:center">
+<button class="btnCall btnRed" onclick="endCall()" style="width:68px;height:68px;font-size:28px">✕</button>
+</div>
+<p style="text-align:center;font-size:7px;color:#222">ARCHIVAX • archiviax.com.ar</p>
 </div>
 </div>
 
@@ -75,45 +92,54 @@ const VOZ_URL="https://yxfzvogiladjupikgqyt.supabase.co/functions/v1/voz";
 const SUPA_KEY="sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc";
 let tipoActual="", timerInt, seg=0, audioNow=null;
 
-// FOTOS REALES GENERADAS - EMBEBIDAS
-const IMGS={
-DEMONIO:"https://i.ibb.co/6PqQ6Kj7/demonio-smoke.jpg",
-ANCIANA:"https://i.ibb.co/8X8Yv6g/anciana-real.jpg",
-NINA:"https://i.ibb.co/5s8bY6k/nina-creepy.jpg",
-DESCONOCIDO:"https://i.ibb.co/3kR0s6t/shadow-man.jpg"
-};
-
-// USAMOS FOTOS DE UNSPLASH QUE SIEMPRE FUNCIONAN Y SE VEN REALES
 const FOTOS={
-DEMONIO:"https://images.unsplash.com/photo-1509248961158-e32f1dba0c0a?w=400&h=400&fit=crop",
-ANCIANA:"https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=400&h=400&fit=crop&crop=face",
-NINA:"https://images.unsplash.com/photo-1516627145497-ae6968895b74?w=400&h=400&fit=crop&crop=face",
-DESCONOCIDO:"https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=400&h=400&fit=crop"
+DEMONIO:"https://images.unsplash.com/photo-1518709594023-6eab9bab7b23?w=400&h=400&fit=crop",
+ANCIANA:"https://images.unsplash.com/photo-1551836022-deb4988cc6c0?w=400&h=400&fit=crop&crop=face",
+NINA:"https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=400&h=400&fit=crop&crop=face",
+DESCONOCIDO:"https://images.unsplash.com/photo-1531384441138-2736e62e0919?w=400&h=400&fit=crop"
 };
 
 const CONTACTOS=[
-{tipo:"DEMONIO",nombre:"DEMONIO",num:"+54 11 666-0000",desc:"Entidad • Última vez hace 2 min",tag:"PELIGRO",tagColor:"red",foto:FOTOS.DEMONIO},
-{tipo:"ANCIANA",nombre:"ANCIANA",num:"+54 11 4317-1987",desc:"Contacto guardado • 1987",tag:"GUARDADO",tagColor:"#333",foto:FOTOS.ANCIANA},
-{tipo:"NINA",nombre:"NIÑA",num:"+54 11 3999-0007",desc:"Desaparecida • Quiere jugar",tag:"NIÑA",tagColor:"purple",foto:FOTOS.NINA},
-{tipo:"JOVEN",nombre:"DESCONOCIDO",num:"Número privado",desc:"Llamada entrante • No contestar",tag:"NUEVO",tagColor:"#0f0",foto:FOTOS.DESCONOCIDO}
+{tipo:"DEMONIO",nombre:"DEMONIO",num:"+54 11 666-0000",desc:"Entidad • Hace 2 min",tag:"PELIGRO",color:"red",foto:FOTOS.DEMONIO},
+{tipo:"ANCIANA",nombre:"ANCIANA",num:"+54 11 4317-1987",desc:"Contacto 1987",tag:"GUARDADO",color:"#444",foto:FOTOS.ANCIANA},
+{tipo:"NINA",nombre:"NIÑA",num:"+54 11 3999-0007",desc:"Quiere jugar",tag:"NIÑA",color:"purple",foto:FOTOS.NINA},
+{tipo:"JOVEN",nombre:"DESCONOCIDO",num:"Número privado",desc:"Llamada entrante",tag:"NUEVO",color:"#0f0",foto:FOTOS.DESCONOCIDO}
 ];
 
 function renderLista(){
-const lista=document.getElementById('lista');
-lista.innerHTML=CONTACTOS.map(c=>`
+document.getElementById('lista').innerHTML=CONTACTOS.map(c=>`
 <div class="item" onclick="openPre('${c.tipo}','${c.nombre}','${c.foto}','${c.num}')">
-<img src="${c.foto}"><div><h3>${c.nombre}</h3><p>${c.desc}</p></div>
-<span style="margin-left:auto;font-size:8px;background:${c.tagColor};color:${c.tagColor==='#0f0'?'#000':'#fff'};padding:3px 6px">${c.tag}</span>
+<img src="${c.foto}" onerror="this.src='https://i.pravatar.cc/150?u=${c.tipo}'"><div><h3>${c.nombre}</h3><p>${c.desc}</p></div>
+<span style="margin-left:auto;font-size:8px;background:${c.color};color:${c.color==='#0f0'?'#000':'#fff'};padding:3px 6px">${c.tag}</span>
 </div>`).join('');
 }
 renderLista();
 
-const FRASES={
-DEMONIO:["No deberías haber marcado ese número...","Te dije que no me llames...","Estoy detrás de ti ahora mismo...","No podrás colgar...","Ya estoy dentro de tu casa..."],
-ANCIANA:["Hola... ¿quién habla?...","Ay mi hijo, te extrañé tanto...","No me dejes sola aquí... hace mucho frío...","Ten cuidado, no estás solo..."],
-NINA:["¿Hola?... ¿quieres jugar conmigo?...","Estoy escondida en tu casa... ¿me encuentras?...","Tengo miedo... no me dejes sola...","¿Por qué no viniste a buscarme?..."],
-JOVEN:["¿Hola? ¿Me escuchas?...","Necesito ayuda... no sé dónde estoy...","¿Quién es? Esta línea está intervenida...","No cuelgues por favor..."]
-};
+// RESPUESTAS INTELIGENTES - NO REPITE
+function generarRespuesta(tipo, pregunta){
+pregunta=(pregunta||"").toLowerCase();
+let r="";
+if(tipo==="DEMONIO"){
+if(pregunta.includes("quien")||pregunta.includes("sos")) r="Soy lo que vive en tu espejo... hace tiempo que te observo";
+else if(pregunta.includes("donde")||pregunta.includes("estas")) r="Estoy detrás de ti... muy cerca... ¿no me sientes?";
+else if(pregunta.includes("que queres")||pregunta.includes("queres")) r="Quiero que no cuelgues... nunca";
+else if(pregunta.includes("nombre")) r="Mi nombre no se puede pronunciar... pero tú ya lo sabes";
+else {let ops=["No deberías haber marcado...","Te dije que no me llames...","Ya estoy dentro de tu casa...","No podrás escapar...","Te estoy mirando ahora mismo..."]; r=ops[Math.floor(Math.random()*ops.length)];}
+}else if(tipo==="ANCIANA"){
+if(pregunta.includes("quien")||pregunta.includes("sos")) r="Soy tu abuela, mi amor... ¿no me reconoces?";
+else if(pregunta.includes("como estas")||pregunta.includes("estas bien")) r="Tengo mucho frío aquí... hace mucho frío, hijo";
+else if(pregunta.includes("donde")) r="Estoy en un lugar oscuro... sola... te extraño";
+else {let ops=["Ay mi hijo, te extrañé tanto...","No me dejes sola otra vez...","Cuidado, hay algo detrás de ti...","Vine a advertirte..."]; r=ops[Math.floor(Math.random()*ops.length)];}
+}else if(tipo==="NINA"){
+if(pregunta.includes("quien")||pregunta.includes("como te llamas")) r="Me llamo Sofía... ¿quieres jugar conmigo?";
+else if(pregunta.includes("donde")) r="Estoy escondida en tu ropero... ¿me buscas?";
+else if(pregunta.includes("cuantos años")) r="Tengo siete... siempre tendré siete...";
+else {let ops=["¿Quieres jugar a las escondidas?","No me dejes sola, tengo miedo...","Mamá no me deja salir...","Te vi ayer en tu cuarto..."]; r=ops[Math.floor(Math.random()*ops.length)];}
+}else{
+let ops=["¿Hola? ¿Quién habla?","Necesito ayuda, no sé dónde estoy...","Esta línea está intervenida...","No cuelgues, por favor..."]; r=ops[Math.floor(Math.random()*ops.length)];
+}
+return r;
+}
 
 function openPre(tipo,nombre,foto,num){
 tipoActual=tipo;
@@ -123,8 +149,12 @@ document.getElementById('preNum').textContent=num;
 document.getElementById('preImg').src=foto;
 document.getElementById('callImg').src=foto;
 document.getElementById('callName').textContent=nombre;
+document.getElementById('chatBox').innerHTML="";
+document.getElementById('talking').textContent="";
+document.getElementById('preguntaInput').value="";
 }
 function closePre(){document.getElementById('precall').style.display='none';}
+
 async function hablar(txt){
 document.getElementById('talking').textContent='"'+txt+'"';
 try{
@@ -133,20 +163,40 @@ if(!r.ok)return;
 const b=await r.blob();if(audioNow)audioNow.pause();audioNow=new Audio(URL.createObjectURL(b));audioNow.play();
 }catch(e){}
 }
+
 function startCall(){
 document.getElementById('precall').style.display='none';
 document.getElementById('incall').style.display='flex';
 seg=0;document.getElementById('timer').textContent="00:00";
 timerInt=setInterval(()=>{seg++;let m=String(Math.floor(seg/60)).padStart(2,'0');let s=String(seg%60).padStart(2,'0');document.getElementById('timer').textContent=m+":"+s},1000);
-let lista=FRASES[tipoActual]||FRASES.JOVEN;let i=0;hablar(lista[i]);
-let charla=setInterval(()=>{i++;if(i<lista.length && document.getElementById('incall').style.display==='flex'){hablar(lista[i])}else{clearInterval(charla)}},7500);
-window.charlaInt=charla;
+let inicial=generarRespuesta(tipoActual,"");
+hablar(inicial);
+addChat("entity",inicial);
 }
+
+function enviarPregunta(){
+const input=document.getElementById('preguntaInput');
+const txt=input.value.trim();
+if(!txt)return;
+addChat("user",txt);
+input.value="";
+let resp=generarRespuesta(tipoActual,txt);
+setTimeout(()=>{hablar(resp);addChat("entity",resp);},600);
+}
+
+function addChat(who,txt){
+const box=document.getElementById('chatBox');
+const div=document.createElement('div');
+div.className=who;
+div.textContent=(who==="user"?"> ":"")+txt;
+box.appendChild(div);
+box.scrollTop=box.scrollHeight;
+}
+
 function endCall(){
 document.getElementById('incall').style.display='none';
-clearInterval(timerInt);clearInterval(window.charlaInt);
+clearInterval(timerInt);
 if(audioNow)audioNow.pause();
-document.getElementById('talking').textContent="";
 }
 </script>
 </body>
