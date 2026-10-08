@@ -11,6 +11,8 @@ body{margin:0;background:#000;overflow:hidden}
 #hud{position:absolute;top:0;left:0;right:0;padding:14px;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,.85),transparent);font-family:monospace}
 #rec{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:62px;height:62px;border-radius:50%;background:#ff1e1e;border:3px solid #fff;z-index:20}
 #rec.on{background:#fff;box-shadow:0 0 20px red}
+#zoomBox{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);z-index:15;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:20px;border:1px solid #333}
+#zoom{width:140px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3"></script>
@@ -19,8 +21,13 @@ body{margin:0;background:#000;overflow:hidden}
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <div id="hud">
-<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM</div>
+<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM • AUDIO + ZOOM</div>
 <div id="log" style="color:#fff;font-size:12px;margin-top:6px">INICIANDO...</div>
+</div>
+<div id="zoomBox">
+<span style="color:#fff;font-family:monospace;font-size:10px">ZOOM</span>
+<input id="zoom" type="range" min="1" max="4" step="0.1" value="1">
+<span id="zoomVal" style="color:#fff;font-family:monospace;font-size:10px">1x</span>
 </div>
 <button id="rec" onclick="toggleRec()"></button>
 <script>
@@ -28,13 +35,13 @@ const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 let detector, entities=[], isRec=false, recorder, chunks=[];
+let videoTrack, audioContext, analyser, audioStream;
 
 class Ghost{
  constructor(x,y){
   this.x=x; this.y=y; this.phase=Math.random()*5;
   this.start=Date.now(); this.life=8000+Math.random()*2000;
-  this.scale=2.6;
-  this.dir=(Math.random()-0.5)*0.5;
+  this.scale=2.6; this.dir=(Math.random()-0.5)*0.5;
  }
  alive(){ return Date.now()-this.start < this.life; }
  alpha(){ const r=this.life-(Date.now()-this.start); return r<800? r/800 : 1; }
@@ -59,18 +66,39 @@ class Ghost{
 }
 
 async function init(){
- const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:1280,height:720}});
- video.srcObject=stream; await new Promise(r=>video.onloadedmetadata=r);
+ // CAMARA + AUDIO AMBIENTE
+ const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:1280,height:720}, audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+ video.srcObject=stream;
+ videoTrack=stream.getVideoTracks()[0];
+ audioStream=stream;
+ await new Promise(r=>video.onloadedmetadata=r);
  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
+
+ // ZOOM NATIVO
+ const zoomInput=document.getElementById('zoom');
+ zoomInput.addEventListener('input', async (e)=>{
+  const z=parseFloat(e.target.value);
+  document.getElementById('zoomVal').innerText=z.toFixed(1)+'x';
+  try{ await videoTrack.applyConstraints({advanced:[{zoom:z}]}); }catch{ video.style.transform=`scale(${z})`; }
+ });
+
+ // AUDIO ANALISIS PARA RUIDO RARO
+ try{
+  audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  const src=audioContext.createMediaStreamSource(stream);
+  analyser=audioContext.createAnalyser(); analyser.fftSize=256;
+  src.connect(analyser);
+ }catch{}
+
  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true});
- document.getElementById('log').innerText='VISION ACTIVA - SOLO DETECCION REAL';
+ document.getElementById('log').innerText='VISION ACTIVA + AUDIO AMBIENTE ON';
  loop();
 }
 
 function drawWatermark(){
  ctx.save();
- ctx.globalAlpha= isRec ? 0.85 : 0.35;
+ ctx.globalAlpha= isRec? 0.85 : 0.35;
  ctx.fillStyle='#fff';
  ctx.font=`${Math.round(canvas.width*0.022)}px monospace`;
  ctx.textAlign='right';
@@ -79,6 +107,7 @@ function drawWatermark(){
  ctx.restore();
 }
 
+let lastAudioAlert=0;
 async function loop(){
  const poses=await detector.estimatePoses(video,{maxPoses:5,flipHorizontal:false});
  ctx.clearRect(0,0,canvas.width,canvas.height);
@@ -91,14 +120,33 @@ async function loop(){
  entities=entities.filter(e=>e.alive());
  entities.forEach(e=>{ e.update(); e.draw(); });
  drawWatermark();
- document.getElementById('log').innerText= entities.length? `${entities.length} ENTIDAD DETECTADA` : 'ESCANEANDO...';
+
+ // DETECCION DE RUIDO RARO / VOZ SOLA
+ if(analyser){
+  const data=new Uint8Array(analyser.frequencyBinCount);
+  analyser.getByteFrequencyData(data);
+  const vol=data.reduce((a,b)=>a+b,0)/data.length;
+  if(vol>45 && Date.now()-lastAudioAlert>3000 && entities.length===0){
+   document.getElementById('log').innerText=`⚠ RUIDO AMBIENTE DETECTADO - ${vol.toFixed(0)}dB`;
+   lastAudioAlert=Date.now();
+  } else if(entities.length>0){
+   document.getElementById('log').innerText=`${entities.length} ENTIDAD DETECTADA + AUDIO ON`;
+  } else if(Date.now()-lastAudioAlert>4000){
+   document.getElementById('log').innerText='ESCANEANDO... AUDIO AMBIENTE ACTIVO';
+  }
+ } else {
+  document.getElementById('log').innerText= entities.length? `${entities.length} ENTIDAD DETECTADA` : 'ESCANEANDO...';
+ }
+
  requestAnimationFrame(loop);
 }
 
 function toggleRec(){
  if(!isRec){
-  const s=new MediaStream([...canvas.captureStream(30).getTracks(),...video.srcObject.getTracks()]);
-  chunks=[]; recorder=new MediaRecorder(s,{mimeType:'video/webm'});
+  // GRABA VIDEO + CANVAS + AUDIO AMBIENTE
+  const canvasStream=canvas.captureStream(30);
+  const combined=new MediaStream([...canvasStream.getVideoTracks(),...audioStream.getAudioTracks()]);
+  chunks=[]; recorder=new MediaRecorder(combined,{mimeType:'video/webm'});
   recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
   recorder.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ARCHIVAX-VISION-${Date.now()}.webm`;a.click();};
   recorder.start(); isRec=true; document.getElementById('rec').classList.add('on');
