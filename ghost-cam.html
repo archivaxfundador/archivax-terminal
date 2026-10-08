@@ -31,11 +31,9 @@ let detector, entities=[], isRec=false, recorder, chunks=[];
 
 class Ghost{
  constructor(x,y){
-  this.x=x; this.y=y;
-  this.phase=Math.random()*5;
-  this.start=Date.now(); 
-  this.life=8000+Math.random()*2000; // 8-10 seg
-  this.scale=2.6; // ALTO REAL PERSONA
+  this.x=x; this.y=y; this.phase=Math.random()*5;
+  this.start=Date.now(); this.life=8000+Math.random()*2000;
+  this.scale=2.6;
   this.dir=(Math.random()-0.5)*0.5;
  }
  alive(){ return Date.now()-this.start < this.life; }
@@ -43,29 +41,20 @@ class Ghost{
  update(){ this.phase+=0.11; this.x+=this.dir; }
  draw(){
   const a=this.alpha(); if(a<=0) return;
-  ctx.save(); 
-  ctx.translate(this.x,this.y); 
-  ctx.scale(this.scale,this.scale); 
-  ctx.globalAlpha=a;
-  ctx.shadowBlur=22; ctx.shadowColor='rgba(255,255,255,0.85)'; 
+  ctx.save(); ctx.translate(this.x,this.y); ctx.scale(this.scale,this.scale); ctx.globalAlpha=a;
+  ctx.shadowBlur=22; ctx.shadowColor='rgba(255,255,255,0.85)';
   ctx.fillStyle='#e8e0d5'; ctx.strokeStyle='#e8e0d5';
   ctx.lineWidth=11; ctx.lineCap='round'; ctx.lineJoin='round';
-  
   const swing=Math.sin(this.phase);
   const lX=swing<0?-7:-7+swing*22; const lY=swing<0?72:72-Math.abs(swing)*16;
   const rX=swing>=0?7:7+Math.sin(this.phase+Math.PI)*22; const rY=swing>=0?72:72-Math.abs(Math.sin(this.phase+Math.PI))*16;
-
-  // CUERPO ALTO REAL - 1.75m proporcion
-  ctx.beginPath(); ctx.arc(0,-82,12,0,Math.PI*2); ctx.fill(); // cabeza mas grande
-  ctx.beginPath(); ctx.roundRect(-11,-66,22,48,8); ctx.fill(); // torso largo
-  // brazos largos
+  ctx.beginPath(); ctx.arc(0,-82,12,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.roundRect(-11,-66,22,48,8); ctx.fill();
   ctx.beginPath(); ctx.moveTo(-9,-54); ctx.lineTo(-18+swing*3,-22); ctx.lineTo(-20+swing*3,10); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(9,-54); ctx.lineTo(18-swing*3,-22); ctx.lineTo(20-swing*3,10); ctx.stroke();
-  // piernas largas altura real
   ctx.beginPath(); ctx.moveTo(-5,-20); ctx.lineTo(lX*0.5,22); ctx.lineTo(lX,lY); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(5,-20); ctx.lineTo(rX*0.5,22); ctx.lineTo(rX,rY); ctx.stroke();
   ctx.restore();
-  // SIN MARCA ROJA
  }
 }
 
@@ -80,7 +69,6 @@ async function init(){
 }
 
 function drawWatermark(){
- // Marca de agua solo visible en grabacion pero la dibujamos siempre semitransparente
  ctx.save();
  ctx.globalAlpha= isRec ? 0.85 : 0.35;
  ctx.fillStyle='#fff';
@@ -94,21 +82,15 @@ function drawWatermark(){
 async function loop(){
  const poses=await detector.estimatePoses(video,{maxPoses:5,flipHorizontal:false});
  ctx.clearRect(0,0,canvas.width,canvas.height);
-
  poses.forEach(p=>{
-  if(p.keypoints[0].score>0.38){
+  if(p.keypoints[0].score>0.28){
    const kx=p.keypoints[0].x; const ky=p.keypoints[12].y || p.keypoints[0].y+120;
-   if(!entities.find(e=>Math.abs(e.x-kx)<100 && e.alive())){
-    entities.push(new Ghost(kx,ky));
-   }
+   if(!entities.find(e=>Math.abs(e.x-kx)<100 && e.alive())){ entities.push(new Ghost(kx,ky)); }
   }
  });
-
  entities=entities.filter(e=>e.alive());
  entities.forEach(e=>{ e.update(); e.draw(); });
- 
- drawWatermark(); // marca de agua archiviax
-
+ drawWatermark();
  document.getElementById('log').innerText= entities.length? `${entities.length} ENTIDAD DETECTADA` : 'ESCANEANDO...';
  requestAnimationFrame(loop);
 }
