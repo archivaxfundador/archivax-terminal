@@ -5,14 +5,17 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
 <title>ARCHIVAX VISION SYSTEM</title>
 <style>
-body{margin:0;background:#000;overflow:hidden}
-#video{position:absolute;width:100%;height:100%;object-fit:cover;filter:brightness(0.3) contrast(1.4)}
+body{margin:0;background:#000;overflow:hidden;font-family:monospace}
+#video{position:absolute;width:100%;height:100%;object-fit:cover;filter:brightness(0.32) contrast(1.3)}
 #canvas{position:absolute;width:100%;height:100%}
-#hud{position:absolute;top:0;left:0;right:0;padding:16px;z-index:10;background:linear-gradient(180deg,#000 0%,transparent 100%)}
-#log{color:#fff;font-family:monospace;font-size:13px;margin-top:8px}
-#bottom{position:absolute;bottom:0;left:0;right:0;z-index:10;background:#0a0a0a;padding:12px;display:flex;justify-content:space-between;align-items:center}
-#rec{width:54px;height:54px;border-radius:50%;background:#ff1a1a;border:3px solid #fff;display:flex;align-items:center;justify-content:center}
-#rec.on{background:#fff;box-shadow:0 0 20px red}
+#hud{position:absolute;top:0;left:0;right:0;padding:14px;z-index:10;background:linear-gradient(180deg,#000 90%,transparent)}
+#zone{position:absolute;top:70px;left:10px;z-index:10;display:flex;gap:6px}
+.zoneBtn{background:#111;color:#888;border:1px solid #333;padding:6px 10px;font-size:10px;border-radius:12px}
+.zoneBtn.active{background:#fff;color:#000;border-color:#fff}
+#bottom{position:absolute;bottom:0;left:0;right:0;z-index:10;background:#0a0a0a;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;border-top:1px solid #222}
+#rec{width:52px;height:52px;border-radius:50%;background:#ff1a1a;border:3px solid #fff}
+#rec.on{animation:pulse 1s infinite}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,0,0,.6)}100%{box-shadow:0 0 0 15px rgba(255,0,0,0)}}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3"></script>
@@ -21,121 +24,137 @@ body{margin:0;background:#000;overflow:hidden}
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <div id="hud">
-<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px;font-family:monospace">ARCHIVAX VISION SYSTEM • TESLA MODE</div>
-<div id="log">INICIANDO SISTEMA...</div>
+<div style="color:rgba(255,255,255,.5);font-size:10px">ARCHIVAX VISION SYSTEM • REAL WALK MODE</div>
+<div id="log" style="color:#fff;font-size:13px;margin-top:6px">SELECCIONÁ ZONA PARA DETECCION</div>
+</div>
+<div id="zone">
+<button class="zoneBtn active" onclick="setZone('casa',this)">CASA (1-2)</button>
+<button class="zoneBtn" onclick="setZone('patio',this)">PATIO (1-2)</button>
+<button class="zoneBtn" onclick="setZone('cementerio',this)">CEMENTERIO (4-7)</button>
+<button class="zoneBtn" onclick="setZone('descampado',this)">DESCAMPADO (3-5)</button>
 </div>
 <div id="bottom">
-<div id="rec" onclick="toggleRec()"><div style="width:18px;height:18px;background:#fff;border-radius:50%"></div></div>
-<div style="color:#fff;font-family:monospace;font-size:11px"><span id="cnt">0 ENTIDADES</span><br><span style="color:#888">MANTENÉ PRESIONADO PARA GRABAR</span></div>
+<button id="rec" onclick="toggleRec()"></button>
+<div style="color:#fff;font-size:11px"><div id="cnt">0 ENTIDADES</div><div id="sub" style="color:#777">TOCA ROJO PARA GRABAR</div></div>
 </div>
 <script>
 const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
-let detector, entities=[], isRec=false, recorder, chunks=[];
+let detector, entities=[], zone='casa', zoneCount={casa:[1,2],patio:[1,2],cementerio:[4,7],descampado:[3,5]};
+let isRec=false, recorder, chunks=[];
+
+function setZone(z,el){ zone=z; document.querySelectorAll('.zoneBtn').forEach(b=>b.classList.remove('active')); el.classList.add('active');
+ document.getElementById('log').innerText=`MODO ${z.toUpperCase()} - BUSCANDO ${zoneCount[z][0]} A ${zoneCount[z][1]} ENTIDADES`;
+ entities=[]; // limpia para generar nueva cantidad
+}
 
 async function init(){
  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:1280,height:720}});
  video.srcObject=s; await new Promise(r=>video.onloadedmetadata=r);
  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
- detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true});
+ detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING});
  loop();
 }
 
-function drawRealTeslaMan(x,y,scale,phase,alpha){
- ctx.save();
- ctx.translate(x,y);
- ctx.scale(scale,scale);
- ctx.globalAlpha=alpha*0.95;
+// DIBUJO REAL - con pie que pisa y no patina
+class RealWalker{
+ constructor(x,y,scale){
+  this.x=x; this.y=y; this.baseY=y; this.scale=scale;
+  this.phase=Math.random()*Math.PI*2; this.speed=0.09+Math.random()*0.03;
+  this.stride=45; this.lift=18;
+  // Estado de pies - uno plantado siempre
+  this.leftPlanted=true;
+ }
+ update(){
+  this.phase+=this.speed;
+  // Avanza lento hacia camara
+  this.y+=0.25*this.scale;
+  this.scale+=0.001;
+  // Ciclo de caminata real
+  const t = (Math.sin(this.phase)+1)/2; // 0 a 1
+  if(t>0.95) this.leftPlanted=!this.leftPlanted; // cambio de pie
+ }
 
- // Material Tesla real - blanco hueso mate con borde suave
- ctx.shadowBlur=20; ctx.shadowColor='rgba(255,255,255,0.7)';
- ctx.fillStyle='#e8e0d5'; // color exacto Tesla
- ctx.strokeStyle='#e8e0d5';
- ctx.lineWidth=18; ctx.lineCap='round'; ctx.lineJoin='round';
+ draw(alpha){
+  ctx.save(); ctx.translate(this.x,this.y); ctx.scale(this.scale,this.scale); ctx.globalAlpha=alpha;
+  ctx.shadowBlur=18; ctx.shadowColor='rgba(255,255,255,.6)';
+  ctx.fillStyle='#e9e1d6'; ctx.strokeStyle='#e9e1d6'; ctx.lineWidth=17; ctx.lineCap='round'; ctx.lineJoin='round';
+  
+  const t=(Math.sin(this.phase)+1)/2;
+  // Pies con trayectoria real: uno fijo en suelo, otro hace arco
+  const leftX = this.leftPlanted ? -8 : -8 + Math.sin(this.phase)*this.stride;
+  const leftY = this.leftPlanted ? 62 : 62 - Math.abs(Math.sin(this.phase))*this.lift - 10;
+  const rightX = !this.leftPlanted ? 8 : 8 + Math.sin(this.phase+Math.PI)*this.stride;
+  const rightY = !this.leftPlanted ? 62 : 62 - Math.abs(Math.sin(this.phase+Math.PI))*this.lift - 10;
 
- // Animacion caminata real
- const leg1=Math.sin(phase)*22;
- const leg2=Math.sin(phase+Math.PI)*22;
- const arm1=Math.sin(phase+Math.PI)*14;
- const arm2=Math.sin(phase)*14;
+  // Cuerpo entero proporcion real 7.5 cabezas
+  ctx.beginPath(); ctx.ellipse(0,-86,15,18,0,0,Math.PI*2); ctx.fill(); // cabeza
+  ctx.beginPath(); ctx.roundRect(-15,-67,30,50,12); ctx.fill(); // torso
+  // Brazos opuestos a piernas
+  ctx.beginPath(); ctx.moveTo(-13,-55); ctx.lineTo(-28-Math.sin(this.phase)*10,-28); ctx.lineTo(-30-Math.sin(this.phase)*10,8); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(13,-55); ctx.lineTo(28+Math.sin(this.phase)*10,-28); ctx.lineTo(30+Math.sin(this.phase)*10,8); ctx.stroke();
+  // Piernas con pie clavado
+  ctx.beginPath(); ctx.moveTo(-6,-18); ctx.lineTo(leftX*0.6,20); ctx.lineTo(leftX,leftY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6,-18); ctx.lineTo(rightX*0.6,20); ctx.lineTo(rightX,rightY); ctx.stroke();
 
- // Cabeza ovalada Tesla
- ctx.beginPath(); ctx.ellipse(0,-88,16,19,0,0,Math.PI*2); ctx.fill();
- // Tronco
- ctx.beginPath(); ctx.roundRect(-16,-68,32,52,14); ctx.fill();
- // Brazos que se balancean al caminar
- ctx.beginPath(); ctx.moveTo(-14,-55); ctx.lineTo(-28+arm1*0.3,-30); ctx.lineTo(-32+arm1*0.3,2); ctx.stroke();
- ctx.beginPath(); ctx.moveTo(14,-55); ctx.lineTo(28+arm2*0.3,-30); ctx.lineTo(32+arm2*0.3,2); ctx.stroke();
- // Piernas cruzadas caminando de verdad
- ctx.beginPath(); ctx.moveTo(-7,-18); ctx.lineTo(-10+leg1*0.4,18); ctx.lineTo(-12+leg1*0.5,62); ctx.stroke();
- ctx.beginPath(); ctx.moveTo(7,-18); ctx.lineTo(10+leg2*0.4,18); ctx.lineTo(12+leg2*0.5,62); ctx.stroke();
-
- ctx.restore();
- // Sombra roja Tesla debajo
- ctx.globalAlpha=alpha*0.6; ctx.fillStyle='#ff1e1e'; ctx.fillRect(x-28*scale,y+62*scale,56*scale,4*scale);
+  ctx.restore();
+  // Sombra que queda fija en el suelo - efecto que pisa de verdad
+  ctx.globalAlpha=alpha*0.7; ctx.fillStyle='#ff1e1e';
+  const groundY=this.y+62*this.scale;
+  ctx.fillRect(this.x-30*this.scale,groundY,60*this.scale,4);
+ }
 }
 
 async function loop(){
- const poses=await detector.estimatePoses(video,{maxPoses:6,flipHorizontal:false});
+ const poses=await detector.estimatePoses(video,{maxPoses:6});
  ctx.clearRect(0,0,canvas.width,canvas.height);
  const now=Date.now();
 
- // 1. Gente real detectada
+ // Si detecta gente real, crea walkers en esa posicion
  poses.forEach(p=>{
-  if(p.keypoints[0].score>0.25){
-   const cx=p.keypoints[0].x; const cy=p.keypoints[11].y || canvas.height*0.5;
-   // Si ya existe cerca, actualizar
-   let e=entities.find(en=>Math.abs(en.x-cx)<100);
-   if(e){ e.tx=cx; e.ty=cy; e.last=now; }
-   else { entities.push({x:cx,y:cy,tx:cx,ty:cy,start:now,last:now,phase:Math.random()*6,scale:0.8+Math.random()*0.4,phantom:false}); }
+  if(p.keypoints[0].score>0.3){
+   if(!entities.find(e=>Math.abs(e.x-p.keypoints[0].x)<80)){
+    entities.push(new RealWalker(p.keypoints[0].x, p.keypoints[11].y||canvas.height*0.5, 0.9));
+   }
   }
  });
 
- // 2. Modo cementerio - genera 3 a 5 fantasmas caminando juntos como en tu imagen
- if(entities.length===0 && Math.random()>0.985){
-  const baseX=canvas.width*0.45+Math.random()*canvas.width*0.2;
-  const count=3+Math.floor(Math.random()*3); // 3 a 5
-  for(let i=0;i<count;i++){
-   entities.push({
-    x:baseX+(i*35-50)+Math.random()*20,
-    y:canvas.height*0.35+i*15,
-    tx:baseX+(i*35-50),
-    ty:canvas.height*0.75,
-    start:now+i*300, last:now, phase:i*0.8, scale:0.7+i*0.15, phantom:true
-   });
+ // Generacion segun ZONA
+ const minMax=zoneCount[zone];
+ if(entities.length<minMax[0] && Math.random()>0.97){
+  const needed = minMax[0] + Math.floor(Math.random()*(minMax[1]-minMax[0]+1));
+  const toCreate = needed - entities.length;
+  for(let i=0;i<toCreate;i++){
+   const x=canvas.width*0.25 + Math.random()*canvas.width*0.5 + (i*40-60);
+   const y=canvas.height*0.3 + Math.random()*canvas.height*0.15;
+   entities.push(new RealWalker(x,y,0.65+Math.random()*0.3));
   }
  }
 
- // Dibujar con movimiento y acercamiento real
+ // Dibujar y mantener 15 seg, con pie que pisa
  entities=entities.filter(en=>{
-  const age=(now-en.start)/1000;
-  if(age>12) return false; // dura 12 segundos
-  // Interpolar hacia target (camina hacia vos)
-  en.x+=(en.tx-en.x)*0.02;
-  en.y+=(en.ty-en.y)*0.008;
-  en.phase+=0.12; // velocidad caminata
-  en.scale+=0.0015; // se acerca y se agranda como en Tesla
-
-  const alpha= age>9? 1-(age-9)/3 : 1;
-  drawRealTeslaMan(en.x,en.y,en.scale,en.phase,alpha);
+  const age=(now-(en.start||now))/1000;
+  if(!en.start) en.start=now;
+  if(age>15) return false;
+  en.update();
+  const alpha=age>12?1-(age-12)/3:1;
+  en.draw(alpha);
   return true;
  });
 
- document.getElementById('log').innerText= entities.length? `⚠ ${entities.length} ENTIDADES EN VIA - DISTANCIA ${ (5-entities[0].scale).toFixed(1)}m` : 'VIA LIBRE - ESCANEANDO';
- document.getElementById('cnt').innerText=`${entities.length} ENTIDADES`;
-
+ document.getElementById('cnt').innerText=`${entities.length} ENTIDADES • ${zone.toUpperCase()}`;
+ document.getElementById('log').innerText=entities.length?`${entities.length} ENTIDADES CAMINANDO - PISADA REAL DETECTADA`:'VIA LIBRE';
  requestAnimationFrame(loop);
 }
 
 function toggleRec(){
  if(!isRec){
-  const stream=canvas.captureStream(30);
-  chunks=[]; recorder=new MediaRecorder(stream,{mimeType:'video/webm'});
+  const s=canvas.captureStream(30); chunks=[]; recorder=new MediaRecorder(s,{mimeType:'video/webm'});
   recorder.ondataavailable=e=>chunks.push(e.data);
-  recorder.onstop=()=>{ const blob=new Blob(chunks,{type:'video/webm'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=`ARCHIVAX-VISION-${Date.now()}.webm`; a.click(); };
-  recorder.start(); isRec=true; document.getElementById('rec').classList.add('on');
- } else { recorder.stop(); isRec=false; document.getElementById('rec').classList.remove('on'); }
+  recorder.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ARCHIVAX-VISION-${zone}-${Date.now()}.webm`;a.click();};
+  recorder.start(); isRec=true; document.getElementById('rec').classList.add('on'); document.getElementById('sub').innerText='GRABANDO...';
+ } else {recorder.stop(); isRec=false; document.getElementById('rec').classList.remove('on'); document.getElementById('sub').innerText='VIDEO GUARDADO';}
 }
 init();
 </script>
