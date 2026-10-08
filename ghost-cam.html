@@ -9,7 +9,7 @@ body{margin:0;background:#000;overflow:hidden}
 #video{position:absolute;width:100%;height:100%;object-fit:cover}
 #canvas{position:absolute;width:100%;height:100%}
 #hud{position:absolute;top:0;left:0;right:0;padding:14px;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,.85),transparent);font-family:monospace}
-#rec{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:60px;height:60px;border-radius:50%;background:#ff1e1e;border:3px solid #fff;z-index:20}
+#rec{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:62px;height:62px;border-radius:50%;background:#ff1e1e;border:3px solid #fff;z-index:20}
 #rec.on{background:#fff;box-shadow:0 0 20px red}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
@@ -20,84 +20,105 @@ body{margin:0;background:#000;overflow:hidden}
 <canvas id="canvas"></canvas>
 <div id="hud">
 <div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM</div>
-<div id="log" style="color:#fff;font-size:12px;margin-top:6px">INICIANDO CAMARA + IA...</div>
+<div id="log" style="color:#fff;font-size:12px;margin-top:6px">INICIANDO...</div>
 </div>
 <button id="rec" onclick="toggleRec()"></button>
 <script>
 const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
-let detector, entities=[], W,H;
+let detector, entities=[], isRec=false, recorder, chunks=[];
 
 class Ghost{
- constructor(x,y,scale){
-  this.x=x; this.y=y; this.scale=scale; this.phase=Math.random()*5;
-  this.start=Date.now(); this.life=8000+Math.random()*2000;
-  this.speed=0.7; this.dir=(Math.random()-0.5)*0.6;
+ constructor(x,y){
+  this.x=x; this.y=y;
+  this.phase=Math.random()*5;
+  this.start=Date.now(); 
+  this.life=8000+Math.random()*2000; // 8-10 seg
+  this.scale=2.6; // ALTO REAL PERSONA
+  this.dir=(Math.random()-0.5)*0.5;
  }
  alive(){ return Date.now()-this.start < this.life; }
- alpha(){ const r=this.life-(Date.now()-this.start); return r<1000? r/1000 : 1; }
- update(){ this.phase+=0.11; this.x+=this.dir; this.y-=0.15; }
+ alpha(){ const r=this.life-(Date.now()-this.start); return r<800? r/800 : 1; }
+ update(){ this.phase+=0.11; this.x+=this.dir; }
  draw(){
   const a=this.alpha(); if(a<=0) return;
-  ctx.save(); ctx.translate(this.x,this.y); ctx.scale(this.scale,this.scale); ctx.globalAlpha=a;
-  ctx.shadowBlur=15; ctx.shadowColor='#fff'; ctx.fillStyle='#e9e1d6'; ctx.strokeStyle='#e9e1d6';
-  ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+  ctx.save(); 
+  ctx.translate(this.x,this.y); 
+  ctx.scale(this.scale,this.scale); 
+  ctx.globalAlpha=a;
+  ctx.shadowBlur=22; ctx.shadowColor='rgba(255,255,255,0.85)'; 
+  ctx.fillStyle='#e8e0d5'; ctx.strokeStyle='#e8e0d5';
+  ctx.lineWidth=11; ctx.lineCap='round'; ctx.lineJoin='round';
+  
   const swing=Math.sin(this.phase);
-  const lX=swing<0?-5:-5+swing*16; const lY=swing<0?32:32-Math.abs(swing)*10;
-  const rX=swing>=0?5:5+Math.sin(this.phase+Math.PI)*16; const rY=swing>=0?32:32-Math.abs(Math.sin(this.phase+Math.PI))*10;
-  ctx.beginPath(); ctx.arc(0,-36,7.5,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.roundRect(-6.5,-27,13,20,5); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-4.5,-21); ctx.lineTo(-9+swing*2,-9); ctx.lineTo(-10+swing*2,2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(4.5,-21); ctx.lineTo(9-swing*2,-9); ctx.lineTo(10-swing*2,2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-2.5,-8); ctx.lineTo(lX*0.5,8); ctx.lineTo(lX,lY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(2.5,-8); ctx.lineTo(rX*0.5,8); ctx.lineTo(rX,rY); ctx.stroke();
+  const lX=swing<0?-7:-7+swing*22; const lY=swing<0?72:72-Math.abs(swing)*16;
+  const rX=swing>=0?7:7+Math.sin(this.phase+Math.PI)*22; const rY=swing>=0?72:72-Math.abs(Math.sin(this.phase+Math.PI))*16;
+
+  // CUERPO ALTO REAL - 1.75m proporcion
+  ctx.beginPath(); ctx.arc(0,-82,12,0,Math.PI*2); ctx.fill(); // cabeza mas grande
+  ctx.beginPath(); ctx.roundRect(-11,-66,22,48,8); ctx.fill(); // torso largo
+  // brazos largos
+  ctx.beginPath(); ctx.moveTo(-9,-54); ctx.lineTo(-18+swing*3,-22); ctx.lineTo(-20+swing*3,10); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(9,-54); ctx.lineTo(18-swing*3,-22); ctx.lineTo(20-swing*3,10); ctx.stroke();
+  // piernas largas altura real
+  ctx.beginPath(); ctx.moveTo(-5,-20); ctx.lineTo(lX*0.5,22); ctx.lineTo(lX,lY); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(5,-20); ctx.lineTo(rX*0.5,22); ctx.lineTo(rX,rY); ctx.stroke();
   ctx.restore();
-  ctx.globalAlpha=a*0.6; ctx.fillStyle='#ff1e1e'; ctx.fillRect(this.x-18*this.scale,this.y+30*this.scale,36*this.scale,3);
+  // SIN MARCA ROJA
  }
 }
 
 async function init(){
  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:1280,height:720}});
  video.srcObject=stream; await new Promise(r=>video.onloadedmetadata=r);
- W=canvas.width=video.videoWidth; H=canvas.height=video.videoHeight;
+ canvas.width=video.videoWidth; canvas.height=video.videoHeight;
  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true});
- document.getElementById('log').innerText='CAMARA ACTIVA - ESPERANDO DETECCION';
+ document.getElementById('log').innerText='VISION ACTIVA - SOLO DETECCION REAL';
  loop();
+}
+
+function drawWatermark(){
+ // Marca de agua solo visible en grabacion pero la dibujamos siempre semitransparente
+ ctx.save();
+ ctx.globalAlpha= isRec ? 0.85 : 0.35;
+ ctx.fillStyle='#fff';
+ ctx.font=`${Math.round(canvas.width*0.022)}px monospace`;
+ ctx.textAlign='right';
+ ctx.shadowBlur=6; ctx.shadowColor='rgba(0,0,0,0.9)';
+ ctx.fillText('archiviax.com.ar', canvas.width-25, canvas.height-28);
+ ctx.restore();
 }
 
 async function loop(){
  const poses=await detector.estimatePoses(video,{maxPoses:5,flipHorizontal:false});
- ctx.clearRect(0,0,W,H);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
 
- // SOLO cuando IA detecta persona real, crea fantasma Tesla en esa posicion
  poses.forEach(p=>{
-  if(p.keypoints[0].score>0.35){
-   const kx=p.keypoints[0].x; const ky=p.keypoints[11].y || p.keypoints[0].y+80;
-   // No duplicar si ya hay uno cerca
-   if(!entities.find(e=>Math.abs(e.x-kx)<60 && e.alive())){
-    entities.push(new Ghost(kx,ky,1.1));
+  if(p.keypoints[0].score>0.38){
+   const kx=p.keypoints[0].x; const ky=p.keypoints[12].y || p.keypoints[0].y+120;
+   if(!entities.find(e=>Math.abs(e.x-kx)<100 && e.alive())){
+    entities.push(new Ghost(kx,ky));
    }
   }
  });
 
- // Dibujar y mantener 8-10 seg caminando
  entities=entities.filter(e=>e.alive());
  entities.forEach(e=>{ e.update(); e.draw(); });
+ 
+ drawWatermark(); // marca de agua archiviax
 
- document.getElementById('log').innerText= entities.length? `${entities.length} ENTIDAD${entities.length>1?'ES':''} DETECTADA - ${entities.length===1?'8-10 SEG':''}` : 'SIN DETECCION - MOVER CAMARA LENTO';
+ document.getElementById('log').innerText= entities.length? `${entities.length} ENTIDAD DETECTADA` : 'ESCANEANDO...';
  requestAnimationFrame(loop);
 }
 
-// Grabacion
-let recorder,chunks=[],isRec=false;
 function toggleRec(){
  if(!isRec){
   const s=new MediaStream([...canvas.captureStream(30).getTracks(),...video.srcObject.getTracks()]);
   chunks=[]; recorder=new MediaRecorder(s,{mimeType:'video/webm'});
-  recorder.ondataavailable=e=>chunks.push(e.data);
-  recorder.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`VISION-SYSTEM-${Date.now()}.webm`;a.click();};
+  recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
+  recorder.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ARCHIVAX-VISION-${Date.now()}.webm`;a.click();};
   recorder.start(); isRec=true; document.getElementById('rec').classList.add('on');
  } else {recorder.stop(); isRec=false; document.getElementById('rec').classList.remove('on');}
 }
