@@ -6,7 +6,7 @@
 <title>ARCHIVAX VISION SYSTEM</title>
 <style>
 body{margin:0;background:#000;overflow:hidden}
-#video{position:absolute;width:100%;height:100%;object-fit:cover}
+#video{position:absolute;width:100%;height:100%;object-fit:cover;filter:contrast(1.1)}
 #canvas{position:absolute;width:100%;height:100%}
 #hud{position:absolute;top:0;left:0;right:0;padding:14px;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,.85),transparent);font-family:monospace}
 #rec{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:62px;height:62px;border-radius:50%;background:#ff1e1e;border:3px solid #fff;z-index:20}
@@ -36,58 +36,38 @@ body{margin:0;background:#000;overflow:hidden}
 const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
-let detector, entities=[], isRec=false, recorder, chunks=[];
-let videoTrack, audioStream, currentFacing='environment', currentStream=null;
-let analyser, audioContext;
+let detector, isRec=false, chunks=[], videoTrack, audioStream, currentFacing='environment', currentStream=null, analyser, audioContext;
+let distortion=0, whisperGain, whisperTimer=0;
 
-function drawSkeleton(kp, color, mirror){
+function drawReal(kp, mirror){
  const get=i=>kp[i];
  const tx=x=>mirror?canvas.width-x:x;
- if(get(5).score<0.1 && get(6).score<0.1) return false;
+ if(get(5).score<0.15 && get(6).score<0.15) return false;
  ctx.save();
- ctx.strokeStyle=color; ctx.fillStyle=color;
- ctx.lineWidth=color==='#00ff66'?7:10;
- ctx.shadowBlur=color==='#00ff66'?14:22;
- ctx.shadowColor=color;
- ctx.lineCap='round'; ctx.lineJoin='round';
+ ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=7;
+ ctx.shadowBlur=16; ctx.shadowColor='#00ff66'; ctx.lineCap='round'; ctx.lineJoin='round';
  const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
  lines.forEach(([i,j])=>{
   const a=get(i), b=get(j);
-  if(a.score>0.1 && b.score>0.1){ ctx.beginPath(); ctx.moveTo(tx(a.x),a.y); ctx.lineTo(tx(b.x),b.y); ctx.stroke(); }
+  if(a.score>0.15 && b.score>0.15){ ctx.beginPath(); ctx.moveTo(tx(a.x),a.y); ctx.lineTo(tx(b.x),b.y); ctx.stroke(); }
  });
- const h=get(0); if(h.score>0.1){ ctx.beginPath(); ctx.arc(tx(h.x),h.y, color==='#00ff66'?11:15,0,Math.PI*2); ctx.fill(); }
- ctx.restore();
- return true;
+ const h=get(0); if(h.score>0.15){ ctx.beginPath(); ctx.arc(tx(h.x),h.y,11,0,Math.PI*2); ctx.fill(); }
+ ctx.restore(); return true;
 }
 
-class Hallucination{
- constructor(){
-  this.x=Math.random()*canvas.width*0.6+canvas.width*0.2;
-  this.y=canvas.height*0.3+Math.random()*canvas.height*0.3;
-  this.life=4000+Math.random()*3000;
-  this.start=Date.now();
-  this.speed=(Math.random()-0.5)*1.2;
-  this.phase=Math.random()*10;
- }
- alive(){ return Date.now()-this.start < this.life; }
- draw(mirror){
-  const dt=Date.now()-this.start;
-  const a=dt<3000?1:1-(dt-3000)/(this.life-3000);
-  this.x+=this.speed; this.phase+=0.08; this.y+=Math.sin(this.phase)*0.4;
-  ctx.save(); ctx.globalAlpha=a;
-  ctx.shadowBlur=24; ctx.shadowColor='#fff'; ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5'; ctx.lineWidth=10;
-  ctx.lineCap='round';
-  // muñeco caminando solo, como ve alguien con esa percepción
-  const swing=Math.sin(this.phase)*18;
-  const cx=mirror?canvas.width-this.x:this.x;
-  const cy=this.y;
-  ctx.beginPath(); ctx.arc(cx,cy-80,13,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(cx-8,cy-65); ctx.lineTo(cx-12+swing*0.3,cy-30); ctx.lineTo(cx-15+swing*0.3,cy); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx+8,cy-65); ctx.lineTo(cx+12-swing*0.3,cy-30); ctx.lineTo(cx+15-swing*0.3,cy); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx-4,cy-25); ctx.lineTo(cx-10+swing,cy+25); ctx.lineTo(cx-10+swing,cy+70); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(cx+4,cy-25); ctx.lineTo(cx+10-swing,cy+25); ctx.lineTo(cx+10-swing,cy+70); ctx.stroke();
-  ctx.restore();
- }
+function playWhisper(){
+ if(!audioContext ||!whisperGain) return;
+ const now=audioContext.currentTime;
+ const osc=audioContext.createOscillator();
+ const gain=audioContext.createGain();
+ const filter=audioContext.createBiquadFilter();
+ filter.type='bandpass'; filter.frequency.value=800+Math.random()*1200;
+ osc.frequency.value=90+Math.random()*60;
+ gain.gain.setValueAtTime(0,now);
+ gain.gain.linearRampToValueAtTime(0.04+distortion*0.08,now+0.3);
+ gain.gain.linearRampToValueAtTime(0,now+1.2+Math.random());
+ osc.connect(filter); filter.connect(gain); gain.connect(whisperGain);
+ osc.start(now); osc.stop(now+1.5);
 }
 
 async function startCamera(facing){
@@ -102,7 +82,8 @@ async function startCamera(facing){
   if(audioContext) await audioContext.close();
   audioContext=new (window.AudioContext||window.webkitAudioContext)();
   const src=audioContext.createMediaStreamSource(stream);
-  analyser=audioContext.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
+  analyser=audioContext.createAnalyser(); analyser.fftSize=512; src.connect(analyser);
+  whisperGain=audioContext.createGain(); whisperGain.gain.value=0.7; whisperGain.connect(audioContext.destination);
  }catch{}
 }
 
@@ -127,41 +108,38 @@ function drawWatermark(){
  ctx.fillText('archiviax.com.ar', canvas.width-25, canvas.height-28); ctx.restore();
 }
 
-let lastSpawn=0, lastAudio=0;
+function applyDistortion(){
+ if(distortion>0){
+  const wobble=Math.sin(Date.now()*0.005)*distortion*8;
+  canvas.style.filter=`blur(${distortion*1.2}px) contrast(${1+distortion}) hue-rotate(${wobble}deg)`;
+  video.style.filter=`blur(${distortion*0.8}px) contrast(${1+distortion*0.3})`;
+ } else { canvas.style.filter='none'; video.style.filter='contrast(1.1)'; }
+}
+
 async function loop(){
  const isMirror=currentFacing==='user';
  const poses=await detector.estimatePoses(video,{flipHorizontal:isMirror});
  ctx.clearRect(0,0,canvas.width,canvas.height);
- let real=false;
-
+ let detected=false;
  if(poses[0]){
   const kp=poses[0].keypoints;
-  const s=Math.max(kp[0].score,kp[5].score,kp[6].score,kp[11].score,kp[12].score);
-  if(s>0.15){
-   real=true;
-   drawSkeleton(kp,'#00ff66',isMirror); // VOS EN TU MEDIDA REAL
-   document.getElementById('log').innerText='PERSONA DETECTADA';
+  if(Math.max(kp[0].score,kp[5].score,kp[6].score)>0.15){
+   if(drawReal(kp,isMirror)){ detected=true; distortion=Math.max(0,distortion-0.02); }
   }
  }
-
- // si no hay nadie, cada 4-8 segundos aparece una caminando sola por el pasillo
- if(!real){
-  if(Date.now()-lastSpawn>4000+Math.random()*4000 && entities.length===0){
-   entities.push(new Hallucination()); lastSpawn=Date.now();
-  }
-  entities=entities.filter(e=>e.alive());
-  entities.forEach(e=>e.draw(isMirror));
-  if(entities.length>0){
-   document.getElementById('log').innerText='ENTIDAD DETECTADA';
-  } else {
-   if(analyser){
-    const data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
-    const vol=data.reduce((a,b)=>a+b,0)/data.length;
-    if(vol>38 && Date.now()-lastAudio>2500){ document.getElementById('log').innerText=`RUIDO - ${vol.toFixed(0)}dB`; lastAudio=Date.now(); }
-    else if(Date.now()-lastAudio>2500){ document.getElementById('log').innerText='ESCANEANDO...'; }
-   } else { document.getElementById('log').innerText='ESCANEANDO...'; }
-  }
+ if(analyser){
+  const data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
+  const vol=data.reduce((a,b)=>a+b,0)/data.length;
+  if(!detected){
+   distortion=Math.min(1, distortion+vol/400);
+   if(Date.now()-whisperTimer>1200+Math.random()*2000 && vol>20){
+    playWhisper(); whisperTimer=Date.now();
+    if(Math.random()>0.7) setTimeout(playWhisper, 300);
+   }
+   document.getElementById('log').innerText= vol>35? `RUIDO - ${vol.toFixed(0)}dB` : 'ESCANEANDO...';
+  } else { document.getElementById('log').innerText='PERSONA DETECTADA'; }
  }
+ applyDistortion();
  drawWatermark();
  requestAnimationFrame(loop);
 }
