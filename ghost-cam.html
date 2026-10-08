@@ -37,32 +37,55 @@ const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 let detector, entities=[], isRec=false, recorder, chunks=[];
-let videoTrack, audioContext, analyser, audioStream;
-let currentFacing='environment', currentStream=null;
+let videoTrack, audioStream, currentFacing='environment', currentStream=null;
+let analyser, audioContext;
 
-class Ghost{
- constructor(kp){
-  this.kp=kp; this.lastSeen=Date.now();
-  this.phase=Math.random()*6;
+function drawSkeleton(kp, color, mirror){
+ const get=i=>kp[i];
+ const tx=x=>mirror?canvas.width-x:x;
+ if(get(5).score<0.1 && get(6).score<0.1) return false;
+ ctx.save();
+ ctx.strokeStyle=color; ctx.fillStyle=color;
+ ctx.lineWidth=color==='#00ff66'?7:10;
+ ctx.shadowBlur=color==='#00ff66'?14:22;
+ ctx.shadowColor=color;
+ ctx.lineCap='round'; ctx.lineJoin='round';
+ const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
+ lines.forEach(([i,j])=>{
+  const a=get(i), b=get(j);
+  if(a.score>0.1 && b.score>0.1){ ctx.beginPath(); ctx.moveTo(tx(a.x),a.y); ctx.lineTo(tx(b.x),b.y); ctx.stroke(); }
+ });
+ const h=get(0); if(h.score>0.1){ ctx.beginPath(); ctx.arc(tx(h.x),h.y, color==='#00ff66'?11:15,0,Math.PI*2); ctx.fill(); }
+ ctx.restore();
+ return true;
+}
+
+class Hallucination{
+ constructor(){
+  this.x=Math.random()*canvas.width*0.6+canvas.width*0.2;
+  this.y=canvas.height*0.3+Math.random()*canvas.height*0.3;
+  this.life=4000+Math.random()*3000;
+  this.start=Date.now();
+  this.speed=(Math.random()-0.5)*1.2;
+  this.phase=Math.random()*10;
  }
- update(kp){ this.kp=kp; this.lastSeen=Date.now(); }
- alive(){ return Date.now()-this.lastSeen < 2500; } // AHORA DESAPARECE RAPIDO AL MOVERTE
- alpha(){ return 1; }
- draw(isEntity, mirror){
-  const k=this.kp; if(!k) return;
-  const get=i=>k[i];
-  const tx=x=>mirror?canvas.width-x:x;
-  if(get(5).score<0.08 && get(6).score<0.08) return;
-  ctx.save();
-  if(isEntity){ ctx.shadowBlur=20; ctx.shadowColor='#fff'; ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5'; ctx.lineWidth=10; }
-  else { ctx.shadowBlur=14; ctx.shadowColor='#00ff66'; ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=7; }
-  ctx.lineCap='round'; ctx.lineJoin='round';
-  const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
-  lines.forEach(([i,j])=>{
-   const p1=get(i), p2=get(j);
-   if(p1.score>0.08 && p2.score>0.08){ ctx.beginPath(); ctx.moveTo(tx(p1.x),p1.y); ctx.lineTo(tx(p2.x),p2.y); ctx.stroke(); }
-  });
-  const h=get(0); if(h.score>0.08){ ctx.beginPath(); ctx.arc(tx(h.x),h.y,isEntity?15:11,0,Math.PI*2); ctx.fill(); }
+ alive(){ return Date.now()-this.start < this.life; }
+ draw(mirror){
+  const dt=Date.now()-this.start;
+  const a=dt<3000?1:1-(dt-3000)/(this.life-3000);
+  this.x+=this.speed; this.phase+=0.08; this.y+=Math.sin(this.phase)*0.4;
+  ctx.save(); ctx.globalAlpha=a;
+  ctx.shadowBlur=24; ctx.shadowColor='#fff'; ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5'; ctx.lineWidth=10;
+  ctx.lineCap='round';
+  // muñeco caminando solo, como ve alguien con esa percepción
+  const swing=Math.sin(this.phase)*18;
+  const cx=mirror?canvas.width-this.x:this.x;
+  const cy=this.y;
+  ctx.beginPath(); ctx.arc(cx,cy-80,13,0,Math.PI*2); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(cx-8,cy-65); ctx.lineTo(cx-12+swing*0.3,cy-30); ctx.lineTo(cx-15+swing*0.3,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+8,cy-65); ctx.lineTo(cx+12-swing*0.3,cy-30); ctx.lineTo(cx+15-swing*0.3,cy); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx-4,cy-25); ctx.lineTo(cx-10+swing,cy+25); ctx.lineTo(cx-10+swing,cy+70); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(cx+4,cy-25); ctx.lineTo(cx+10-swing,cy+25); ctx.lineTo(cx+10-swing,cy+70); ctx.stroke();
   ctx.restore();
  }
 }
@@ -75,6 +98,12 @@ async function startCamera(facing){
  await new Promise(r=>video.onloadedmetadata=r);
  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
+ try{
+  if(audioContext) await audioContext.close();
+  audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  const src=audioContext.createMediaStreamSource(stream);
+  analyser=audioContext.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
+ }catch{}
 }
 
 async function switchCam(){ await startCamera(currentFacing==='environment'?'user':'environment'); }
@@ -86,11 +115,6 @@ async function init(){
   document.getElementById('zoomVal').innerText=z.toFixed(1)+'x';
   try{ await videoTrack.applyConstraints({advanced:[{zoom:z}]}); }catch{ video.style.transform=`scale(${z})`; }
  });
- try{
-  audioContext=new (window.AudioContext||window.webkitAudioContext)();
-  const src=audioContext.createMediaStreamSource(currentStream);
-  analyser=audioContext.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
- }catch{}
  await tf.setBackend('webgl'); await tf.ready();
  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
  document.getElementById('log').innerText='VISION ACTIVA';
@@ -98,64 +122,60 @@ async function init(){
 }
 
 function drawWatermark(){
- ctx.save(); ctx.globalAlpha=isRec?0.85:0.35; ctx.fillStyle='#fff';
+ ctx.save(); ctx.globalAlpha=isRec?0.85:0.32; ctx.fillStyle='#fff';
  ctx.font=`${Math.round(canvas.width*0.022)}px monospace`; ctx.textAlign='right';
  ctx.fillText('archiviax.com.ar', canvas.width-25, canvas.height-28); ctx.restore();
 }
 
-let lastAudioAlert=0;
+let lastSpawn=0, lastAudio=0;
 async function loop(){
  const isMirror=currentFacing==='user';
  const poses=await detector.estimatePoses(video,{flipHorizontal:isMirror});
  ctx.clearRect(0,0,canvas.width,canvas.height);
- let realCount=0;
+ let real=false;
 
- if(poses.length>0 && poses[0].keypoints){
-  const p=poses[0];
-  const score=Math.max(p.keypoints[0].score,p.keypoints[5].score,p.keypoints[6].score);
-  if(score>0.08){
-   realCount=1;
-   // persona real verde instantanea
-   new Ghost(p.keypoints).draw(false,isMirror);
-   // entidad blanca que sigue
-   let found=false;
-   entities.forEach(e=>{ if(Date.now()-e.lastSeen<500){ e.update(p.keypoints); found=true; } });
-   if(!found) entities.push(new Ghost(p.keypoints));
+ if(poses[0]){
+  const kp=poses[0].keypoints;
+  const s=Math.max(kp[0].score,kp[5].score,kp[6].score,kp[11].score,kp[12].score);
+  if(s>0.15){
+   real=true;
+   drawSkeleton(kp,'#00ff66',isMirror); // VOS EN TU MEDIDA REAL
+   document.getElementById('log').innerText='PERSONA DETECTADA';
   }
  }
 
- entities=entities.filter(e=>e.alive());
- entities.forEach(e=>{ if(Date.now()-e.lastSeen>400) e.draw(true,isMirror); });
-
+ // si no hay nadie, cada 4-8 segundos aparece una caminando sola por el pasillo
+ if(!real){
+  if(Date.now()-lastSpawn>4000+Math.random()*4000 && entities.length===0){
+   entities.push(new Hallucination()); lastSpawn=Date.now();
+  }
+  entities=entities.filter(e=>e.alive());
+  entities.forEach(e=>e.draw(isMirror));
+  if(entities.length>0){
+   document.getElementById('log').innerText='ENTIDAD DETECTADA';
+  } else {
+   if(analyser){
+    const data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
+    const vol=data.reduce((a,b)=>a+b,0)/data.length;
+    if(vol>38 && Date.now()-lastAudio>2500){ document.getElementById('log').innerText=`RUIDO - ${vol.toFixed(0)}dB`; lastAudio=Date.now(); }
+    else if(Date.now()-lastAudio>2500){ document.getElementById('log').innerText='ESCANEANDO...'; }
+   } else { document.getElementById('log').innerText='ESCANEANDO...'; }
+  }
+ }
  drawWatermark();
-
- if(analyser){
-  const data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
-  const vol=data.reduce((a,b)=>a+b,0)/data.length;
-  if(realCount===0 && entities.length===0 && vol>35 && Date.now()-lastAudioAlert>2500){
-   document.getElementById('log').innerText=`RUIDO - ${vol.toFixed(0)}dB`; lastAudioAlert=Date.now();
-  } else if(realCount>0 && entities.length>0){
-   document.getElementById('log').innerText=`ENTIDAD + PERSONA`;
-  } else if(entities.length>0){
-   document.getElementById('log').innerText=`ENTIDAD DETECTADA`;
-  } else if(realCount>0){
-   document.getElementById('log').innerText=`PERSONA DETECTADA`;
-  } else if(Date.now()-lastAudioAlert>2000){
-   document.getElementById('log').innerText='ESCANEANDO...';
-  }
- }
  requestAnimationFrame(loop);
 }
 
 function toggleRec(){
  if(!isRec){
-  const canvasStream=canvas.captureStream(30);
-  const combined=new MediaStream([...canvasStream.getVideoTracks(),...audioStream.getAudioTracks()]);
-  chunks=[]; recorder=new MediaRecorder(combined,{mimeType:'video/webm'});
-  recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
-  recorder.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ARCHIVAX-VISION-${Date.now()}.webm`;a.click();};
-  recorder.start(); isRec=true; document.getElementById('rec').classList.add('on');
- } else {recorder.stop(); isRec=false; document.getElementById('rec').classList.remove('on');}
+  const cs=canvas.captureStream(30);
+  const combined=new MediaStream([...cs.getVideoTracks(),...audioStream.getAudioTracks()]);
+  chunks=[]; const rec=new MediaRecorder(combined,{mimeType:'video/webm'});
+  window.recorder=rec;
+  rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
+  rec.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ARCHIVAX-${Date.now()}.webm`;a.click();};
+  rec.start(); isRec=true; document.getElementById('rec').classList.add('on');
+ } else { window.recorder.stop(); isRec=false; document.getElementById('rec').classList.remove('on'); }
 }
 init();
 </script>
