@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>ARCHIVAX VISION SYSTEM</title>
+<title>ARCHIVAX VISION SYSTEM - TESLA MODE</title>
 <style>
 body{margin:0;background:#000;overflow:hidden}
 #video{position:absolute;width:100%;height:100%;object-fit:cover}
@@ -21,7 +21,7 @@ body{margin:0;background:#000;overflow:hidden}
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <div id="hud">
-<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM • AUDIO + ZOOM • SENS 0.18</div>
+<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM • TESLA MODE • 0.18</div>
 <div id="log" style="color:#fff;font-size:12px;margin-top:6px">INICIANDO...</div>
 </div>
 <div id="zoomBox">
@@ -37,38 +37,59 @@ const ctx=canvas.getContext('2d');
 let detector, entities=[], isRec=false, recorder, chunks=[];
 let videoTrack, audioContext, analyser, audioStream;
 
-class Ghost{
- constructor(x,y){
-  this.x=x; this.y=y;
-  this.phase=Math.random()*5;
+class TeslaGhost{
+ constructor(pose){
+  this.id=Math.random();
+  this.update(pose);
   this.start=Date.now();
-  this.life=8000+Math.random()*2000;
-  this.scale=3.4;
-  this.dir=(Math.random()-0.5)*0.4;
+  this.lastSeen=Date.now();
  }
- alive(){ return Date.now()-this.start < this.life; }
- alpha(){ const r=this.life-(Date.now()-this.start); return r<800? r/800 : 1; }
- update(){
-  this.phase+=0.18;
-  this.x+=this.dir;
-  this.y+=0.6;
-  this.scale+=0.006;
+ update(pose){
+  this.pose=pose;
+  this.kp=pose.keypoints;
+  this.lastSeen=Date.now();
+ }
+ alive(){ return Date.now()-this.lastSeen < 3500; } // queda 3.5 seg como Tesla cuando pierde la persona
+ alpha(){
+  const dt=Date.now()-this.lastSeen;
+  if(dt<2500) return 1;
+  return Math.max(0,1-(dt-2500)/1000);
  }
  draw(){
-  const a=this.alpha(); if(a<=0) return;
-  ctx.save(); ctx.translate(this.x,this.y); ctx.scale(this.scale,this.scale); ctx.globalAlpha=a;
-  ctx.shadowBlur=24; ctx.shadowColor='rgba(255,255,255,0.9)';
-  ctx.fillStyle='#e8e0d5'; ctx.strokeStyle='#e8e0d5';
-  ctx.lineWidth=11; ctx.lineCap='round'; ctx.lineJoin='round';
-  const swing=Math.sin(this.phase);
-  const lX=swing<0?-7:-7+swing*22; const lY=swing<0?72:72-Math.abs(swing)*16;
-  const rX=swing>=0?7:7+Math.sin(this.phase+Math.PI)*22; const rY=swing>=0?72:72-Math.abs(Math.sin(this.phase+Math.PI))*16;
-  ctx.beginPath(); ctx.arc(0,-82,12,0,Math.PI*2); ctx.fill();
-  ctx.beginPath(); ctx.roundRect(-11,-66,22,48,8); ctx.fill();
-  ctx.beginPath(); ctx.moveTo(-9,-54); ctx.lineTo(-18+swing*3,-22); ctx.lineTo(-20+swing*3,10); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(9,-54); ctx.lineTo(18-swing*3,-22); ctx.lineTo(20-swing*3,10); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(-5,-20); ctx.lineTo(lX*0.5,22); ctx.lineTo(lX,lY); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(5,-20); ctx.lineTo(rX*0.5,22); ctx.lineTo(rX,rY); ctx.stroke();
+  const k=this.kp;
+  const a=this.alpha();
+  if(a<=0) return;
+  const get=(i)=>k[i];
+  // precision Tesla: necesita hombros + cadera visibles
+  if(get(5).score<0.15 || get(6).score<0.15) return;
+
+  ctx.save();
+  ctx.globalAlpha=a;
+  ctx.shadowBlur=22; ctx.shadowColor='rgba(255,255,255,0.9)';
+  ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5';
+  ctx.lineWidth=9; ctx.lineCap='round'; ctx.lineJoin='round';
+
+  // dibuja esqueleto 100% real copiando la pose detectada - tamaño persona real
+  const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16]];
+  lines.forEach(([i,j])=>{
+   const p1=get(i), p2=get(j);
+   if(p1.score>0.15 && p2.score>0.15){
+    ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
+   }
+  });
+  // cabeza
+  const head=get(0);
+  if(head.score>0.15){
+   ctx.beginPath(); ctx.arc(head.x,head.y,16,0,Math.PI*2); ctx.fill();
+  }
+  // torso relleno para que se vea alto como persona
+  const ls=get(5), rs=get(6), lh=get(11), rh=get(12);
+  if(ls.score>0.15 && rs.score>0.15 && lh.score>0.15 && rh.score>0.15){
+   ctx.globalAlpha=a*0.35;
+   ctx.beginPath();
+   ctx.moveTo(ls.x,ls.y); ctx.lineTo(rs.x,rs.y); ctx.lineTo(rh.x,rh.y); ctx.lineTo(lh.x,lh.y); ctx.closePath(); ctx.fill();
+   ctx.globalAlpha=a;
+  }
   ctx.restore();
  }
 }
@@ -94,7 +115,7 @@ async function init(){
   src.connect(analyser);
  }catch{}
  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true});
- document.getElementById('log').innerText='VISION ACTIVA 0.18 + AUDIO ON';
+ document.getElementById('log').innerText='TESLA MODE ACTIVO 0.18';
  loop();
 }
 
@@ -111,17 +132,29 @@ function drawWatermark(){
 
 let lastAudioAlert=0;
 async function loop(){
- const poses=await detector.estimatePoses(video,{maxPoses:5,flipHorizontal:false});
+ const poses=await detector.estimatePoses(video,{maxPoses:4,flipHorizontal:false});
  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+ // TESLA LOGIC: match por distancia, actualiza pose real
  poses.forEach(p=>{
   if(p.keypoints[0].score>0.18){
-   const kx=p.keypoints[0].x; const ky=p.keypoints[12].y || p.keypoints[0].y+120;
-   if(!entities.find(e=>Math.abs(e.x-kx)<100 && e.alive())){ entities.push(new Ghost(kx,ky)); }
+   // busca entidad cercana
+   let best=null, bestD=200;
+   entities.forEach(e=>{
+    const dx=e.kp[0].x-p.keypoints[0].x;
+    const dy=e.kp[0].y-p.keypoints[0].y;
+    const d=Math.hypot(dx,dy);
+    if(d<bestD){ bestD=d; best=e; }
+   });
+   if(best){ best.update(p); }
+   else { entities.push(new TeslaGhost(p)); }
   }
  });
+
  entities=entities.filter(e=>e.alive());
- entities.forEach(e=>{ e.update(); e.draw(); });
+ entities.forEach(e=>e.draw());
  drawWatermark();
+
  if(analyser){
   const data=new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(data);
@@ -130,9 +163,9 @@ async function loop(){
    document.getElementById('log').innerText=`⚠ RUIDO AMBIENTE DETECTADO - ${vol.toFixed(0)}dB`;
    lastAudioAlert=Date.now();
   } else if(entities.length>0){
-   document.getElementById('log').innerText=`${entities.length} ENTIDAD DETECTADA + AUDIO ON`;
+   document.getElementById('log').innerText=`${entities.length} ENTIDAD DETECTADA • TESLA TRACKING`;
   } else if(Date.now()-lastAudioAlert>4000){
-   document.getElementById('log').innerText='ESCANEANDO... AUDIO AMBIENTE ACTIVO';
+   document.getElementById('log').innerText='ESCANEANDO... TESLA MODE';
   }
  } else {
   document.getElementById('log').innerText= entities.length? `${entities.length} ENTIDAD DETECTADA` : 'ESCANEANDO...';
