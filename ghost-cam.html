@@ -1,17 +1,24 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
-<title>ARCHIVAX TESLA VISION V2</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ARCHIVAX VISION SYSTEM</title>
 <style>
-body{margin:0;background:#000;overflow:hidden}
-#video{position:absolute;width:100%;height:100%;object-fit:cover;filter:brightness(0.4) contrast(1.5)}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#000;overflow:hidden;font-family:-apple-system,BlinkMacSystemFont,monospace}
+#video{position:absolute;width:100%;height:100%;object-fit:cover;filter:brightness(0.35) contrast(1.3)}
 #canvas{position:absolute;width:100%;height:100%}
-#hud{position:absolute;top:0;left:0;right:0;padding:15px;font-family:monospace;color:#fff;z-index:10;
-background:linear-gradient(to bottom, rgba(0,0,0,0.9), transparent)}
-#bottom{position:absolute;bottom:0;left:0;right:0;padding:15px;background:#0a0a0a;display:flex;justify-content:space-between;align-items:center}
-.dot{width:10px;height:10px;background:red;border-radius:50%;animation:blink 1s infinite}
-@keyframes blink{50%{opacity:0}}
+#hud{position:absolute;top:0;left:0;right:0;padding:18px 16px;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,.95) 0%,rgba(0,0,0,0) 100%)}
+#hud-top{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.6);letter-spacing:1px}
+#log{margin-top:14px;color:#fff;font-size:14px;font-weight:600;text-shadow:0 0 10px rgba(255,255,255,.8)}
+#bottom{position:absolute;bottom:0;left:0;right:0;z-index:10;background:#0a0a0a;border-top:1px solid #222;padding:12px 16px;display:flex;justify-content:space-between;align-items:center}
+#recBtn{width:56px;height:56px;border-radius:50%;background:#ff1a1a;border:3px solid #fff;display:flex;align-items:center;justify-content:center;cursor:pointer}
+#recBtn.recording{background:#fff;animation:pulse 1s infinite}
+#recBtn.recording div{background:#ff1a1a;width:22px;height:22px;border-radius:4px}
+#recBtn div{background:#fff;width:18px;height:18px;border-radius:50%}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,0,0,.7)}70%{box-shadow:0 0 0 10px rgba(255,0,0,0)}100%{box-shadow:0 0 0 0 rgba(255,0,0,0)}}
+#status{color:#fff;font-size:11px}
 </style>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3"></script>
@@ -19,87 +26,140 @@ background:linear-gradient(to bottom, rgba(0,0,0,0.9), transparent)}
 <body>
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
+
 <div id="hud">
-  <div style="font-size:12px;opacity:0.7">ARCHIVAX // TESLA VISION SYSTEM // 23:33 • 24°C</div>
-  <div id="log" style="margin-top:10px;font-size:14px">INICIALIZANDO RED NEURONAL...</div>
+  <div id="hud-top"><span>ARCHIVAX VISION SYSTEM</span><span id="time">23:33 • 24°C • AP</span></div>
+  <div id="log">INICIANDO VISION SYSTEM...</div>
 </div>
+
 <div id="bottom">
-  <div style="display:flex;gap:10px;align-items:center">
-    <div class="dot"></div><span style="color:#fff;font-family:monospace;font-size:12px">REC • CAMINO VACIO</span>
+  <div style="display:flex;gap:12px;align-items:center">
+    <div id="recBtn" onclick="toggleRec()"><div></div></div>
+    <div id="status"><div style="color:#ff3b3b">● REC</div><div id="count">0 ENTIDADES</div></div>
   </div>
-  <div id="count" style="color:#fff;font-family:monospace">0 ENTIDADES</div>
+  <div style="color:rgba(255,255,255,.5);font-size:10px;text-align:right">TESLA VISION<br>SIMULATION</div>
 </div>
+
 <script>
 const video=document.getElementById('video');
 const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
-const log=document.getElementById('log');
-let detector;
+let detector, ghosts=[], recorder, chunks=[], isRec=false;
 
 async function init(){
-  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:1280,height:720}});
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:1280,height:720},audio:false});
   video.srcObject=stream;
   await new Promise(r=>video.onloadedmetadata=r);
   canvas.width=video.videoWidth; canvas.height=video.videoHeight;
-  // Modelo de esqueleto completo como Tesla
   detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
-  log.innerText='SISTEMA TESLA ACTIVO - BUSCANDO...';
+  document.getElementById('log').innerText='VISION SYSTEM ACTIVO';
   loop();
 }
 
-function drawTeslaPerson(keypoints,x,y,scale){
+// Muñeco 100% Tesla - cuerpo relleno gris claro con glow
+function drawTeslaMan(x,y,phase,alpha=1){
   ctx.save();
   ctx.translate(x,y);
-  ctx.scale(scale,scale);
-  ctx.shadowBlur=15; ctx.shadowColor='rgba(255,255,255,0.8)';
-  ctx.fillStyle='rgba(220,220,220,0.95)';
-  ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.lineWidth=6; ctx.lineCap='round';
-
+  ctx.globalAlpha=alpha;
+  ctx.shadowBlur=25; ctx.shadowColor='rgba(255,255,255,.9)';
+  ctx.fillStyle='rgba(235,235,235,1)';
+  
+  const walk=Math.sin(phase)*18;
+  const walk2=Math.cos(phase)*18;
+  
   // Cabeza
-  ctx.beginPath(); ctx.arc(0,-80,18,0,Math.PI*2); ctx.fill();
-  // Tronco
-  ctx.beginPath(); ctx.moveTo(0,-60); ctx.lineTo(0,20); ctx.stroke();
-  // Brazos
-  ctx.beginPath(); ctx.moveTo(0,-50); ctx.lineTo(-25,-20); ctx.lineTo(-35,10); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0,-50); ctx.lineTo(25,-20); ctx.lineTo(35,10); ctx.stroke();
-  // Piernas (con animación de caminar)
-  const walk=Math.sin(Date.now()/200)*15;
-  ctx.beginPath(); ctx.moveTo(0,20); ctx.lineTo(-15+walk,70); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(0,20); ctx.lineTo(15-walk,70); ctx.stroke();
-
+  ctx.beginPath(); ctx.arc(0,-85,20,0,Math.PI*2); ctx.fill();
+  // Cuello y torso ancho tipo Tesla
+  ctx.beginPath();
+  ctx.roundRect(-18,-62,36,58,12); ctx.fill();
+  // Brazos gruesos
+  ctx.lineWidth=16; ctx.lineCap='round'; ctx.strokeStyle='rgba(235,235,235,1)';
+  ctx.beginPath(); ctx.moveTo(-12,-45); ctx.lineTo(-32+walk*0.3,-15); ctx.lineTo(-38+walk*0.3,12); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(12,-45); ctx.lineTo(32-walk*0.3,-15); ctx.lineTo(38-walk*0.3,12); ctx.stroke();
+  // Piernas gruesas caminando de verdad
+  ctx.beginPath(); ctx.moveTo(-8, -6); ctx.lineTo(-12+walk, 28); ctx.lineTo(-14+walk, 68); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(8, -6); ctx.lineTo(12+walk2, 28); ctx.lineTo(14+walk2, 68); ctx.stroke();
+  
   ctx.restore();
-
-  // Sombra roja debajo como en Tesla
-  ctx.fillStyle='rgba(255,30,30,0.6)';
-  ctx.fillRect(x-30,y+65,60,4);
+  // Sombra roja Tesla
+  ctx.fillStyle=`rgba(255,30,30,${0.5*alpha})`;
+  ctx.fillRect(x-32,y+66,64,5);
 }
 
 async function loop(){
   const poses=await detector.estimatePoses(video,{flipHorizontal:false});
   ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  if(poses.length>0 && poses[0].keypoints){
+  
+  const now=Date.now();
+  
+  if(poses[0]?.keypoints3D){
     const kp=poses[0].keypoints;
-    // Centro del cuerpo
-    const cx=kp[5].x; const cy=kp[5].y;
-    drawTeslaPerson(kp,cx,cy,1.5);
-    log.innerText=`ENTIDAD DETECTADA - CONFIANZA ${Math.round(kp[0].score*100)}%`;
-    document.getElementById('count').innerText=`1 ENTIDAD • DISTANCIA 4.2m`;
-  } else {
-    // Falso positivo estilo cementerio Tesla - aparece persona donde no hay nada
-    if(Math.random()>0.985){
-      const rx=Math.random()*canvas.width*0.6+canvas.width*0.2;
-      const ry=canvas.height*0.3+Math.random()*canvas.height*0.4;
-      drawTeslaPerson([],rx,ry,1.2+Math.random());
-      log.innerText='⚠ VISUALIZACION AUTONOMA - OBJETO NO VISIBLE EN CAMARA';
-      document.getElementById('count').innerText=`1 ENTIDAD • ORIGEN DESCONOCIDO`;
-    } else {
-      log.innerText='CAMINO LIBRE - ESCANEANDO ENTORNO...';
-      document.getElementById('count').innerText=`0 ENTIDADES`;
+    if(kp[0].score>0.3){
+      const cx=kp[0].x; // cabeza como referencia
+      // Crea ghost que dura 8 segundos
+      ghosts.push({x:cx, y:kp[11].y, start:now, lastSeen:now, phase:now/180});
     }
   }
+  
+  // Fantasmas autónomos tipo cementerio Tesla (cada 6-10 seg)
+  if(Math.random()>0.992){
+    ghosts.push({x:canvas.width*(0.3+Math.random()*0.4), y:canvas.height*0.55, start:now, lastSeen:now, phase:Math.random()*10, isPhantom:true});
+  }
+  
+  // Dibujar y mantener en pantalla 8 segundos
+  ghosts=ghosts.filter(g=>{
+    const age=(now-g.start)/1000;
+    if(age>8) return false;
+    const alpha= age>6 ? 1-(age-6)/2 : 1; // fade out lento
+    g.phase+=0.08;
+    g.x+= Math.sin(g.phase*0.5)*0.6; // se mueve lateral lento como caminando
+    g.y+=0.15; // avanza hacia abajo como si se acercara
+    drawTeslaMan(g.x,g.y,g.phase,alpha);
+    return true;
+  });
+  
+  if(ghosts.length>0){
+    const ph=ghosts.find(g=>g.isPhantom);
+    document.getElementById('log').innerText= ph ? '⚠ ANOMALIA - OBJETO NO VISIBLE EN VIA' : `ENTIDAD DETECTADA - ${ghosts.length} EN RANGO`;
+    document.getElementById('count').innerText=`${ghosts.length} ENTIDAD${ghosts.length>1?'ES':''} • ${ph?'ORIGEN DESCONOCIDO':'4.2m'}`;
+  } else {
+    document.getElementById('log').innerText='VIA LIBRE - SIN OBSTACULOS';
+    document.getElementById('count').innerText='0 ENTIDADES';
+  }
+  
   requestAnimationFrame(loop);
 }
+
+// GRABACION
+function toggleRec(){
+  if(!isRec){ startRec(); } else { stopRec(); }
+}
+function startRec(){
+  const stream=canvas.captureStream(30);
+  const mic=video.srcObject;
+  const combined=new MediaStream([...stream.getTracks(),...mic.getTracks()]);
+  chunks=[];
+  recorder=new MediaRecorder(combined,{mimeType:'video/webm'});
+  recorder.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
+  recorder.onstop=()=>{
+    const blob=new Blob(chunks,{type:'video/webm'});
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url; a.download=`ARCHIVAX-VISION-${Date.now()}.webm`; a.click();
+    URL.revokeObjectURL(url);
+  };
+  recorder.start();
+  isRec=true;
+  document.getElementById('recBtn').classList.add('recording');
+  document.getElementById('status').innerHTML='<div style="color:#ff3b3b">● GRABANDO</div><div>VISION SYSTEM</div>';
+}
+function stopRec(){
+  recorder.stop();
+  isRec=false;
+  document.getElementById('recBtn').classList.remove('recording');
+  document.getElementById('status').innerHTML='<div style="color:#ff3b3b">● REC</div><div id="count">0 ENTIDADES</div>';
+}
+setInterval(()=>{document.getElementById('time').innerText=new Date().toLocaleTimeString('es-AR',{hour:'2-digit',minute:'2-digit'})+' • 24°C • AP'},1000);
 init();
 </script>
 </body>
