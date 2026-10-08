@@ -22,7 +22,7 @@ body{margin:0;background:#000;overflow:hidden}
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <div id="hud">
-<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM • 0.08 FIX</div>
+<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM</div>
 <div id="log" style="color:#fff;font-size:12px;margin-top:6px">INICIANDO...</div>
 </div>
 <div id="zoomBox">
@@ -43,39 +43,26 @@ let currentFacing='environment', currentStream=null;
 class Ghost{
  constructor(kp){
   this.kp=kp; this.lastSeen=Date.now();
-  this.x=kp[0].x; this.wander=(Math.random()-0.5)*0.8; this.phase=Math.random()*6;
+  this.phase=Math.random()*6;
  }
- update(kp){ this.kp=kp; this.lastSeen=Date.now(); this.x=kp[0].x; }
- alive(){ return Date.now()-this.lastSeen < 12000; }
- alpha(){ const dt=Date.now()-this.lastSeen; return dt<9000?1:Math.max(0,1-(dt-9000)/3000); }
- autoMove(){
-  if(Date.now()-this.lastSeen>600){
-   this.phase+=0.05;
-   this.kp=this.kp.map(k=>({...k, x:k.x+Math.sin(this.phase)*0.8+this.wander, y:k.y+Math.cos(this.phase*0.6)*0.3}));
-  }
- }
+ update(kp){ this.kp=kp; this.lastSeen=Date.now(); }
+ alive(){ return Date.now()-this.lastSeen < 2500; } // AHORA DESAPARECE RAPIDO AL MOVERTE
+ alpha(){ return 1; }
  draw(isEntity, mirror){
-  const k=this.kp, a=this.alpha(); if(a<=0) return;
+  const k=this.kp; if(!k) return;
   const get=i=>k[i];
   const tx=x=>mirror?canvas.width-x:x;
-  const minScore=isEntity?0.08:0.05;
-  if(get(5).score<minScore && get(6).score<minScore) return;
-  if(isEntity && Date.now()-this.lastSeen>600) this.autoMove();
-  ctx.save(); ctx.globalAlpha=a;
-  if(isEntity){ ctx.shadowBlur=22; ctx.shadowColor='#fff'; ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5'; ctx.lineWidth=10; }
-  else { ctx.shadowBlur=16; ctx.shadowColor='#00ff66'; ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=8; }
+  if(get(5).score<0.08 && get(6).score<0.08) return;
+  ctx.save();
+  if(isEntity){ ctx.shadowBlur=20; ctx.shadowColor='#fff'; ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5'; ctx.lineWidth=10; }
+  else { ctx.shadowBlur=14; ctx.shadowColor='#00ff66'; ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=7; }
   ctx.lineCap='round'; ctx.lineJoin='round';
   const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
   lines.forEach(([i,j])=>{
    const p1=get(i), p2=get(j);
-   if(p1.score>minScore && p2.score>minScore){ ctx.beginPath(); ctx.moveTo(tx(p1.x),p1.y); ctx.lineTo(tx(p2.x),p2.y); ctx.stroke(); }
+   if(p1.score>0.08 && p2.score>0.08){ ctx.beginPath(); ctx.moveTo(tx(p1.x),p1.y); ctx.lineTo(tx(p2.x),p2.y); ctx.stroke(); }
   });
-  const h=get(0); if(h.score>minScore){ ctx.beginPath(); ctx.arc(tx(h.x),h.y,isEntity?16:12,0,Math.PI*2); ctx.fill(); }
-  const ls=get(5), rs=get(6), lh=get(11), rh=get(12);
-  if(ls.score>minScore && rs.score>minScore && lh.score>minScore && rh.score>minScore){
-   ctx.globalAlpha=isEntity?a*0.3:a*0.18;
-   ctx.beginPath(); ctx.moveTo(tx(ls.x),ls.y); ctx.lineTo(tx(rs.x),rs.y); ctx.lineTo(tx(rh.x),rh.y); ctx.lineTo(tx(lh.x),lh.y); ctx.closePath(); ctx.fill();
-  }
+  const h=get(0); if(h.score>0.08){ ctx.beginPath(); ctx.arc(tx(h.x),h.y,isEntity?15:11,0,Math.PI*2); ctx.fill(); }
   ctx.restore();
  }
 }
@@ -88,13 +75,6 @@ async function startCamera(facing){
  await new Promise(r=>video.onloadedmetadata=r);
  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
- video.style.transform='scaleX(1)';
- try{
-  if(audioContext) await audioContext.close();
-  audioContext=new (window.AudioContext||window.webkitAudioContext)();
-  const src=audioContext.createMediaStreamSource(stream);
-  analyser=audioContext.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
- }catch{}
 }
 
 async function switchCam(){ await startCamera(currentFacing==='environment'?'user':'environment'); }
@@ -106,16 +86,20 @@ async function init(){
   document.getElementById('zoomVal').innerText=z.toFixed(1)+'x';
   try{ await videoTrack.applyConstraints({advanced:[{zoom:z}]}); }catch{ video.style.transform=`scale(${z})`; }
  });
- // FIX: SINGLEPOSE es el que te detecta a vos 100% - multipose era el que fallaba
+ try{
+  audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  const src=audioContext.createMediaStreamSource(currentStream);
+  analyser=audioContext.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
+ }catch{}
+ await tf.setBackend('webgl'); await tf.ready();
  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
- document.getElementById('log').innerText='VISION ACTIVA 0.08';
+ document.getElementById('log').innerText='VISION ACTIVA';
  loop();
 }
 
 function drawWatermark(){
  ctx.save(); ctx.globalAlpha=isRec?0.85:0.35; ctx.fillStyle='#fff';
  ctx.font=`${Math.round(canvas.width*0.022)}px monospace`; ctx.textAlign='right';
- ctx.shadowBlur=6; ctx.shadowColor='rgba(0,0,0,0.9)';
  ctx.fillText('archiviax.com.ar', canvas.width-25, canvas.height-28); ctx.restore();
 }
 
@@ -124,37 +108,39 @@ async function loop(){
  const isMirror=currentFacing==='user';
  const poses=await detector.estimatePoses(video,{flipHorizontal:isMirror});
  ctx.clearRect(0,0,canvas.width,canvas.height);
- let realDetected=false;
+ let realCount=0;
 
- poses.forEach(p=>{
-  const s=Math.max(p.keypoints[0].score,p.keypoints[5].score,p.keypoints[6].score);
-  if(s>0.08){
-   realDetected=true;
-   let best=null, bestD=200;
-   entities.forEach(e=>{ const d=Math.hypot(e.x-p.keypoints[0].x, e.kp[0].y-p.keypoints[0].y); if(d<bestD){bestD=d; best=e;} });
-   if(best) best.update(p.keypoints); else entities.push(new Ghost(p.keypoints));
-   // DIBUJA VERDE EN TIEMPO REAL - VOS
-   const tmp=new Ghost(p.keypoints); tmp.draw(false,isMirror);
+ if(poses.length>0 && poses[0].keypoints){
+  const p=poses[0];
+  const score=Math.max(p.keypoints[0].score,p.keypoints[5].score,p.keypoints[6].score);
+  if(score>0.08){
+   realCount=1;
+   // persona real verde instantanea
+   new Ghost(p.keypoints).draw(false,isMirror);
+   // entidad blanca que sigue
+   let found=false;
+   entities.forEach(e=>{ if(Date.now()-e.lastSeen<500){ e.update(p.keypoints); found=true; } });
+   if(!found) entities.push(new Ghost(p.keypoints));
   }
- });
+ }
 
- // entidades blancas que se mueven solas
  entities=entities.filter(e=>e.alive());
- entities.forEach(e=>e.draw(true,isMirror));
+ entities.forEach(e=>{ if(Date.now()-e.lastSeen>400) e.draw(true,isMirror); });
+
  drawWatermark();
 
  if(analyser){
   const data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
   const vol=data.reduce((a,b)=>a+b,0)/data.length;
-  if(!realDetected && entities.length===0 && vol>38 && Date.now()-lastAudioAlert>3000){
-   document.getElementById('log').innerText=`⚠ RUIDO AMBIENTE - ${vol.toFixed(0)}dB`; lastAudioAlert=Date.now();
-  } else if(realDetected && entities.length>0){
-   document.getElementById('log').innerText=`ENTIDAD + VOS`;
+  if(realCount===0 && entities.length===0 && vol>35 && Date.now()-lastAudioAlert>2500){
+   document.getElementById('log').innerText=`RUIDO - ${vol.toFixed(0)}dB`; lastAudioAlert=Date.now();
+  } else if(realCount>0 && entities.length>0){
+   document.getElementById('log').innerText=`ENTIDAD + PERSONA`;
   } else if(entities.length>0){
    document.getElementById('log').innerText=`ENTIDAD DETECTADA`;
-  } else if(realDetected){
-   document.getElementById('log').innerText=`PERSONA REAL`;
-  } else if(Date.now()-lastAudioAlert>3000){
+  } else if(realCount>0){
+   document.getElementById('log').innerText=`PERSONA DETECTADA`;
+  } else if(Date.now()-lastAudioAlert>2000){
    document.getElementById('log').innerText='ESCANEANDO...';
   }
  }
