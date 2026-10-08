@@ -39,17 +39,26 @@ let videoTrack, audioContext, analyser, audioStream;
 
 class Ghost{
  constructor(x,y){
-  this.x=x; this.y=y; this.phase=Math.random()*5;
-  this.start=Date.now(); this.life=8000+Math.random()*2000;
-  this.scale=2.6; this.dir=(Math.random()-0.5)*0.5;
+  this.x=x; this.y=y;
+  this.baseY=y;
+  this.phase=Math.random()*5;
+  this.start=Date.now();
+  this.life=8000+Math.random()*2000;
+  this.scale=3.4; // AHORA ALTURA REAL PISO A TECHO - PERSONA 1.75m
+  this.dir=(Math.random()-0.5)*0.4;
  }
  alive(){ return Date.now()-this.start < this.life; }
  alpha(){ const r=this.life-(Date.now()-this.start); return r<800? r/800 : 1; }
- update(){ this.phase+=0.11; this.x+=this.dir; }
+ update(){
+  this.phase+=0.18; // CAMINA MAS RAPIDO - SE ACERCA
+  this.x+=this.dir;
+  this.y+=0.6; // SE VIENE HACIA VOS
+  this.scale+=0.006; // SE HACE MAS GRANDE AL ACERCARSE - TIEMPO REAL
+ }
  draw(){
   const a=this.alpha(); if(a<=0) return;
   ctx.save(); ctx.translate(this.x,this.y); ctx.scale(this.scale,this.scale); ctx.globalAlpha=a;
-  ctx.shadowBlur=22; ctx.shadowColor='rgba(255,255,255,0.85)';
+  ctx.shadowBlur=24; ctx.shadowColor='rgba(255,255,255,0.9)';
   ctx.fillStyle='#e8e0d5'; ctx.strokeStyle='#e8e0d5';
   ctx.lineWidth=11; ctx.lineCap='round'; ctx.lineJoin='round';
   const swing=Math.sin(this.phase);
@@ -66,7 +75,6 @@ class Ghost{
 }
 
 async function init(){
- // CAMARA + AUDIO AMBIENTE
  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:1280,height:720}, audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
  video.srcObject=stream;
  videoTrack=stream.getVideoTracks()[0];
@@ -74,23 +82,18 @@ async function init(){
  await new Promise(r=>video.onloadedmetadata=r);
  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
-
- // ZOOM NATIVO
  const zoomInput=document.getElementById('zoom');
  zoomInput.addEventListener('input', async (e)=>{
   const z=parseFloat(e.target.value);
   document.getElementById('zoomVal').innerText=z.toFixed(1)+'x';
   try{ await videoTrack.applyConstraints({advanced:[{zoom:z}]}); }catch{ video.style.transform=`scale(${z})`; }
  });
-
- // AUDIO ANALISIS PARA RUIDO RARO
  try{
   audioContext=new (window.AudioContext||window.webkitAudioContext)();
   const src=audioContext.createMediaStreamSource(stream);
   analyser=audioContext.createAnalyser(); analyser.fftSize=256;
   src.connect(analyser);
  }catch{}
-
  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true});
  document.getElementById('log').innerText='VISION ACTIVA + AUDIO AMBIENTE ON';
  loop();
@@ -112,7 +115,7 @@ async function loop(){
  const poses=await detector.estimatePoses(video,{maxPoses:5,flipHorizontal:false});
  ctx.clearRect(0,0,canvas.width,canvas.height);
  poses.forEach(p=>{
-  if(p.keypoints[0].score>0.28){
+  if(p.keypoints[0].score>0.24){
    const kx=p.keypoints[0].x; const ky=p.keypoints[12].y || p.keypoints[0].y+120;
    if(!entities.find(e=>Math.abs(e.x-kx)<100 && e.alive())){ entities.push(new Ghost(kx,ky)); }
   }
@@ -120,8 +123,6 @@ async function loop(){
  entities=entities.filter(e=>e.alive());
  entities.forEach(e=>{ e.update(); e.draw(); });
  drawWatermark();
-
- // DETECCION DE RUIDO RARO / VOZ SOLA
  if(analyser){
   const data=new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(data);
@@ -137,13 +138,11 @@ async function loop(){
  } else {
   document.getElementById('log').innerText= entities.length? `${entities.length} ENTIDAD DETECTADA` : 'ESCANEANDO...';
  }
-
  requestAnimationFrame(loop);
 }
 
 function toggleRec(){
  if(!isRec){
-  // GRABA VIDEO + CANVAS + AUDIO AMBIENTE
   const canvasStream=canvas.captureStream(30);
   const combined=new MediaStream([...canvasStream.getVideoTracks(),...audioStream.getAudioTracks()]);
   chunks=[]; recorder=new MediaRecorder(combined,{mimeType:'video/webm'});
