@@ -41,13 +41,13 @@ class KinectGhost{
  constructor(pose, isReal){
   this.kp=pose.keypoints;
   this.isReal=isReal;
-  this.start=Date.now();
   this.lastSeen=Date.now();
   this.x=pose.keypoints[0].x;
+  this.wander=(Math.random()-0.5)*0.8;
+  this.phase=Math.random()*6;
  }
  update(pose){ this.kp=pose.keypoints; this.lastSeen=Date.now(); this.x=pose.keypoints[0].x; }
  alive(){
-  // entidad queda 12 seg, persona real queda mientras la veas
   const limit=this.isReal? 1500 : 12000;
   return Date.now()-this.lastSeen < limit;
  }
@@ -57,12 +57,23 @@ class KinectGhost{
   if(dt<9000) return 1;
   return Math.max(0,1-(dt-9000)/3000);
  }
+ autoMove(){
+  // cuando queda sola, se mueve sola por el pasillo
+  if(Date.now()-this.lastSeen>800){
+   this.phase+=0.04;
+   this.kp=this.kp.map(k=>{
+    return {...k, x:k.x+Math.sin(this.phase)*0.3+this.wander, y:k.y+Math.cos(this.phase*0.7)*0.2};
+   });
+  }
+ }
  draw(isEntity){
   const k=this.kp;
   const a=this.alpha();
   if(a<=0) return;
   const get=i=>k[i];
-  if(get(5).score<0.12 || get(6).score<0.12) return;
+  if(get(5).score<0.10 || get(6).score<0.10) return;
+  if(!isEntity) this.autoMove();
+  else if(Date.now()-this.lastSeen>800) this.autoMove();
 
   ctx.save();
   ctx.globalAlpha=a;
@@ -76,22 +87,19 @@ class KinectGhost{
    ctx.lineWidth=7;
   }
   ctx.lineCap='round'; ctx.lineJoin='round';
-
   const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
   lines.forEach(([i,j])=>{
    const p1=get(i), p2=get(j);
-   if(p1.score>0.12 && p2.score>0.12){
+   if(p1.score>0.10 && p2.score>0.10){
     ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y); ctx.stroke();
    }
   });
-  // cabeza
   const head=get(0);
-  if(head.score>0.12){
+  if(head.score>0.10){
    ctx.beginPath(); ctx.arc(head.x,head.y,isEntity?16:12,0,Math.PI*2); ctx.fill();
   }
-  // cuerpo relleno para altura real
   const ls=get(5), rs=get(6), lh=get(11), rh=get(12);
-  if(ls.score>0.12 && rs.score>0.12 && lh.score>0.12 && rh.score>0.12){
+  if(ls.score>0.10 && rs.score>0.10 && lh.score>0.10 && rh.score>0.10){
    ctx.globalAlpha=isEntity? a*0.35 : a*0.20;
    ctx.beginPath();
    ctx.moveTo(ls.x,ls.y); ctx.lineTo(rs.x,rs.y); ctx.lineTo(rh.x,rh.y); ctx.lineTo(lh.x,lh.y); ctx.closePath(); ctx.fill();
@@ -120,7 +128,7 @@ async function init(){
   src.connect(analyser);
  }catch{}
  detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true});
- document.getElementById('log').innerText='VISION ACTIVA 0.14 + KINECT REAL';
+ document.getElementById('log').innerText='VISION ACTIVA';
  loop();
 }
 
@@ -140,10 +148,9 @@ let realPersons=[];
 async function loop(){
  const poses=await detector.estimatePoses(video,{maxPoses:5,flipHorizontal:false});
  ctx.clearRect(0,0,canvas.width,canvas.height);
-
  realPersons=[];
  poses.forEach(p=>{
-  if(p.keypoints[0].score>0.14){
+  if(p.keypoints[0].score>0.12){
    realPersons.push(p);
    let best=null, bestD=150;
    entities.forEach(e=>{
@@ -154,18 +161,13 @@ async function loop(){
    else { entities.push(new KinectGhost(p,false)); }
   }
  });
-
  entities=entities.filter(e=>e.alive());
- // dibuja primero entidades blancas que quedan
  entities.forEach(e=>e.draw(true));
- // dibuja encima personas reales en verde con articulacion 100% real
  realPersons.forEach(p=>{
   const temp=new KinectGhost(p,true);
   temp.draw(false);
  });
-
  drawWatermark();
-
  if(analyser){
   const data=new Uint8Array(analyser.frequencyBinCount);
   analyser.getByteFrequencyData(data);
@@ -176,11 +178,11 @@ async function loop(){
   } else if(entities.length>0 && realPersons.length>0){
    document.getElementById('log').innerText=`${entities.length} ENTIDAD + ${realPersons.length} PERSONA REAL`;
   } else if(entities.length>0){
-   document.getElementById('log').innerText=`${entities.length} ENTIDAD DETECTADA - 12 SEG`;
+   document.getElementById('log').innerText=`${entities.length} ENTIDAD DETECTADA`;
   } else if(realPersons.length>0){
-   document.getElementById('log').innerText=`${realPersons.length} PERSONA REAL - KINECT`;
+   document.getElementById('log').innerText=`${realPersons.length} PERSONA REAL`;
   } else if(Date.now()-lastAudioAlert>4000){
-   document.getElementById('log').innerText='ESCANEANDO... AUDIO ON';
+   document.getElementById('log').innerText='ESCANEANDO...';
   }
  }
  requestAnimationFrame(loop);
