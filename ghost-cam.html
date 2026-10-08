@@ -22,7 +22,7 @@ body{margin:0;background:#000;overflow:hidden}
 <video id="video" autoplay playsinline muted></video>
 <canvas id="canvas"></canvas>
 <div id="hud">
-<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM • 0.08</div>
+<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM • 0.08 FIX</div>
 <div id="log" style="color:#fff;font-size:12px;margin-top:6px">INICIANDO...</div>
 </div>
 <div id="zoomBox">
@@ -38,136 +38,125 @@ const canvas=document.getElementById('canvas');
 const ctx=canvas.getContext('2d');
 let detector, entities=[], isRec=false, recorder, chunks=[];
 let videoTrack, audioContext, analyser, audioStream;
-let currentFacing='environment';
-let currentStream=null;
+let currentFacing='environment', currentStream=null;
 
-class KinectGhost{
- constructor(pose){
-  this.kp=pose.keypoints;
-  this.lastSeen=Date.now();
-  this.x=pose.keypoints[0].x;
-  this.wander=(Math.random()-0.5)*0.9;
-  this.phase=Math.random()*6;
+class Ghost{
+ constructor(kp){
+  this.kp=kp; this.lastSeen=Date.now();
+  this.x=kp[0].x; this.wander=(Math.random()-0.5)*0.8; this.phase=Math.random()*6;
  }
- update(pose){ this.kp=pose.keypoints; this.lastSeen=Date.now(); this.x=pose.keypoints[0].x; }
+ update(kp){ this.kp=kp; this.lastSeen=Date.now(); this.x=kp[0].x; }
  alive(){ return Date.now()-this.lastSeen < 12000; }
- alpha(){ const dt=Date.now()-this.lastSeen; if(dt<9000) return 1; return Math.max(0,1-(dt-9000)/3000); }
+ alpha(){ const dt=Date.now()-this.lastSeen; return dt<9000?1:Math.max(0,1-(dt-9000)/3000); }
  autoMove(){
   if(Date.now()-this.lastSeen>600){
    this.phase+=0.05;
-   this.kp=this.kp.map(k=>({...k, x:k.x+Math.sin(this.phase)*0.6+this.wander, y:k.y+Math.cos(this.phase*0.7)*0.3}));
+   this.kp=this.kp.map(k=>({...k, x:k.x+Math.sin(this.phase)*0.8+this.wander, y:k.y+Math.cos(this.phase*0.6)*0.3}));
   }
  }
  draw(isEntity, mirror){
-  const k=this.kp; const a=this.alpha(); if(a<=0) return;
+  const k=this.kp, a=this.alpha(); if(a<=0) return;
   const get=i=>k[i];
-  const transformX = (x)=> mirror? canvas.width - x : x;
-  // si es persona real, la mostramos aunque tenga score bajo
-  const minScore = isEntity? 0.08 : 0.05;
+  const tx=x=>mirror?canvas.width-x:x;
+  const minScore=isEntity?0.08:0.05;
   if(get(5).score<minScore && get(6).score<minScore) return;
-  if(Date.now()-this.lastSeen>600) this.autoMove();
-
+  if(isEntity && Date.now()-this.lastSeen>600) this.autoMove();
   ctx.save(); ctx.globalAlpha=a;
-  if(isEntity){ ctx.shadowBlur=24; ctx.shadowColor='rgba(255,255,255,0.9)'; ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5'; ctx.lineWidth=10; }
-  else { ctx.shadowBlur=18; ctx.shadowColor='rgba(0,255,100,0.8)'; ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=7; }
+  if(isEntity){ ctx.shadowBlur=22; ctx.shadowColor='#fff'; ctx.strokeStyle='#e8e0d5'; ctx.fillStyle='#e8e0d5'; ctx.lineWidth=10; }
+  else { ctx.shadowBlur=16; ctx.shadowColor='#00ff66'; ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=8; }
   ctx.lineCap='round'; ctx.lineJoin='round';
   const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
   lines.forEach(([i,j])=>{
    const p1=get(i), p2=get(j);
-   if(p1.score>minScore && p2.score>minScore){
-    ctx.beginPath(); ctx.moveTo(transformX(p1.x),p1.y); ctx.lineTo(transformX(p2.x),p2.y); ctx.stroke();
-   }
+   if(p1.score>minScore && p2.score>minScore){ ctx.beginPath(); ctx.moveTo(tx(p1.x),p1.y); ctx.lineTo(tx(p2.x),p2.y); ctx.stroke(); }
   });
-  const head=get(0);
-  if(head.score>minScore){ ctx.beginPath(); ctx.arc(transformX(head.x),head.y,isEntity?16:12,0,Math.PI*2); ctx.fill(); }
+  const h=get(0); if(h.score>minScore){ ctx.beginPath(); ctx.arc(tx(h.x),h.y,isEntity?16:12,0,Math.PI*2); ctx.fill(); }
   const ls=get(5), rs=get(6), lh=get(11), rh=get(12);
   if(ls.score>minScore && rs.score>minScore && lh.score>minScore && rh.score>minScore){
-   ctx.globalAlpha=isEntity? a*0.35 : a*0.20;
-   ctx.beginPath();
-   ctx.moveTo(transformX(ls.x),ls.y); ctx.lineTo(transformX(rs.x),rs.y); ctx.lineTo(transformX(rh.x),rh.y); ctx.lineTo(transformX(lh.x),lh.y); ctx.closePath(); ctx.fill();
+   ctx.globalAlpha=isEntity?a*0.3:a*0.18;
+   ctx.beginPath(); ctx.moveTo(tx(ls.x),ls.y); ctx.lineTo(tx(rs.x),rs.y); ctx.lineTo(tx(rh.x),rh.y); ctx.lineTo(tx(lh.x),lh.y); ctx.closePath(); ctx.fill();
   }
   ctx.restore();
  }
 }
 
 async function startCamera(facing){
- if(currentStream){ currentStream.getTracks().forEach(t=>t.stop()); }
+ if(currentStream) currentStream.getTracks().forEach(t=>t.stop());
  currentFacing=facing;
  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:1280,height:720}, audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
- currentStream=stream;
- video.srcObject=stream;
- videoTrack=stream.getVideoTracks()[0];
- audioStream=stream;
+ currentStream=stream; video.srcObject=stream; videoTrack=stream.getVideoTracks()[0]; audioStream=stream;
  await new Promise(r=>video.onloadedmetadata=r);
  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
  canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
  video.style.transform='scaleX(1)';
+ try{
+  if(audioContext) await audioContext.close();
+  audioContext=new (window.AudioContext||window.webkitAudioContext)();
+  const src=audioContext.createMediaStreamSource(stream);
+  analyser=audioContext.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
+ }catch{}
 }
 
-async function switchCam(){
- const newFacing=currentFacing==='environment'?'user':'environment';
- await startCamera(newFacing);
- document.getElementById('log').innerText=newFacing==='user'?'CAMARA DELANTERA':'CAMARA TRASERA';
- setTimeout(()=>{ document.getElementById('log').innerText='VISION ACTIVA 0.08'; },1500);
-}
+async function switchCam(){ await startCamera(currentFacing==='environment'?'user':'environment'); }
 
 async function init(){
  await startCamera('environment');
- document.getElementById('zoom').addEventListener('input', async (e)=>{
+ document.getElementById('zoom').addEventListener('input', async e=>{
   const z=parseFloat(e.target.value);
   document.getElementById('zoomVal').innerText=z.toFixed(1)+'x';
   try{ await videoTrack.applyConstraints({advanced:[{zoom:z}]}); }catch{ video.style.transform=`scale(${z})`; }
  });
- try{
-  audioContext=new (window.AudioContext||window.webkitAudioContext)();
-  const src=audioContext.createMediaStreamSource(currentStream);
-  analyser=audioContext.createAnalyser(); analyser.fftSize=256;
-  src.connect(analyser);
- }catch{}
- detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.MULTIPOSE_LIGHTNING,enableTracking:true});
+ // FIX: SINGLEPOSE es el que te detecta a vos 100% - multipose era el que fallaba
+ detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
  document.getElementById('log').innerText='VISION ACTIVA 0.08';
  loop();
 }
 
 function drawWatermark(){
- ctx.save(); ctx.globalAlpha= isRec? 0.85 : 0.35; ctx.fillStyle='#fff';
+ ctx.save(); ctx.globalAlpha=isRec?0.85:0.35; ctx.fillStyle='#fff';
  ctx.font=`${Math.round(canvas.width*0.022)}px monospace`; ctx.textAlign='right';
  ctx.shadowBlur=6; ctx.shadowColor='rgba(0,0,0,0.9)';
  ctx.fillText('archiviax.com.ar', canvas.width-25, canvas.height-28); ctx.restore();
 }
 
-let lastAudioAlert=0; let realPersons=[];
+let lastAudioAlert=0;
 async function loop(){
  const isMirror=currentFacing==='user';
- const poses=await detector.estimatePoses(video,{maxPoses:5,flipHorizontal:isMirror});
+ const poses=await detector.estimatePoses(video,{flipHorizontal:isMirror});
  ctx.clearRect(0,0,canvas.width,canvas.height);
- realPersons=[];
+ let realDetected=false;
+
  poses.forEach(p=>{
-  // AHORA DETECTA CON 0.08 - MUCHO MAS SENSIBLE
-  if(p.keypoints[0].score>0.08 || p.keypoints[5].score>0.08 || p.keypoints[6].score>0.08){
-   realPersons.push(p);
-   let best=null, bestD=180;
-   entities.forEach(e=>{ const d=Math.hypot(e.x-p.keypoints[0].x, e.kp[0].y-p.keypoints[0].y); if(d<bestD){ bestD=d; best=e; } });
-   if(best){ best.update(p); } else { entities.push(new KinectGhost(p)); }
+  const s=Math.max(p.keypoints[0].score,p.keypoints[5].score,p.keypoints[6].score);
+  if(s>0.08){
+   realDetected=true;
+   let best=null, bestD=200;
+   entities.forEach(e=>{ const d=Math.hypot(e.x-p.keypoints[0].x, e.kp[0].y-p.keypoints[0].y); if(d<bestD){bestD=d; best=e;} });
+   if(best) best.update(p.keypoints); else entities.push(new Ghost(p.keypoints));
+   // DIBUJA VERDE EN TIEMPO REAL - VOS
+   const tmp=new Ghost(p.keypoints); tmp.draw(false,isMirror);
   }
  });
+
+ // entidades blancas que se mueven solas
  entities=entities.filter(e=>e.alive());
  entities.forEach(e=>e.draw(true,isMirror));
- realPersons.forEach(p=>{ const temp=new KinectGhost(p); temp.draw(false,isMirror); });
  drawWatermark();
 
  if(analyser){
   const data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
   const vol=data.reduce((a,b)=>a+b,0)/data.length;
-  if(vol>38 && Date.now()-lastAudioAlert>3000 && entities.length===0 && realPersons.length===0){
+  if(!realDetected && entities.length===0 && vol>38 && Date.now()-lastAudioAlert>3000){
    document.getElementById('log').innerText=`⚠ RUIDO AMBIENTE - ${vol.toFixed(0)}dB`; lastAudioAlert=Date.now();
-  } else if(entities.length>0 && realPersons.length>0){
-   document.getElementById('log').innerText=`${entities.length} ENTIDAD + ${realPersons.length} REAL`;
-  } else if(entities.length>0){ document.getElementById('log').innerText=`${entities.length} ENTIDAD DETECTADA`; }
-  else if(realPersons.length>0){ document.getElementById('log').innerText=`${realPersons.length} PERSONA REAL`; }
-  else if(Date.now()-lastAudioAlert>4000){ document.getElementById('log').innerText='ESCANEANDO...'; }
- } else {
-   document.getElementById('log').innerText= realPersons.length? `${realPersons.length} PERSONA REAL` : entities.length? `${entities.length} ENTIDAD` : 'ESCANEANDO...';
+  } else if(realDetected && entities.length>0){
+   document.getElementById('log').innerText=`ENTIDAD + VOS`;
+  } else if(entities.length>0){
+   document.getElementById('log').innerText=`ENTIDAD DETECTADA`;
+  } else if(realDetected){
+   document.getElementById('log').innerText=`PERSONA REAL`;
+  } else if(Date.now()-lastAudioAlert>3000){
+   document.getElementById('log').innerText='ESCANEANDO...';
+  }
  }
  requestAnimationFrame(loop);
 }
