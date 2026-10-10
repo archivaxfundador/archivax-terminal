@@ -11,7 +11,7 @@
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .card{border:1px solid #0f0;background:linear-gradient(180deg,#111,#000);padding:18px;text-align:center;cursor:pointer;position:relative;transition:0.2s}
 .card:active{transform:scale(0.97);background:#0f0;color:#000}
-.card.icon{font-size:38px;margin-bottom:8px}
+.icon{font-size:38px;margin-bottom:8px}
 .card h3{font-size:13px;margin-bottom:4px}.card p{font-size:9px;color:#888}
 .card.disabled{border-color:#333;color:#333;opacity:0.5;pointer-events:none}
 .card.disabled p{color:#333}
@@ -28,29 +28,42 @@
 <div id="status">VERIFICANDO ACCESO...</div>
 </div>
 <div class="grid">
+
 <div class="card" onclick="location.href='app.html'">
 <div class="badge">SLS + EVP</div>
 <div class="icon">📷</div>
 <h3>CÁMARA SLS</h3>
 <p>Stickman + Fantasma + EVP</p>
 </div>
+
 <div class="card" onclick="location.href='evp.html'">
 <div class="badge" style="background:red;color:white">REAL</div>
 <div class="icon">📻</div>
 <h3>EVP SPIRIT BOX</h3>
 <p>P-SB7 + Voces H/M/Niño</p>
 </div>
+
+<!-- NUEVA OPCION AGREGADA -->
+<div class="card" onclick="location.href='evp-real-ghost.html'">
+<div class="badge" style="background:#ff00ff;color:#fff">10K FRASES</div>
+<div class="icon">👻</div>
+<h3>EVP REAL GHOST</h3>
+<p>P-SB26 + 10.000 Frases Largas</p>
+</div>
+
 <div class="card" onclick="location.href='ouija-evp.html'">
 <div class="icon">🔮</div>
 <h3>OUIJA EVP</h3>
 <p>Ouija + Respuestas IA</p>
 </div>
+
 <div class="card" onclick="location.href='llamada.html'">
 <div class="badge" style="background:#0f0;color:#000">NUEVO</div>
 <div class="icon">📞</div>
 <h3>LLAMADA</h3>
 <p>Voces Reales Demonio/Abuela</p>
 </div>
+
 </div>
 <div class="footer">archiviax.com.ar - Sistema Premium Activado</div>
 <script>
