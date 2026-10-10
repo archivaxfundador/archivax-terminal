@@ -7,6 +7,7 @@
 <!-- Librerías SLS reales -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
 body { background-color: #050505; color: #00ff00; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow-x: hidden; }
 .container { text-align: center; background: #111; border: 3px solid #333; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
@@ -27,7 +28,7 @@ button.recording { color: #ffffff; background: #ff0000; border-color: #ff3333; b
 <div class="container">
 <h2>SLS KINECT SENSOR & EVP SCANNER</h2>
 <div id="canvas-holder">
-<div class="hud-overlay"> SYS STATUS: ONLINE<br> AUDIO GATE: ACCUMULATING... </div>
+<div class="hud-overlay" id="hud"> SYS STATUS: ONLINE<br> AUDIO GATE: ACCUMULATING... </div>
 <div class="anomaly-alert" id="alert-ui">⚠️ AUDIO ANOMALY DETECTED</div>
 </div>
 <div class="controls">
@@ -35,10 +36,41 @@ button.recording { color: #ffffff; background: #ff0000; border-color: #ff3333; b
 </div>
 <div id="status-msg">Cargando sensores de mapeo neuronal... Por favor espera.</div>
 </div>
-
-<button onclick="location.href='menu.html'" style="margin-top:20px;background:#000;color:#888;border:1px solid #333;font-size:10px;letter-spacing:2px;padding:10px 20px;cursor:pointer;font-family:monospace">◀ VOLVER AL MENU</button>
-
+<button onclick="goMenu()" style="margin-top:20px;background:#000;color:#888;border:1px solid #333;font-size:10px;letter-spacing:2px;padding:10px 20px;cursor:pointer;font-family:monospace">◀ VOLVER AL MENU</button>
 <script>
+// === PARCHE AGREGADO - NO ROMPE NADA - PERMITE USAR EN MODO PRUEBA ===
+const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
+const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
+const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
+const STORAGE_KEY='archiviax_v26';
+const urlParams=new URLSearchParams(location.search);
+const isTrialParam=urlParams.get('mode')==='trial';
+function goMenu(){ if(isTrialParam) location.href='menu.html?mode=trial'; else location.href='menu.html'; }
+(async()=>{
+  try{
+    const {data:{session}}=await supa.auth.getSession();
+    if(session){
+      const meta=session.user.user_metadata||{};
+      if(meta.expires_at && new Date(meta.expires_at)>new Date()) return;
+    }
+    const state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+    const now=Date.now();
+    if(state.blockedUntil && now < state.blockedUntil){
+      location.href='index.html?blocked=1'; return;
+    }
+    if(isTrialParam || state.trialStart){
+      const start=state.trialStart||now;
+      const left=30-Math.floor((now-start)/60000);
+      if(left<=0){
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({blockedUntil: now + 24*3600*1000}));
+        location.href='index.html?blocked=1'; return;
+      }
+      document.getElementById('hud').innerHTML=`SYS STATUS: ONLINE<br>TRIAL ${left} MIN`;
+    }
+  }catch(e){}
+})();
+// === FIN PARCHE ===
+
 let video;
 let bodyPose;
 let poses = [];
@@ -52,7 +84,6 @@ let noiseThreshold = 45;
 let statusMsg = document.getElementById('status-msg');
 let alertUi = document.getElementById('alert-ui');
 let recBtn = document.getElementById('rec-btn');
-
 function preload() {
 bodyPose = ml5.bodyPose("BlazePose", { flipped: true });
 }
