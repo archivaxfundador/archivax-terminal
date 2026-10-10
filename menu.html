@@ -13,10 +13,7 @@
 .card:active{transform:scale(0.97);background:#0f0;color:#000}
 .icon{font-size:38px;margin-bottom:8px}
 .card h3{font-size:13px;margin-bottom:4px}.card p{font-size:9px;color:#888}
-.card.disabled{border-color:#333;color:#333;opacity:0.5;pointer-events:none}
-.card.disabled p{color:#333}
 .badge{position:absolute;top:5px;right:5px;background:yellow;color:#000;font-size:8px;padding:2px 5px;font-weight:bold}
-.badge.soon{background:#333;color:#888}
 .footer{margin-top:25px;text-align:center;font-size:9px;color:#444}
 #status{margin-top:10px;font-size:10px;color:#0f0;text-align:center}
 </style>
@@ -43,7 +40,6 @@
 <p>P-SB7 + Voces H/M/Niño</p>
 </div>
 
-<!-- NUEVA OPCION AGREGADA -->
 <div class="card" onclick="location.href='evp-real-ghost.html'">
 <div class="badge" style="background:#ff00ff;color:#fff">10K FRASES</div>
 <div class="icon">👻</div>
@@ -70,7 +66,38 @@
 const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
 const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
 const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
-async function check(){const{data:{session}}=await supa.auth.getSession();const el=document.getElementById('status');if(session){const meta=session.user.user_metadata||{};el.textContent=`PREMIUM ACTIVO HASTA ${new Date(meta.expires_at).toLocaleDateString()}`}else{el.textContent='MODO PRUEBA 30 MIN - GRATIS';}}check();
+async function check(){
+const params=new URLSearchParams(location.search);
+const isTrial=params.get('mode')==='trial';
+const STORAGE_KEY='archiviax_v26';
+const el=document.getElementById('status');
+const {data:{session}}=await supa.auth.getSession();
+if(session){
+const meta=session.user.user_metadata||{};
+if(meta.expires_at && new Date(meta.expires_at)>new Date()){
+el.textContent=`PREMIUM ACTIVO HASTA ${new Date(meta.expires_at).toLocaleDateString()}`;
+return;
+}
+}
+if(isTrial){
+try{
+const state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
+const now=Date.now();
+const start=state.trialStart||now;
+const elapsed=Math.floor((now-start)/60000);
+const left=30-elapsed;
+if(left<=0){
+localStorage.setItem(STORAGE_KEY, JSON.stringify({blockedUntil: now + 24*3600*1000}));
+location.href='index.html?blocked=1';
+return;
+}
+el.textContent=`MODO PRUEBA - ${left} MIN RESTANTES`;
+return;
+}catch(e){ el.textContent='MODO PRUEBA 30 MIN - GRATIS'; return; }
+}
+el.textContent='MODO PRUEBA 30 MIN - GRATIS';
+}
+check();
 </script>
 </body>
 </html>
