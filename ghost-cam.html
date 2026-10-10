@@ -1,208 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="es">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no">
-<title>ARCHIVAX VISION SYSTEM</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHIVIAX - Spirit Box</title>
 <style>
-body{margin:0;background:#000;overflow:hidden}
-#video{position:absolute;width:100%;height:100%;object-fit:cover}
-#canvas{position:absolute;width:100%;height:100%}
-#hud{position:absolute;top:0;left:0;right:0;padding:14px;z-index:10;background:linear-gradient(180deg,rgba(0,0,0,.85),transparent);font-family:monospace}
-#rec{position:absolute;bottom:20px;left:50%;transform:translateX(-50%);width:62px;height:62px;border-radius:50%;background:#ff1e1e;border:3px solid #fff;z-index:20}
-#rec.on{background:#fff;box-shadow:0 0 20px red}
-#zoomBox{position:absolute;bottom:100px;left:50%;transform:translateX(-50%);z-index:15;display:flex;align-items:center;gap:10px;background:rgba(0,0,0,.6);padding:8px 12px;border-radius:20px;border:1px solid #333}
-#zoom{width:140px}
-#camBtn{position:absolute;bottom:100px;right:18px;z-index:15;width:44px;height:44px;border-radius:50%;background:rgba(0,0,0,.6);border:1px solid #333;color:#fff;font-size:18px}
+body{background:#050505;color:#ccc;font-family:monospace;text-align:center;padding:20px}
+h1{color:#8b0000;letter-spacing:5px;font-size:20px}
+#reels{display:flex;justify-content:center;gap:40px;margin:30px 0}
+.reel-img{width:240px;height:240px;border-radius:50%;box-shadow:0 0 30px #000;animation:spin 1.8s linear infinite;animation-play-state:paused}
+.playing{animation-play-state:running}
+@keyframes spin{100%{transform:rotate(360deg)}}
+button{background:#111;border:2px solid #8b0000;color:#fff;padding:16px 32px;margin:10px;font-size:18px;cursor:pointer}
+button.on{background:#8b0000}
+#status{margin-top:15px;color:#555}
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.10.0"></script>
-<script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3"></script>
 </head>
 <body>
-<video id="video" autoplay playsinline muted></video>
-<canvas id="canvas"></canvas>
-<div id="hud">
-<div style="color:rgba(255,255,255,.5);font-size:10px;letter-spacing:1px">ARCHIVAX VISION SYSTEM</div>
-<div id="log" style="color:#fff;font-size:12px;margin-top:6px">INICIANDO...</div>
+<h1>ARCHIVIAX.COM.AR // OFFLINE SPIRIT BOX</h1>
+<div id="reels">
+  <img src="revox.png" class="reel-img" id="r1">
+  <img src="revox.png" class="reel-img" id="r2">
 </div>
-<div id="zoomBox">
-<span style="color:#fff;font-family:monospace;font-size:10px">ZOOM</span>
-<input id="zoom" type="range" min="1" max="4" step="0.1" value="1">
-<span id="zoomVal" style="color:#fff;font-family:monospace;font-size:10px">1x</span>
-</div>
-<button id="camBtn" onclick="switchCam()">↻</button>
-<button id="rec" onclick="toggleRec()"></button>
+
+<button id="btnListen">▶ ESCUCHAR</button>
+<button id="btnRecord">● GRABAR AUDIO</button>
+<div id="status">OFFLINE - SIN INTERNET - LISTO</div>
+
 <script>
-const video=document.getElementById('video');
-const canvas=document.getElementById('canvas');
-const ctx=canvas.getContext('2d');
-let detector, entities=[], isRec=false, chunks=[], videoTrack, audioStream, currentFacing='environment', currentStream=null, analyser, audioContext;
-let lastMoveCheck=0, prevData=null;
+let ctx, noise, gain, dest, playing=false;
+let rec, chunks=[], recording=false;
 
-class RealGhost{
- constructor(x,y){
-  this.x=x; this.y=y; this.start=Date.now(); this.phase=Math.random()*10; this.state='walk';
-  this.life=15000; this.walkDir=(Math.random()-0.5)*0.8;
-  this.kp=this.makePose();
- }
- makePose(){
-  const cx=this.x, cy=this.y;
-  return [
-   {x:cx,y:cy-90,score:0.9},{x:cx,y:cy-75,score:0.9},{x:cx,y:cy-75,score:0.9},
-   {x:cx,y:cy-75,score:0.9},{x:cx,y:cy-75,score:0.9},
-   {x:cx-16,y:cy-65,score:0.9},{x:cx+16,y:cy-65,score:0.9},
-   {x:cx-20,y:cy-40,score:0.9},{x:cx+20,y:cy-40,score:0.9},
-   {x:cx-18,y:cy-15,score:0.9},{x:cx+18,y:cy-15,score:0.9},
-   {x:cx-8,y:cy-20,score:0.9},{x:cx+8,y:cy-20,score:0.9},
-   {x:cx-10,y:cy+20,score:0.9},{x:cx+10,y:cy+20,score:0.9},
-   {x:cx-12,y:cy+65,score:0.9},{x:cx+12,y:cy+65,score:0.9},
-   {x:cx-12,y:cy+95,score:0.9},{x:cx+12,y:cy+95,score:0.9},
-  ];
- }
- update(){
-  this.phase+=0.07;
-  const t=(Date.now()-this.start)/1000;
-  if(t>3 && t<6) this.state='crouch';
-  else if(t>6 && t<9) this.state='stand';
-  else this.state='walk';
-
-  if(this.state==='walk'){ this.x+=this.walkDir; }
-  const swing=Math.sin(this.phase)*18;
-  const crouchOff=this.state==='crouch'?35:0;
-  const cx=this.x, cy=this.y+crouchOff;
-  this.kp=[
-   {x:cx,y:cy-90,score:0.9},{x:cx,y:cy-75,score:0.9},{x:cx,y:cy-75,score:0.9},{x:cx,y:cy-75,score:0.9},{x:cx,y:cy-75,score:0.9},
-   {x:cx-16,y:cy-65,score:0.9},{x:cx+16,y:cy-65,score:0.9},
-   {x:cx-20+swing*0.2,y:cy-40,score:0.9},{x:cx+20-swing*0.2,y:cy-40,score:0.9},
-   {x:cx-18+swing*0.3,y:cy-15,score:0.9},{x:cx+18-swing*0.3,y:cy-15,score:0.9},
-   {x:cx-8,y:cy-20,score:0.9},{x:cx+8,y:cy-20,score:0.9},
-   {x:cx-10+swing,y:cy+20,score:0.9},{x:cx+10-swing,y:cy+20,score:0.9},
-   {x:cx-12+swing*0.8,y:cy+65,score:0.9},{x:cx+12-swing*0.8,y:cy+65,score:0.9},
-   {x:cx-12+swing*0.8,y:cy+95,score:0.9},{x:cx+12-swing*0.8,y:cy+95,score:0.9},
-  ];
- }
- alive(){ return Date.now()-this.start < this.life; }
- draw(mirror){
-  const kp=this.kp;
-  const get=i=>kp[i];
-  const tx=x=>mirror?canvas.width-x:x;
-  ctx.save();
-  ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=8;
-  ctx.shadowBlur=18; ctx.shadowColor='#00ff66'; ctx.lineCap='round'; ctx.lineJoin='round';
-  const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
-  lines.forEach(([i,j])=>{
-   const a=get(i), b=get(j);
-   ctx.beginPath(); ctx.moveTo(tx(a.x),a.y); ctx.lineTo(tx(b.x),b.y); ctx.stroke();
-  });
-  const h=get(0); ctx.beginPath(); ctx.arc(tx(h.x),h.y,13,0,Math.PI*2); ctx.fill();
-  ctx.globalAlpha=0.22; ctx.beginPath(); ctx.moveTo(tx(get(5).x),get(5).y); ctx.lineTo(tx(get(6).x),get(6).y); ctx.lineTo(tx(get(12).x),get(12).y); ctx.lineTo(tx(get(11).x),get(11).y); ctx.closePath(); ctx.fill();
-  ctx.restore();
- }
-}
-
-async function startCamera(facing){
- if(currentStream) currentStream.getTracks().forEach(t=>t.stop());
- currentFacing=facing;
- const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:facing,width:1280,height:720}, audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
- currentStream=stream; video.srcObject=stream; videoTrack=stream.getVideoTracks()[0]; audioStream=stream;
- await new Promise(r=>video.onloadedmetadata=r);
- canvas.width=video.videoWidth; canvas.height=video.videoHeight;
- canvas.style.width=innerWidth+'px'; canvas.style.height=innerHeight+'px';
- try{
-  if(audioContext) await audioContext.close();
-  audioContext=new (window.AudioContext||window.webkitAudioContext)();
-  const src=audioContext.createMediaStreamSource(stream);
-  analyser=audioContext.createAnalyser(); analyser.fftSize=256; src.connect(analyser);
- }catch{}
-}
-
-async function switchCam(){ await startCamera(currentFacing==='environment'?'user':'environment'); }
-
-async function init(){
- await startCamera('environment');
- document.getElementById('zoom').addEventListener('input', async e=>{
-  const z=parseFloat(e.target.value);
-  document.getElementById('zoomVal').innerText=z.toFixed(1)+'x';
-  try{ await videoTrack.applyConstraints({advanced:[{zoom:z}]}); }catch{ video.style.transform=`scale(${z})`; }
- });
- await tf.setBackend('webgl'); await tf.ready();
- detector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
- document.getElementById('log').innerText='VISION ACTIVA';
- loop();
-}
-
-function drawWatermark(){
- ctx.save(); ctx.globalAlpha=isRec?0.85:0.35; ctx.fillStyle='#fff';
- ctx.font=`${Math.round(canvas.width*0.022)}px monospace`; ctx.textAlign='right';
- ctx.fillText('archiviax.com.ar', canvas.width-25, canvas.height-28); ctx.restore();
-}
-
-function detectCameraMove(){
- if(!analyser) return false;
- const data=new Uint8Array(analyser.frequencyBinCount);
- analyser.getByteFrequencyData(data);
- const avg=data.reduce((a,b)=>a+b,0)/data.length;
- if(prevData!==null && Math.abs(avg-prevData)>18) { prevData=avg; return true; }
- prevData=avg; return false;
-}
-
-let lastSpawn=0;
-async function loop(){
- const isMirror=currentFacing==='user';
- const poses=await detector.estimatePoses(video,{flipHorizontal:isMirror});
- ctx.clearRect(0,0,canvas.width,canvas.height);
- let real=false;
-
- if(poses[0]){
-  const kp=poses[0].keypoints;
-  if(Math.max(kp[0].score,kp[5].score,kp[6].score)>0.15){
-   const get=i=>kp[i];
-   ctx.save();
-   ctx.strokeStyle='#00ff66'; ctx.fillStyle='#00ff66'; ctx.lineWidth=7;
-   ctx.shadowBlur=14; ctx.shadowColor='#00ff66'; ctx.lineCap='round';
-   const lines=[[5,6],[5,7],[7,9],[6,8],[8,10],[5,11],[6,12],[11,12],[11,13],[13,15],[12,14],[14,16],[0,5],[0,6]];
-   const tx=x=>isMirror?canvas.width-x:x;
-   lines.forEach(([i,j])=>{
-    const a=get(i), b=get(j);
-    if(a.score>0.15 && b.score>0.15){ ctx.beginPath(); ctx.moveTo(tx(a.x),a.y); ctx.lineTo(tx(b.x),b.y); ctx.stroke(); }
-   });
-   const h=get(0); if(h.score>0.15){ ctx.beginPath(); ctx.arc(tx(h.x),h.y,11,0,Math.PI*2); ctx.fill(); }
-   ctx.restore();
-   real=true;
-   document.getElementById('log').innerText='PERSONA DETECTADA';
-   entities=[]; // si hay real, borra los verdes generados
+document.getElementById('btnListen').onclick=async()=>{
+  if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();dest=ctx.createMediaStreamDestination();gain=ctx.createGain();gain.gain.value=0.9;gain.connect(ctx.destination);gain.connect(dest);}
+  const r1=document.getElementById('r1'), r2=document.getElementById('r2'), btn=document.getElementById('btnListen');
+  if(playing){
+    noise.stop();playing=false;r1.classList.remove('playing');r2.classList.remove('playing');btn.innerText='▶ ESCUCHAR';btn.classList.remove('on');document.getElementById('status').innerText='DETENIDO';
+  }else{
+    const bufSize=ctx.sampleRate*2;const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);const out=buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++){out[i]=(Math.random()*2-1)*(Math.random()>0.88?1.8:0.5);}
+    noise=ctx.createBufferSource();noise.buffer=buf;noise.loop=true;
+    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=1100;f.Q.value=10;
+    const lfo=ctx.createOscillator();lfo.frequency.value=0.6;const lfoG=ctx.createGain();lfoG.gain.value=900;lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
+    noise.connect(f);f.connect(gain);noise.start();
+    playing=true;r1.classList.add('playing');r2.classList.add('playing');btn.innerText='■ DETENER';btn.classList.add('on');document.getElementById('status').innerText='BARRIENDO AM/FM OFFLINE - GRABANDO EN VIVO';
   }
- }
+};
 
- if(!real){
-  if(detectCameraMove()){ entities=[]; lastSpawn=Date.now(); }
-  if(Date.now()-lastSpawn>3500 && entities.length===0){
-   const x=canvas.width*0.3+Math.random()*canvas.width*0.4;
-   const y=canvas.height*0.35+Math.random()*canvas.height*0.25;
-   entities.push(new RealGhost(x,y));
-   lastSpawn=Date.now();
+document.getElementById('btnRecord').onclick=()=>{
+  if(!dest){alert('Primero ESCUCHAR');return;}
+  const btn=document.getElementById('btnRecord');
+  if(!recording){
+    chunks=[];rec=new MediaRecorder(dest.stream);rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+    rec.onstop=()=>{const blob=new Blob(chunks,{type:'audio/webm'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ARCHIVIAX_'+Date.now()+'.webm';a.click();document.getElementById('status').innerText='GUARDADO EN EL CELULAR';};
+    rec.start();recording=true;btn.innerText='■ GUARDANDO...';btn.classList.add('on');
+  }else{
+    rec.stop();recording=false;btn.innerText='● GRABAR AUDIO';btn.classList.remove('on');
   }
-  entities=entities.filter(e=>e.alive());
-  entities.forEach(e=>{ e.update(); e.draw(isMirror); });
-  if(entities.length>0) document.getElementById('log').innerText='ENTIDAD DETECTADA';
-  else document.getElementById('log').innerText='ESCANEANDO...';
- }
- drawWatermark();
- requestAnimationFrame(loop);
-}
-
-function toggleRec(){
- if(!isRec){
-  const cs=canvas.captureStream(30);
-  const combined=new MediaStream([...cs.getVideoTracks(),...audioStream.getAudioTracks()]);
-  chunks=[]; const rec=new MediaRecorder(combined,{mimeType:'video/webm'});
-  window.recorder=rec;
-  rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data)};
-  rec.onstop=()=>{const b=new Blob(chunks,{type:'video/webm'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=`ARCHIVAX-${Date.now()}.webm`;a.click();};
-  rec.start(); isRec=true; document.getElementById('rec').classList.add('on');
- } else { window.recorder.stop(); isRec=false; document.getElementById('rec').classList.remove('on'); }
-}
-init();
+};
 </script>
 </body>
 </html>
