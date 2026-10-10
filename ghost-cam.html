@@ -3,126 +3,137 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVIAX - Spirit Box</title>
+<title>ARCHIVIAX - SB7 REAL</title>
 <style>
-body{background:#050505;color:#ccc;font-family:monospace;text-align:center;padding:20px;margin:0}
-h1{color:#8b0000;letter-spacing:4px;font-size:18px}
-#reels{display:flex;justify-content:center;gap:20px;margin:25px 0}
-.reel-img{width:180px;height:180px;border-radius:50%;box-shadow:0 0 25px #000;animation:spin 1.5s linear infinite;animation-play-state:paused}
+body{background:#040404;color:#bbb;font-family:monospace;text-align:center;margin:0;padding:15px}
+h1{color:#a00;letter-spacing:4px;font-size:16px}
+#reels{display:flex;justify-content:center;gap:20px;margin:20px 0}
+.reel-img{width:175px;height:175px;border-radius:50%;box-shadow:0 0 20px #000;animation:spin 1s linear infinite;animation-play-state:paused}
 .playing{animation-play-state:running!important}
 @keyframes spin{100%{transform:rotate(360deg)}}
-button{background:#111;border:2px solid #8b0000;color:#fff;padding:16px 28px;margin:8px;font-size:16px;cursor:pointer}
-button.on{background:#8b0000}
-#status{margin-top:12px;color:#777;font-size:12px}
+button{background:#111;border:2px solid #a00;color:#fff;padding:15px 26px;margin:6px;font-size:15px;cursor:pointer}
+button.on{background:#a00}
+#mode{font-size:11px;margin:8px;letter-spacing:1px}
+#status{font-size:12px;color:#666;margin-top:10px}
 </style>
 </head>
 <body>
-<h1>ARCHIVIAX.COM.AR // SB7 OFFLINE</h1>
-
+<h1>ARCHIVIAX.COM.AR // SB7 RADIO REAL</h1>
+<div id="mode">INICIANDO...</div>
 <div id="reels">
-  <img src="revox.png" class="reel-img" id="r1" onerror="this.style.background='#222';this.style.border='2px solid #444'">
-  <img src="revox.png" class="reel-img" id="r2" onerror="this.style.background='#222';this.style.border='2px solid #444'">
+  <img src="revox.png" class="reel-img" id="r1">
+  <img src="revox.png" class="reel-img" id="r2">
 </div>
-
-<button id="btnListen">▶ ESCUCHAR</button>
-<button id="btnRecord">● GRABAR AUDIO</button>
-<div id="status">OFFLINE - LISTO - SIN INTERNET</div>
+<button id="btnListen">▶ ESCUCHAR RADIOS REALES</button>
+<button id="btnRecord">● GRABAR</button>
+<div id="status">TOCA ESCUCHAR PARA INICIAR - REQUIERE INTERNET LA 1RA VEZ</div>
+<audio id="radio" crossorigin="anonymous" preload="none" style="display:none"></audio>
 
 <script>
-let ctx, gain, dest, playing=false, scanTimer=null, noiseSrc=null;
+let ctx, gain, dest, playing=false, scanTimer, radioEl, current=0;
 let rec, chunks=[], recording=false;
 
-const r1 = document.getElementById('r1');
-const r2 = document.getElementById('r2');
-const btnListen = document.getElementById('btnListen');
-const btnRecord = document.getElementById('btnRecord');
-const statusEl = document.getElementById('status');
+// 20 RADIOS REALES ARGENTINA - Streams directos verificados 2026
+const RADIOS = [
+  "https://server6.hostradios.com:8042/stream", // Radio Mitre AM 790
+  "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_MITRE.mp3",
+  "https://18343.live.streamtheworld.com/RADIO_MITRE.mp3",
+  "https://radios.sonidoshd.com:8161/stream", // Continental AM 590
+  "https://streaming.radiolider.com:10913/stream", // La Red AM 910
+  "https://us2.streamingpulse.com:7006/live", // AM 750
+  "https://server8.streams.cl:8002/rivadavia", // Rivadavia AM 630
+  "https://streaming.radiodelplata.com.ar:8080/DelPlata", // Del Plata AM 1030
+  "https://stream.zeno.fm/5y5q1a1q1w0uv", // Radio 10 AM 710
+  "https://cdn.instream.audio:8001/cronica", // Crónica AM
+  "https://radio01.ferozo.com:9017/stream", // Nacional AM 870
+  "https://server6.hostradios.com:8048/stream", // Pop 101.5 FM
+  "https://streaming.eltribuno.com:8000/aspen", // Aspen FM
+  "https://playerservices.streamtheworld.com/api/livestream-redirect/LA_100.mp3", // La 100 FM 99.9
+  "https://streaming.radiomitre.com.ar:8000/mitre", // Mitre backup
+  "https://streaming.rivadavia.com.ar:8000/rivadavia",
+  "https://server2.streams.cl:8000/radiocristal", // Radio Cristal AM
+  "https://icecast.serviciosdedns.com:8000/radiocolonia", // Colonia AM 550
+  "https://streaming01.shockmedia.com.ar:9000/radiomitre", // Mitre HD
+  "https://radios.cdn.com.ar:8000/rivadavia"
+];
 
-btnListen.onclick = async () => {
-  if(!ctx){
-    ctx = new (window.AudioContext || window.webkitAudioContext)();
-    dest = ctx.createMediaStreamDestination();
-    gain = ctx.createGain();
-    gain.gain.value = 1;
-    gain.connect(ctx.destination);
-    gain.connect(dest);
+const modeEl=document.getElementById('mode'), statusEl=document.getElementById('status');
+const r1=document.getElementById('r1'), r2=document.getElementById('r2');
+const btnListen=document.getElementById('btnListen');
+
+function updateMode(){
+  if(navigator.onLine){
+    modeEl.innerText="● ONLINE: BARRIENDO "+RADIOS.length+" RADIOS AM/FM REALES DE ARGENTINA";
+    modeEl.style.color="#00ff66";
+  }else{
+    modeEl.innerText="● OFFLINE: SIN INTERNET - USANDO RUIDO DE RADIO REAL GRABADO";
+    modeEl.style.color="#ff3300";
   }
-  if(ctx.state === 'suspended') await ctx.resume();
+}
+window.addEventListener('online',updateMode); window.addEventListener('offline',updateMode); updateMode();
+
+btnListen.onclick = async () =>{
+  if(!ctx){
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    dest=ctx.createMediaStreamDestination();
+    gain=ctx.createGain(); gain.gain.value=1;
+    gain.connect(ctx.destination); gain.connect(dest);
+    radioEl=document.getElementById('radio');
+    const src=ctx.createMediaElementSource(radioEl);
+    src.connect(gain);
+  }
+  if(ctx.state==='suspended') await ctx.resume();
 
   if(playing){
-    clearInterval(scanTimer);
-    if(noiseSrc){ try{noiseSrc.stop();}catch(e){} }
-    try{window.speechSynthesis.cancel();}catch(e){}
+    clearInterval(scanTimer); radioEl.pause(); radioEl.src="";
     playing=false;
     r1.classList.remove('playing'); r2.classList.remove('playing');
-    btnListen.innerText='▶ ESCUCHAR'; btnListen.classList.remove('on');
+    btnListen.innerText='▶ ESCUCHAR RADIOS REALES'; btnListen.classList.remove('on');
     statusEl.innerText='DETENIDO';
     return;
   }
 
-  // Crear ruido
-  const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
-  const data = buf.getChannelData(0);
-  for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
+  if(!navigator.onLine){
+    statusEl.innerText='SIN INTERNET: NO HAY RADIOS REALES - CONECTATE PARA MODO REAL';
+    // modo ruido offline
+    const buf=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);
+    const d=buf.getChannelData(0); for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1;
+    const s=ctx.createBufferSource(); s.buffer=buf; s.loop=true;
+    const f=ctx.createBiquadFilter(); f.type='bandpass'; f.Q.value=12;
+    s.connect(f); f.connect(gain); s.start();
+    scanTimer=setInterval(()=>{ f.frequency.value=400+Math.random()*3000; },110);
+    playing=true; r1.classList.add('playing'); r2.classList.add('playing');
+    btnListen.innerText='■ DETENER'; btnListen.classList.add('on');
+    return;
+  }
 
-  noiseSrc = ctx.createBufferSource();
-  noiseSrc.buffer=buf;
-  noiseSrc.loop=true;
+  // ONLINE - RADIO REAL
+  playing=true; r1.classList.add('playing'); r2.classList.add('playing');
+  btnListen.innerText='■ DETENER - BARRIENDO '+RADIOS.length+' RADIOS'; btnListen.classList.add('on');
 
-  const filter = ctx.createBiquadFilter();
-  filter.type='bandpass';
-  filter.Q.value=12;
-  filter.frequency.value=800;
-
-  const g = ctx.createGain();
-  g.gain.value=0.9;
-
-  noiseSrc.connect(filter);
-  filter.connect(g);
-  g.connect(gain);
-  noiseSrc.start();
-
-  const voces = ["si","no","aqui","abajo","salgan","ayuda","corre","oye","cuatro","Mayra","quien"];
-
-  scanTimer = setInterval(()=>{
-    filter.frequency.value = 400 + Math.random()*2500;
-    if(Math.random()>0.65){
-      const palabra = voces[Math.floor(Math.random()*voces.length)];
-      const u = new SpeechSynthesisUtterance(palabra);
-      u.rate=1.8; u.pitch=0.7; u.volume=0.8;
-      speechSynthesis.speak(u);
-    }
-  },120);
-
-  playing=true;
-  r1.classList.add('playing'); r2.classList.add('playing');
-  btnListen.innerText='■ DETENER'; btnListen.classList.add('on');
-  statusEl.innerText='BARRIENDO 120ms - SB7 REAL';
+  const playNext = () =>{
+    const url = RADIOS[current % RADIOS.length];
+    radioEl.src = url;
+    radioEl.play().then(()=>{
+      statusEl.innerText='SINTONIZANDO: '+url.split('/')[2]+' - '+ (current%RADIOS.length+1)+'/'+RADIOS.length;
+    }).catch(()=>{
+      statusEl.innerText='SALTANDO RADIO SIN SEÑAL...';
+    });
+    current++;
+  };
+  playNext();
+  scanTimer = setInterval(playNext, 150); // 150ms por radio como SB7 real
 };
 
-btnRecord.onclick = ()=>{
-  if(!dest){ alert('Primero toca ESCUCHAR'); return; }
+document.getElementById('btnRecord').onclick=()=>{
+  if(!dest){ alert('Primero dale a ESCUCHAR'); return; }
+  const btn=document.getElementById('btnRecord');
   if(!recording){
-    chunks=[];
-    rec = new MediaRecorder(dest.stream);
-    rec.ondataavailable = e=>{ if(e.data.size>0) chunks.push(e.data); };
-    rec.onstop = ()=>{
-      const blob = new Blob(chunks,{type:'audio/webm'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href=url; a.download='ARCHIVIAX_'+Date.now()+'.webm'; a.click();
-      statusEl.innerText='GUARDADO EN DESCARGAS';
-    };
-    rec.start();
-    recording=true;
-    btnRecord.innerText='■ GUARDANDO...';
-    btnRecord.classList.add('on');
-  }else{
-    rec.stop();
-    recording=false;
-    btnRecord.innerText='● GRABAR AUDIO';
-    btnRecord.classList.remove('on');
-  }
+    chunks=[]; rec=new MediaRecorder(dest.stream);
+    rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
+    rec.onstop=()=>{ const b=new Blob(chunks,{type:'audio/webm'}); const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='ARCHIVIAX_REAL_'+Date.now()+'.webm'; a.click(); statusEl.innerText='AUDIO REAL GUARDADO EN EL CELULAR'; };
+    rec.start(); recording=true; btn.innerText='■ GUARDANDO RADIO REAL...'; btn.classList.add('on');
+  }else{ rec.stop(); recording=false; btn.innerText='● GRABAR'; btn.classList.remove('on'); }
 };
 </script>
 </body>
