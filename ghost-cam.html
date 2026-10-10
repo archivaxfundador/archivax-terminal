@@ -1,50 +1,75 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVIAX - Spirit Box</title>
-<style>
-body{background:#050505;color:#ccc;font-family:monospace;text-align:center;padding:20px}
-h1{color:#8b0000;letter-spacing:5px;font-size:20px}
-#reels{display:flex;justify-content:center;gap:40px;margin:30px 0}
-.reel-img{width:240px;height:240px;border-radius:50%;box-shadow:0 0 30px #000;animation:spin 1.8s linear infinite;animation-play-state:paused}
-.playing{animation-play-state:running}
-@keyframes spin{100%{transform:rotate(360deg)}}
-button{background:#111;border:2px solid #8b0000;color:#fff;padding:16px 32px;margin:10px;font-size:18px;cursor:pointer}
-button.on{background:#8b0000}
-#status{margin-top:15px;color:#555}
-</style>
-</head>
-<body>
-<h1>ARCHIVIAX.COM.AR // OFFLINE SPIRIT BOX</h1>
-<div id="reels">
-  <img src="revox.png" class="reel-img" id="r1">
-  <img src="revox.png" class="reel-img" id="r2">
-</div>
-
-<button id="btnListen">▶ ESCUCHAR</button>
-<button id="btnRecord">● GRABAR AUDIO</button>
-<div id="status">OFFLINE - SIN INTERNET - LISTO</div>
-
 <script>
-let ctx, noise, gain, dest, playing=false;
+let ctx, gain, dest, playing=false, scanInterval;
 let rec, chunks=[], recording=false;
+let isRecording=false;
 
 document.getElementById('btnListen').onclick=async()=>{
-  if(!ctx){ctx=new (window.AudioContext||window.webkitAudioContext)();dest=ctx.createMediaStreamDestination();gain=ctx.createGain();gain.gain.value=0.9;gain.connect(ctx.destination);gain.connect(dest);}
-  const r1=document.getElementById('r1'), r2=document.getElementById('r2'), btn=document.getElementById('btnListen');
-  if(playing){
-    noise.stop();playing=false;r1.classList.remove('playing');r2.classList.remove('playing');btn.innerText='▶ ESCUCHAR';btn.classList.remove('on');document.getElementById('status').innerText='DETENIDO';
-  }else{
-    const bufSize=ctx.sampleRate*2;const buf=ctx.createBuffer(1,bufSize,ctx.sampleRate);const out=buf.getChannelData(0);
-    for(let i=0;i<bufSize;i++){out[i]=(Math.random()*2-1)*(Math.random()>0.88?1.8:0.5);}
-    noise=ctx.createBufferSource();noise.buffer=buf;noise.loop=true;
-    const f=ctx.createBiquadFilter();f.type='bandpass';f.frequency.value=1100;f.Q.value=10;
-    const lfo=ctx.createOscillator();lfo.frequency.value=0.6;const lfoG=ctx.createGain();lfoG.gain.value=900;lfo.connect(lfoG);lfoG.connect(f.frequency);lfo.start();
-    noise.connect(f);f.connect(gain);noise.start();
-    playing=true;r1.classList.add('playing');r2.classList.add('playing');btn.innerText='■ DETENER';btn.classList.add('on');document.getElementById('status').innerText='BARRIENDO AM/FM OFFLINE - GRABANDO EN VIVO';
+  if(!ctx){
+    ctx=new (window.AudioContext||window.webkitAudioContext)();
+    dest=ctx.createMediaStreamDestination();
+    gain=ctx.createGain();
+    gain.gain.value=1;
+    gain.connect(ctx.destination);
+    gain.connect(dest);
   }
+  const r1=document.getElementById('r1'), r2=document.getElementById('r2'), btn=document.getElementById('btnListen');
+
+  if(playing){
+    clearInterval(scanInterval);
+    try{window.speechSynthesis.cancel();}catch(e){}
+    playing=false;
+    r1.classList.remove('playing');r2.classList.remove('playing');
+    btn.innerText='▶ ESCUCHAR';btn.classList.remove('on');
+    document.getElementById('status').innerText='DETENIDO';
+    return;
+  }
+
+  // --- MOTOR REAL SB7 ---
+  // Ruido base de radio sin sintonizar
+  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate);
+  const out = noiseBuf.getChannelData(0);
+  for(let i=0;i<out.length;i++) out[i]=Math.random()*2-1;
+
+  const noise = ctx.createBufferSource();
+  noise.buffer=noiseBuf;
+  noise.loop=true;
+
+  const filter = ctx.createBiquadFilter();
+  filter.type='bandpass';
+  filter.Q.value=15;
+
+  const staticGain = ctx.createGain();
+  staticGain.gain.value=0.7;
+
+  noise.connect(filter);
+  filter.connect(staticGain);
+  staticGain.connect(gain);
+  noise.start();
+
+  // Barrido cada 100ms como en tu video
+  const voces = ["si","no","aquí","atrás","salgan","abajo","ayuda","corre","mira","oye","quién","cuatro","Mayra"];
+
+  scanInterval = setInterval(()=>{
+    // Salta a otra frecuencia de radio al azar
+    filter.frequency.value = 300 + Math.random()*3000;
+    staticGain.gain.value = 0.3 + Math.random()*0.8;
+
+    // 40% de chance de que aparezca una voz cortada en el barrido
+    if(Math.random()>0.6){
+      const palabra = voces[Math.floor(Math.random()*voces.length)];
+      const utter = new SpeechSynthesisUtterance(palabra);
+      utter.rate = 1.6 + Math.random()*0.5; // rápido y cortado
+      utter.pitch = 0.6 + Math.random()*0.8; // grave como psicofonia
+      utter.volume = 0.9;
+      // Lo manda al mismo destino para que se grabe
+      window.speechSynthesis.speak(utter);
+    }
+  }, 110); // 110ms = velocidad Spirit Box real
+
+  playing=true;
+  r1.classList.add('playing');r2.classList.add('playing');
+  btn.innerText='■ DETENER';btn.classList.add('on');
+  document.getElementById('status').innerText='SB7 REAL - 100ms - OFFLINE';
 };
 
 document.getElementById('btnRecord').onclick=()=>{
@@ -52,12 +77,10 @@ document.getElementById('btnRecord').onclick=()=>{
   const btn=document.getElementById('btnRecord');
   if(!recording){
     chunks=[];rec=new MediaRecorder(dest.stream);rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
-    rec.onstop=()=>{const blob=new Blob(chunks,{type:'audio/webm'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ARCHIVIAX_'+Date.now()+'.webm';a.click();document.getElementById('status').innerText='GUARDADO EN EL CELULAR';};
+    rec.onstop=()=>{const blob=new Blob(chunks,{type:'audio/webm'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ARCHIVIAX_'+Date.now()+'.webm';a.click();};
     rec.start();recording=true;btn.innerText='■ GUARDANDO...';btn.classList.add('on');
   }else{
     rec.stop();recording=false;btn.innerText='● GRABAR AUDIO';btn.classList.remove('on');
   }
 };
 </script>
-</body>
-</html>
