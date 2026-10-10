@@ -1,109 +1,326 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ARCHIVIAX</title>
-<style>
-body{background:#050505;color:#666;font-family:monospace;text-align:center;margin:0;padding:20px}
-#online{color:#00ff66;font-size:12px;margin:10px;letter-spacing:3px}
-#reels{display:flex;justify-content:center;gap:20px;margin:30px 0}
-.reel-img{width:200px;height:200px;border-radius:50%;animation:spin 1s linear infinite;animation-play-state:paused}
-.playing{animation-play-state:running!important}
-@keyframes spin{100%{transform:rotate(360deg)}}
-button{background:#111;border:2px solid #a00;color:#fff;padding:18px 40px;font-size:18px;letter-spacing:2px;margin-top:10px}
-button.on{background:#a00}
-#status{margin-top:25px;font-size:11px;color:#555;letter-spacing:2px}
-audio{width:90%;margin-top:20px;filter:invert(1) hue-rotate(180deg)}
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EVP Spirit Box Pro Latam</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #00ff00;
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+        }
+
+        /* Contenedor que simula el aparato físico EVP */
+        .evp-device {
+            background: linear-gradient(135deg, #222 0%, #151515 100%);
+            border: 4px solid #333;
+            border-radius: 20px;
+            padding: 25px;
+            width: 340px;
+            box-shadow: inset 0 0 15px rgba(255,255,255,0.05), 0 15px 35px rgba(0,0,0,0.8);
+            text-align: center;
+            position: relative;
+        }
+
+        .brand {
+            font-size: 0.75rem;
+            color: #888;
+            letter-spacing: 3px;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+        }
+
+        /* Pantalla LCD del aparato */
+        .lcd-display {
+            background-color: #051a05;
+            border: 3px solid #004400;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
+        }
+
+        .freq {
+            font-size: 2.8rem;
+            color: #00ff33;
+            text-shadow: 0 0 10px rgba(0,255,51,0.6);
+            font-weight: bold;
+            letter-spacing: 1px;
+            height: 55px;
+        }
+
+        /* Panel de Luces LED */
+        .led-panel {
+            display: flex;
+            justify-content: center;
+            gap: 25px;
+            margin: 20px 0;
+            background: #111;
+            padding: 12px;
+            border-radius: 30px;
+            border: 1px solid #2a2a2a;
+        }
+
+        .led {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background-color: #333;
+            transition: all 0.05s ease-in-out;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
+        }
+
+        /* Estados encendidos de los LEDs con brillo paranormal */
+        .led.verde.active {
+            background-color: #00ff00;
+            box-shadow: 0 0 15px #00ff00, inset 0 -2px 5px rgba(0,0,0,0.4);
+        }
+        .led.amarillo.active {
+            background-color: #ffcc00;
+            box-shadow: 0 0 15px #ffcc00, inset 0 -2px 5px rgba(0,0,0,0.4);
+        }
+        .led.rojo.active {
+            background-color: #ff0000;
+            box-shadow: 0 0 15px #ff0000, inset 0 -2px 5px rgba(0,0,0,0.4);
+        }
+
+        .slider-box {
+            margin: 20px 0;
+            text-align: left;
+            font-size: 0.8rem;
+            color: #aaa;
+        }
+
+        .slider-box input {
+            width: 100%;
+            margin-top: 5px;
+            accent-color: #00ff00;
+        }
+
+        /* Botonera física */
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        button {
+            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 12px 5px;
+            font-size: 0.85rem;
+            font-family: inherit;
+            cursor: pointer;
+            font-weight: bold;
+            text-transform: uppercase;
+            box-shadow: 0 3px 0 #004400;
+            transition: all 0.1s ease;
+        }
+
+        button:active {
+            transform: translateY(3px);
+            box-shadow: none;
+        }
+
+        button.active-btn {
+            background: #00ff00;
+            color: #000;
+            box-shadow: 0 3px 0 #00aa00;
+        }
+
+        #rec-btn {
+            color: #ff3333;
+            border-color: #ff3333;
+            box-shadow: 0 3px 0 #550000;
+        }
+
+        #rec-btn.recording {
+            background: #ff3333;
+            color: #fff;
+            animation: pulse 1s infinite alternate;
+        }
+
+        @keyframes pulse {
+            from { opacity: 1; }
+            to { opacity: 0.6; }
+        }
+    </style>
 </head>
 <body>
-<div id="online">● ONLINE</div>
-<div style="color:#111;font-size:10px;letter-spacing:5px">ARCHIVIAX.COM.AR</div>
 
-<div id="reels">
-  <img src="revox.png" class="reel-img" id="r1">
-  <img src="revox.png" class="reel-img" id="r2">
+<div class="evp-device">
+    <div class="brand">EVP LATAM SCANNER // P-SB26</div>
+    
+    <!-- PANTALLA LCD -->
+    <div class="lcd-display">
+        <div class="freq" id="freq-display">OFF</div>
+    </div>
+    
+    <!-- CONTROLES LED DE RADIANCIA -->
+    <div class="led-panel">
+        <div class="led verde" id="led-1"></div>
+        <div class="led amarillo" id="led-2"></div>
+        <div class="led rojo" id="led-3"></div>
+    </div>
+
+    <!-- VELOCIDAD -->
+    <div class="slider-box">
+        <label>VELOCIDAD DE BARRIDO: <span id="speed-val">250ms</span></label>
+        <input type="range" id="speed" min="120" max="600" value="250">
+    </div>
+
+    <!-- BOTONES DE ACCIÓN -->
+    <div class="button-grid">
+        <button id="power-btn">Escuchar Scan</button>
+        <button id="rec-btn">Grabar EVP</button>
+    </div>
 </div>
 
-<button id="btnListen">ESCUCHAR</button>
-<div id="status">analizando audio</div>
-
-<!-- AUDIO VISIBLE PARA QUE VEAS QUE SI SUENA -->
-<audio id="radio" controls autoplay style="opacity:0.5"></audio>
-
 <script>
-let playing=false, timer, current=0;
-const radio = document.getElementById('radio');
-const r1=document.getElementById('r1'), r2=document.getElementById('r2');
-const btn=document.getElementById('btnListen');
+    const freqDisplay = document.getElementById('freq-display');
+    const powerBtn = document.getElementById('power-btn');
+    const recBtn = document.getElementById('rec-btn');
+    const speedSlider = document.getElementById('speed');
+    const speedVal = document.getElementById('speed-val');
+    
+    const led1 = document.getElementById('led-1');
+    const led2 = document.getElementById('led-2');
+    const led3 = document.getElementById('led-3');
 
-// 35 RADIOS LATINAS REALES - HTTPS y con CORS abierto
-const RADIOS = [
-  // ARGENTINA
-  "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_MITRE.mp3",
-  "https://streaming.radiolider.com:10913/stream",
-  "https://radios.sonidoshd.com:8161/stream",
-  "https://stream.zeno.fm/5y5q1a1q1w0uv",
-  "https://server6.hostradios.com:8042/stream",
-  "https://server8.streams.cl:8002/rivadavia",
-  "https://us2.streamingpulse.com:7006/live",
-  "https://cdn.instream.audio:8001/cronica",
-  // CHILE
-  "https://stream-042.zeno.fm/0r0xa8sxa0quv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiIwcjB4YThzeGEwcXV2IiwiaG9zdCI6InN0cmVhbS0wNDIuemVuby5mbSIsInJ0dGwiOjUsImp0aSI6IjlWcW9rWm9tU1N1T2hWbE9fN0tLQSIsImlhdCI6MTY0NjA0ODAwMCwiZXhwIjoxNjQ2MDQ4MDYwfQ",
-  "https://stream.zeno.fm/f3v7qy1m8k8uv",
-  "https://stream.zeno.fm/0u2k1s8q1w0uv",
-  // MEXICO
-  "https://stream.zeno.fm/0r0xa8sxa0quv",
-  "https://radios.sonidoshd.com:8000/wradio",
-  "https://stream.zeno.fm/kw5z5y1m8k8uv",
-  // COLOMBIA
-  "https://stream.zeno.fm/0r0xa8sxa0quv",
-  "https://stream.zeno.fm/q1a1q1w0uv",
-  // PERU / URUGUAY / LATAM GENERICO
-  "https://stream.zeno.fm/0r0xa8sxa0quv",
-  "https://icecast.serviciosdedns.com:8000/radiocolonia",
-  "https://server6.hostradios.com:8048/stream",
-  "https://streaming01.shockmedia.com.ar:9000/radiomitre",
-  "https://playerservices.streamtheworld.com/api/livestream-redirect/LA_100.mp3"
-];
+    let isScanning = false;
+    let isRecording = false;
+    let scanInterval;
+    
+    let audioCtx;
+    let whiteNoiseNode;
+    let gainStaticNode;
+    let destStream; // Para capturar el audio interno
+    let mediaRecorder;
+    let audioChunks = [];
 
-function playNext(){
-  const url = RADIOS[current % RADIOS.length];
-  radio.src = url;
-  radio.volume = 1;
-  radio.play().catch(e=>{
-    console.log("Radio falló, pasando a otra", e);
-    current++;
-    playNext();
-  });
-  current++;
-}
+    // Fonemas caóticos de radio en español latino
+    const fonemasLatinos = [
+        "ba", "ca", "de", "fe", "ga", "ma", "pa", "sa", "ta", "va", "za",
+        "be", "ce", "me", "pe", "re", "se", "te", "que", "en", "con", "por",
+        "bi", "ci", "di", "mi", "pi", "li", "si", "ti", "no", "si", "ya",
+        "bo", "co", "do", "fo", "mo", "po", "lo", "so", "to", "al", "del",
+        "bu", "cu", "mu", "pu", "su", "tu", "un", "ah", "oh", "eh", "uh"
+    ];
 
-btn.onclick = async () =>{
-  if(!playing){
-    playing=true;
-    r1.classList.add('playing'); r2.classList.add('playing');
-    btn.innerText='DETENER';
-    btn.classList.add('on');
-    document.getElementById('status').innerText='analizando audio';
-    playNext();
-    timer = setInterval(playNext, 180);
-  }else{
-    clearInterval(timer);
-    radio.pause();
-    playing=false;
-    r1.classList.remove('playing'); r2.classList.remove('playing');
-    btn.innerText='ESCUCHAR';
-    btn.classList.remove('on');
-    document.getElementById('status').innerText='analizando audio';
-  }
-};
+    // Cambiar velocidad en tiempo real
+    speedSlider.addEventListener('input', () => {
+        speedVal.innerText = speedSlider.value + 'ms';
+        if (isScanning) {
+            stopScan();
+            startScan();
+        }
+    });
 
-// Mostrar ONLINE solo si hay internet
-const onlineEl=document.getElementById('online');
-function upd(){ onlineEl.style.display=navigator.onLine?"block":"none"; }
-window.addEventListener('online',upd); window.addEventListener('offline',upd); upd();
-</script>
-</body>
-</html>
+    // Encender / Apagar el Barrido de audio
+    powerBtn.addEventListener('click', () => {
+        if (!audioCtx) {
+            initAudioContext();
+        }
+
+        if (!isScanning) {
+            isScanning = true;
+            powerBtn.innerText = "Cortar";
+            powerBtn.classList.add('active-btn');
+            startStatic();
+            startScan();
+        } else {
+            isScanning = false;
+            powerBtn.innerText = "Escuchar Scan";
+            powerBtn.classList.remove('active-btn');
+            stopStatic();
+            stopScan();
+            apagarLeds();
+            freqDisplay.innerText = "OFF";
+        }
+    });
+
+    // Iniciar / Detener Grabación directa al dispositivo
+    recBtn.addEventListener('click', () => {
+        if (!audioCtx) {
+            alert("Primero debes activar 'Escuchar Scan' para iniciar el entorno de audio.");
+            return;
+        }
+
+        if (!isRecording) {
+            startRecordingProcess();
+        } else {
+            stopRecordingProcess();
+        }
+    });
+
+    function initAudioContext() {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        // Crear un destino especial de stream para poder grabar todo lo que genera la app
+        destStream = audioCtx.createMediaStreamDestination();
+    }
+
+    function startScan() {
+        const speed = parseInt(speedSlider.value);
+        scanInterval = setInterval(() => {
+            // Cambio visual de frecuencias analógicas latinas
+            if (Math.random() > 0.5) {
+                const amFreq = Math.floor(Math.random() * (1600 - 540 + 1)) + 540;
+                freqDisplay.innerText = amFreq + " kHz";
+            } else {
+                const fmFreq = (Math.random() * (107.9 - 87.5) + 87.5).toFixed(1);
+                freqDisplay.innerText = fmFreq + " MHz";
+            }
+
+            // Actualización del medidor de luces LED (Sube y baja dinámicamente)
+            actualizarLedsParanormales();
+
+            // Probabilidad de interceptar un fonema de voz simulada
+            if (Math.random() > 0.3) {
+                atenuarEstatica(0.03, 40);
+                pronunciarFonemaAleatorio();
+            } else {
+                atenuarEstatica(0.18, 40);
+            }
+        }, speed);
+    }
+
+    function stopScan() {
+        clearInterval(scanInterval);
+        if (window.speechSynthesis) {
+            window.speechSynthesis.cancel();
+        }
+    }
+
+    // Generador matemático de ruido blanco analógico de fondo
+    function startStatic() {
+        const bufferSize = 2 * audioCtx.sampleRate;
+        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
+        const output = noiseBuffer.getChannelData(0);
+        
+        for (let i = 0; i < bufferSize; i++) {
+            output[i] = Math.random() * 2 - 1;
+        }
+
+        whiteNoiseNode = audioCtx.createBufferSource();
+        whiteNoiseNode.buffer = noiseBuffer;
+        whiteNoiseNode.loop = true;
+
+        const filter = audioCtx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.value = 950; // Tono opaco tipo radio AM vieja
+
+        gainStaticNode = audioCtx.createGain();
+        gainStaticNode.gain.setValueAtTime(0.18, audioCtx.currentTime); 
+
+        whiteNoiseNode.connect(filter);
