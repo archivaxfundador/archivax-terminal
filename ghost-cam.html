@@ -1,326 +1,161 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EVP Spirit Box Pro Latam</title>
-    <style>
-        body {
-            background-color: #0d0d0d;
-            color: #00ff00;
-            font-family: 'Courier New', Courier, monospace;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            height: 100vh;
-            margin: 0;
-            user-select: none;
-        }
-
-        /* Contenedor que simula el aparato físico EVP */
-        .evp-device {
-            background: linear-gradient(135deg, #222 0%, #151515 100%);
-            border: 4px solid #333;
-            border-radius: 20px;
-            padding: 25px;
-            width: 340px;
-            box-shadow: inset 0 0 15px rgba(255,255,255,0.05), 0 15px 35px rgba(0,0,0,0.8);
-            text-align: center;
-            position: relative;
-        }
-
-        .brand {
-            font-size: 0.75rem;
-            color: #888;
-            letter-spacing: 3px;
-            margin-bottom: 15px;
-            text-transform: uppercase;
-        }
-
-        /* Pantalla LCD del aparato */
-        .lcd-display {
-            background-color: #051a05;
-            border: 3px solid #004400;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            box-shadow: inset 0 0 10px rgba(0,0,0,0.9);
-        }
-
-        .freq {
-            font-size: 2.8rem;
-            color: #00ff33;
-            text-shadow: 0 0 10px rgba(0,255,51,0.6);
-            font-weight: bold;
-            letter-spacing: 1px;
-            height: 55px;
-        }
-
-        /* Panel de Luces LED */
-        .led-panel {
-            display: flex;
-            justify-content: center;
-            gap: 25px;
-            margin: 20px 0;
-            background: #111;
-            padding: 12px;
-            border-radius: 30px;
-            border: 1px solid #2a2a2a;
-        }
-
-        .led {
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background-color: #333;
-            transition: all 0.05s ease-in-out;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.6);
-        }
-
-        /* Estados encendidos de los LEDs con brillo paranormal */
-        .led.verde.active {
-            background-color: #00ff00;
-            box-shadow: 0 0 15px #00ff00, inset 0 -2px 5px rgba(0,0,0,0.4);
-        }
-        .led.amarillo.active {
-            background-color: #ffcc00;
-            box-shadow: 0 0 15px #ffcc00, inset 0 -2px 5px rgba(0,0,0,0.4);
-        }
-        .led.rojo.active {
-            background-color: #ff0000;
-            box-shadow: 0 0 15px #ff0000, inset 0 -2px 5px rgba(0,0,0,0.4);
-        }
-
-        .slider-box {
-            margin: 20px 0;
-            text-align: left;
-            font-size: 0.8rem;
-            color: #aaa;
-        }
-
-        .slider-box input {
-            width: 100%;
-            margin-top: 5px;
-            accent-color: #00ff00;
-        }
-
-        /* Botonera física */
-        .button-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 15px;
-        }
-
-        button {
-            background: linear-gradient(180deg, #2a2a2a 0%, #1a1a1a 100%);
-            color: #00ff00;
-            border: 2px solid #00ff00;
-            border-radius: 8px;
-            padding: 12px 5px;
-            font-size: 0.85rem;
-            font-family: inherit;
-            cursor: pointer;
-            font-weight: bold;
-            text-transform: uppercase;
-            box-shadow: 0 3px 0 #004400;
-            transition: all 0.1s ease;
-        }
-
-        button:active {
-            transform: translateY(3px);
-            box-shadow: none;
-        }
-
-        button.active-btn {
-            background: #00ff00;
-            color: #000;
-            box-shadow: 0 3px 0 #00aa00;
-        }
-
-        #rec-btn {
-            color: #ff3333;
-            border-color: #ff3333;
-            box-shadow: 0 3px 0 #550000;
-        }
-
-        #rec-btn.recording {
-            background: #ff3333;
-            color: #fff;
-            animation: pulse 1s infinite alternate;
-        }
-
-        @keyframes pulse {
-            from { opacity: 1; }
-            to { opacity: 0.6; }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHIVIAX - EVP Spirit Box Pro Latam</title>
+<style>
+body { background:#0a0a0a; color:#00ff00; font-family:'Courier New', monospace; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; }
+#online{color:#00ff66;font-size:12px;letter-spacing:3px;margin-bottom:10px}
+.evp-device { background: linear-gradient(135deg, #222 0%, #151515 100%); border:4px solid #333; border-radius:20px; padding:25px; width:340px; box-shadow:0 15px 35px rgba(0,0,0,0.8); text-align:center; }
+.brand { font-size:0.7rem; color:#666; letter-spacing:3px; margin-bottom:15px; }
+.lcd-display { background:#051a05; border:3px solid #004400; border-radius:8px; padding:15px; margin-bottom:20px; }
+.freq { font-size:2.6rem; color:#00ff33; text-shadow:0 0 10px rgba(0,255,51,0.6); font-weight:bold; height:55px; }
+.led-panel { display:flex; justify-content:center; gap:25px; margin:20px 0; background:#111; padding:12px; border-radius:30px; border:1px solid #2a2a2a; }
+.led { width:18px; height:18px; border-radius:50%; background:#333; transition:all 0.05s; }
+.led.verde.active { background:#00ff00; box-shadow:0 0 15px #00ff00; }
+.led.amarillo.active { background:#ffcc00; box-shadow:0 0 15px #ffcc00; }
+.led.rojo.active { background:#ff0000; box-shadow:0 0 15px #ff0000; }
+.slider-box { margin:20px 0; text-align:left; font-size:0.8rem; color:#aaa; }
+.slider-box input { width:100%; accent-color:#00ff00; }
+.button-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:15px; }
+button { background:#1a1a1a; color:#00ff00; border:2px solid #00ff00; border-radius:8px; padding:12px; font-size:0.85rem; cursor:pointer; font-weight:bold; text-transform:uppercase; }
+button.active-btn { background:#00ff00; color:#000; }
+#rec-btn { color:#ff3333; border-color:#ff3333; }
+#rec-btn.recording { background:#ff3333; color:#fff; animation:pulse 1s infinite alternate; }
+@keyframes pulse { from{opacity:1} to{opacity:0.6} }
+#status{margin-top:15px;font-size:10px;color:#555;letter-spacing:2px}
+</style>
 </head>
 <body>
 
+<div id="online">● ONLINE</div>
 <div class="evp-device">
-    <div class="brand">EVP LATAM SCANNER // P-SB26</div>
-    
-    <!-- PANTALLA LCD -->
-    <div class="lcd-display">
-        <div class="freq" id="freq-display">OFF</div>
-    </div>
-    
-    <!-- CONTROLES LED DE RADIANCIA -->
-    <div class="led-panel">
-        <div class="led verde" id="led-1"></div>
-        <div class="led amarillo" id="led-2"></div>
-        <div class="led rojo" id="led-3"></div>
-    </div>
-
-    <!-- VELOCIDAD -->
-    <div class="slider-box">
-        <label>VELOCIDAD DE BARRIDO: <span id="speed-val">250ms</span></label>
-        <input type="range" id="speed" min="120" max="600" value="250">
-    </div>
-
-    <!-- BOTONES DE ACCIÓN -->
-    <div class="button-grid">
-        <button id="power-btn">Escuchar Scan</button>
-        <button id="rec-btn">Grabar EVP</button>
-    </div>
+<div class="brand">ARCHIVIAX // P-SB26 LATAM</div>
+<div class="lcd-display"><div class="freq" id="freq-display">OFF</div></div>
+<div class="led-panel"><div class="led verde" id="led-1"></div><div class="led amarillo" id="led-2"></div><div class="led rojo" id="led-3"></div></div>
+<div class="slider-box"><label>VELOCIDAD: <span id="speed-val">150ms</span></label><input type="range" id="speed" min="80" max="600" value="150"></div>
+<div class="button-grid"><button id="power-btn">ESCUCHAR</button><button id="rec-btn">GRABAR EVP</button></div>
+<div id="status">analizando audio</div>
+<audio id="radioReal" crossorigin="anonymous" style="display:none"></audio>
 </div>
 
 <script>
-    const freqDisplay = document.getElementById('freq-display');
-    const powerBtn = document.getElementById('power-btn');
-    const recBtn = document.getElementById('rec-btn');
-    const speedSlider = document.getElementById('speed');
-    const speedVal = document.getElementById('speed-val');
-    
-    const led1 = document.getElementById('led-1');
-    const led2 = document.getElementById('led-2');
-    const led3 = document.getElementById('led-3');
+const freqDisplay = document.getElementById('freq-display');
+const powerBtn = document.getElementById('power-btn');
+const recBtn = document.getElementById('rec-btn');
+const speedSlider = document.getElementById('speed');
+const speedVal = document.getElementById('speed-val');
+const led1 = document.getElementById('led-1');
+const led2 = document.getElementById('led-2');
+const led3 = document.getElementById('led-3');
+const radioReal = document.getElementById('radioReal');
+const onlineEl = document.getElementById('online');
 
-    let isScanning = false;
-    let isRecording = false;
-    let scanInterval;
-    
-    let audioCtx;
-    let whiteNoiseNode;
-    let gainStaticNode;
-    let destStream; // Para capturar el audio interno
-    let mediaRecorder;
-    let audioChunks = [];
+let isScanning=false, isRecording=false, scanInterval, radioInterval;
+let audioCtx, whiteNoiseNode, gainStaticNode, destStream, mediaRecorder, audioChunks=[];
+let currentRadio=0;
 
-    // Fonemas caóticos de radio en español latino
-    const fonemasLatinos = [
-        "ba", "ca", "de", "fe", "ga", "ma", "pa", "sa", "ta", "va", "za",
-        "be", "ce", "me", "pe", "re", "se", "te", "que", "en", "con", "por",
-        "bi", "ci", "di", "mi", "pi", "li", "si", "ti", "no", "si", "ya",
-        "bo", "co", "do", "fo", "mo", "po", "lo", "so", "to", "al", "del",
-        "bu", "cu", "mu", "pu", "su", "tu", "un", "ah", "oh", "eh", "uh"
-    ];
+const RADIOS_LATINAS = [
+  "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_MITRE.mp3",
+  "https://radios.sonidoshd.com:8161/stream",
+  "https://streaming.radiolider.com:10913/stream",
+  "https://us2.streamingpulse.com:7006/live",
+  "https://server6.hostradios.com:8042/stream",
+  "https://server8.streams.cl:8002/rivadavia",
+  "https://stream.zeno.fm/5y5q1a1q1w0uv",
+  "https://cdn.instream.audio:8001/cronica",
+  "https://icecast.serviciosdedns.com:8000/radiocolonia"
+];
 
-    // Cambiar velocidad en tiempo real
-    speedSlider.addEventListener('input', () => {
-        speedVal.innerText = speedSlider.value + 'ms';
-        if (isScanning) {
-            stopScan();
-            startScan();
-        }
-    });
+const fonemasLatinos = ["ba","ca","de","fe","ga","ma","pa","sa","ta","va","za","be","ce","me","pe","re","se","te","que","en","con","por","bi","ci","di","mi","pi","li","si","ti","no","ya","bo","co","do","fo","mo","po","lo","so","to","al","del","bu","cu","mu","pu","su","tu","un","ah","oh","eh","uh","aqui","abajo","sal","ayuda","quien"];
 
-    // Encender / Apagar el Barrido de audio
-    powerBtn.addEventListener('click', () => {
-        if (!audioCtx) {
-            initAudioContext();
-        }
+speedSlider.addEventListener('input', () => { speedVal.innerText = speedSlider.value+'ms'; if(isScanning){ stopScan(); startScan(); }});
 
-        if (!isScanning) {
-            isScanning = true;
-            powerBtn.innerText = "Cortar";
-            powerBtn.classList.add('active-btn');
-            startStatic();
-            startScan();
-        } else {
-            isScanning = false;
-            powerBtn.innerText = "Escuchar Scan";
-            powerBtn.classList.remove('active-btn');
-            stopStatic();
-            stopScan();
-            apagarLeds();
-            freqDisplay.innerText = "OFF";
-        }
-    });
+powerBtn.addEventListener('click', async () => {
+  if(!audioCtx) initAudioContext();
+  if(audioCtx.state==='suspended') await audioCtx.resume();
+  if(!isScanning){
+    isScanning=true; powerBtn.innerText="DETENER"; powerBtn.classList.add('active-btn');
+    startStatic(); startScan(); startRadiosReales();
+  }else{
+    isScanning=false; powerBtn.innerText="ESCUCHAR"; powerBtn.classList.remove('active-btn');
+    stopStatic(); stopScan(); stopRadiosReales(); apagarLeds(); freqDisplay.innerText="OFF";
+  }
+});
 
-    // Iniciar / Detener Grabación directa al dispositivo
-    recBtn.addEventListener('click', () => {
-        if (!audioCtx) {
-            alert("Primero debes activar 'Escuchar Scan' para iniciar el entorno de audio.");
-            return;
-        }
+recBtn.addEventListener('click', () => {
+  if(!audioCtx){ alert("Primero ESCUCHAR"); return; }
+  if(!isRecording) startRecordingProcess(); else stopRecordingProcess();
+});
 
-        if (!isRecording) {
-            startRecordingProcess();
-        } else {
-            stopRecordingProcess();
-        }
-    });
+function initAudioContext(){
+  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+  destStream = audioCtx.createMediaStreamDestination();
+}
 
-    function initAudioContext() {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-        // Crear un destino especial de stream para poder grabar todo lo que genera la app
-        destStream = audioCtx.createMediaStreamDestination();
+function startScan(){
+  const speed=parseInt(speedSlider.value);
+  scanInterval=setInterval(()=>{
+    if(Math.random()>0.5){
+      const am=Math.floor(Math.random()*(1600-540+1))+540; freqDisplay.innerText=am+" kHz";
+    }else{
+      const fm=(Math.random()*(107.9-87.5)+87.5).toFixed(1); freqDisplay.innerText=fm+" MHz";
     }
+    actualizarLedsParanormales();
+    if(Math.random()>0.35){ atenuarEstatica(0.03,40); pronunciarFonemaAleatorio(); }else{ atenuarEstatica(0.18,40); }
+  },speed);
+}
+function stopScan(){ clearInterval(scanInterval); if(window.speechSynthesis) speechSynthesis.cancel(); }
 
-    function startScan() {
-        const speed = parseInt(speedSlider.value);
-        scanInterval = setInterval(() => {
-            // Cambio visual de frecuencias analógicas latinas
-            if (Math.random() > 0.5) {
-                const amFreq = Math.floor(Math.random() * (1600 - 540 + 1)) + 540;
-                freqDisplay.innerText = amFreq + " kHz";
-            } else {
-                const fmFreq = (Math.random() * (107.9 - 87.5) + 87.5).toFixed(1);
-                freqDisplay.innerText = fmFreq + " MHz";
-            }
+function startStatic(){
+  const bufferSize=2*audioCtx.sampleRate;
+  const noiseBuffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+  const output=noiseBuffer.getChannelData(0);
+  for(let i=0;i<bufferSize;i++) output[i]=Math.random()*2-1;
+  whiteNoiseNode=audioCtx.createBufferSource(); whiteNoiseNode.buffer=noiseBuffer; whiteNoiseNode.loop=true;
+  const filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=950;
+  gainStaticNode=audioCtx.createGain(); gainStaticNode.gain.setValueAtTime(0.18,audioCtx.currentTime);
+  whiteNoiseNode.connect(filter); filter.connect(gainStaticNode);
+  gainStaticNode.connect(audioCtx.destination); gainStaticNode.connect(destStream);
+  whiteNoiseNode.start();
+}
+function stopStatic(){ if(whiteNoiseNode){ try{whiteNoiseNode.stop();}catch(e){} whiteNoiseNode=null; } }
+function atenuarEstatica(volumen,tiempoMs){ if(gainStaticNode&&audioCtx) gainStaticNode.gain.linearRampToValueAtTime(volumen,audioCtx.currentTime+(tiempoMs/1000)); }
 
-            // Actualización del medidor de luces LED (Sube y baja dinámicamente)
-            actualizarLedsParanormales();
+function startRadiosReales(){
+  if(!navigator.onLine) return;
+  const playNext=()=>{ radioReal.src=RADIOS_LATINAS[currentRadio%RADIOS_LATINAS.length]; radioReal.volume=0.8; radioReal.play().catch(()=>{}); currentRadio++; };
+  playNext(); radioInterval=setInterval(playNext, parseInt(speedSlider.value)+20);
+}
+function stopRadiosReales(){ clearInterval(radioInterval); radioReal.pause(); }
 
-            // Probabilidad de interceptar un fonema de voz simulada
-            if (Math.random() > 0.3) {
-                atenuarEstatica(0.03, 40);
-                pronunciarFonemaAleatorio();
-            } else {
-                atenuarEstatica(0.18, 40);
-            }
-        }, speed);
-    }
+function actualizarLedsParanormales(){ apagarLeds(); const r=Math.random(); if(r>0.1) led1.classList.add('active'); if(r>0.4) led2.classList.add('active'); if(r>0.75) led3.classList.add('active'); }
+function apagarLeds(){ led1.classList.remove('active'); led2.classList.remove('active'); led3.classList.remove('active'); }
 
-    function stopScan() {
-        clearInterval(scanInterval);
-        if (window.speechSynthesis) {
-            window.speechSynthesis.cancel();
-        }
-    }
+function pronunciarFonemaAleatorio(){
+  if(!window.speechSynthesis) return;
+  const fonema=fonemasLatinos[Math.floor(Math.random()*fonemasLatinos.length)];
+  const utter=new SpeechSynthesisUtterance(fonema); utter.lang='es-MX'; utter.pitch=Math.random()*(1.5-0.4)+0.4; utter.rate=Math.random()*(2.2-1.4)+1.4;
+  window.speechSynthesis.speak(utter);
+}
 
-    // Generador matemático de ruido blanco analógico de fondo
-    function startStatic() {
-        const bufferSize = 2 * audioCtx.sampleRate;
-        const noiseBuffer = audioCtx.createBuffer(1, bufferSize, audioCtx.sampleRate);
-        const output = noiseBuffer.getChannelData(0);
-        
-        for (let i = 0; i < bufferSize; i++) {
-            output[i] = Math.random() * 2 - 1;
-        }
-
-        whiteNoiseNode = audioCtx.createBufferSource();
-        whiteNoiseNode.buffer = noiseBuffer;
-        whiteNoiseNode.loop = true;
-
-        const filter = audioCtx.createBiquadFilter();
-        filter.type = 'bandpass';
-        filter.frequency.value = 950; // Tono opaco tipo radio AM vieja
-
-        gainStaticNode = audioCtx.createGain();
-        gainStaticNode.gain.setValueAtTime(0.18, audioCtx.currentTime); 
-
-        whiteNoiseNode.connect(filter);
+function startRecordingProcess(){
+  isRecording=true; recBtn.innerText="Detener y Guardar"; recBtn.classList.add('recording'); audioChunks=[];
+  mediaRecorder=new MediaRecorder(destStream.stream);
+  mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
+  mediaRecorder.onstop=()=>{
+    const blob=new Blob(audioChunks,{type:'audio/webm'}); const url=URL.createObjectURL(blob);
+    const a=document.createElement('a'); a.href=url; a.download=`EVP_Sesion_${Date.now()}.webm`; a.click();
+  };
+  mediaRecorder.start();
+}
+function stopRecordingProcess(){
+  isRecording=false; recBtn.innerText="Grabar EVP"; recBtn.classList.remove('recording');
+  if(mediaRecorder&&mediaRecorder.state!=="inactive") mediaRecorder.stop();
+}
+function updateOnline(){ onlineEl.style.display=navigator.onLine?"block":"none"; }
+window.addEventListener('online',updateOnline); window.addEventListener('offline',updateOnline); updateOnline();
+</script>
+</body>
+</html>
