@@ -34,7 +34,7 @@ button.active-btn { background:#00ff00; color:#000; }
 <div class="brand">ARCHIVIAX // P-SB26 LATAM</div>
 <div class="lcd-display"><div class="freq" id="freq-display">OFF</div></div>
 <div class="led-panel"><div class="led verde" id="led-1"></div><div class="led amarillo" id="led-2"></div><div class="led rojo" id="led-3"></div></div>
-<div class="slider-box"><label>VELOCIDAD: <span id="speed-val">150ms</span></label><input type="range" id="speed" min="80" max="600" value="150"></div>
+<div class="slider-box"><label>VELOCIDAD: <span id="speed-val">400ms</span></label><input type="range" id="speed" min="250" max="800" value="400"></div>
 <div class="button-grid"><button id="power-btn">ESCUCHAR</button><button id="rec-btn">GRABAR EVP</button></div>
 <div id="status">analizando audio</div>
 <audio id="radioReal" crossorigin="anonymous" style="display:none"></audio>
@@ -68,7 +68,27 @@ const RADIOS_LATINAS = [
   "https://icecast.serviciosdedns.com:8000/radiocolonia"
 ];
 
-const fonemasLatinos = ["ba","ca","de","fe","ga","ma","pa","sa","ta","va","za","be","ce","me","pe","re","se","te","que","en","con","por","bi","ci","di","mi","pi","li","si","ti","no","ya","bo","co","do","fo","mo","po","lo","so","to","al","del","bu","cu","mu","pu","su","tu","un","ah","oh","eh","uh","aqui","abajo","sal","ayuda","quien"];
+// GENERADOR DE 10.000 FRASES EVP LATINAS LARGAS
+const baseSujeto = ["yo","el","ella","ellos","mi alma","mi espiritu","la niña","el hombre","Mayra","la sombra","mi cuerpo","la voz","el muerto","el niño","la mujer","el padre","la madre","mi hermano"];
+const baseVerbo = ["estoy","estaba","me quede","me fui","me llaman","me trajeron","me dejaron","me escondo","no puedo","quiero","necesito","busco","veo","siento","escucho","espero","vuelvo","sigo","estoy atrapado","me perdi"];
+const baseLugar = ["aqui","aqui abajo","en el cementerio","en la oscuridad","en la tumba","detras tuyo","a tu lado","en la cruz","en la capilla","en el pasillo","bajo tierra","en la fosa","en la iglesia","en tu casa","muy cerca","lejos de aqui","en el limbo","atrapado aqui","en el panteon","entre las tumbas"];
+const basePedido = ["ayudame","sal de aqui","no te vayas","mirame","buscame","sacame","dejame salir","no me dejes","cuidado","corre","vete","quedate","ven conmigo","hablame","escuchame","perdoname","reza por mi"];
+
+function generarFrasesEVP(total){
+  const frases = new Set();
+  while(frases.size < total){
+    const s = baseSujeto[Math.floor(Math.random()*baseSujeto.length)];
+    const v = baseVerbo[Math.floor(Math.random()*baseVerbo.length)];
+    const l = baseLugar[Math.floor(Math.random()*baseLugar.length)];
+    const p = basePedido[Math.floor(Math.random()*basePedido.length)];
+    const tipo = Math.random();
+    if(tipo < 0.33) frases.add(`${v} ${l}`);
+    else if(tipo < 0.66) frases.add(`${s} ${v} ${l}`);
+    else frases.add(`${p}, ${v} ${l}`);
+  }
+  return Array.from(frases);
+}
+const fonemasLatinos = generarFrasesEVP(10000);
 
 speedSlider.addEventListener('input', () => { speedVal.innerText = speedSlider.value+'ms'; if(isScanning){ stopScan(); startScan(); }});
 
@@ -103,7 +123,7 @@ function startScan(){
       const fm=(Math.random()*(107.9-87.5)+87.5).toFixed(1); freqDisplay.innerText=fm+" MHz";
     }
     actualizarLedsParanormales();
-    if(Math.random()>0.35){ atenuarEstatica(0.03,40); pronunciarFonemaAleatorio(); }else{ atenuarEstatica(0.18,40); }
+    if(Math.random()>0.45){ atenuarEstatica(0.03,80); pronunciarFonemaAleatorio(); }else{ atenuarEstatica(0.18,80); }
   },speed);
 }
 function stopScan(){ clearInterval(scanInterval); if(window.speechSynthesis) speechSynthesis.cancel(); }
@@ -135,8 +155,13 @@ function apagarLeds(){ led1.classList.remove('active'); led2.classList.remove('a
 
 function pronunciarFonemaAleatorio(){
   if(!window.speechSynthesis) return;
-  const fonema=fonemasLatinos[Math.floor(Math.random()*fonemasLatinos.length)];
-  const utter=new SpeechSynthesisUtterance(fonema); utter.lang='es-MX'; utter.pitch=Math.random()*(1.5-0.4)+0.4; utter.rate=Math.random()*(2.2-1.4)+1.4;
+  window.speechSynthesis.cancel();
+  const frase=fonemasLatinos[Math.floor(Math.random()*fonemasLatinos.length)];
+  const utter=new SpeechSynthesisUtterance(frase);
+  utter.lang='es-MX';
+  utter.pitch=0.7 + Math.random()*0.3;
+  utter.rate=0.75 + Math.random()*0.25;
+  utter.volume=1;
   window.speechSynthesis.speak(utter);
 }
 
@@ -151,7 +176,7 @@ function startRecordingProcess(){
   mediaRecorder.start();
 }
 function stopRecordingProcess(){
-  isRecording=false; recBtn.innerText="Grabar EVP"; recBtn.classList.remove('recording');
+  isRecording=false; recBtn.innerText="GRABAR EVP"; recBtn.classList.remove('recording');
   if(mediaRecorder&&mediaRecorder.state!=="inactive") mediaRecorder.stop();
 }
 function updateOnline(){ onlineEl.style.display=navigator.onLine?"block":"none"; }
