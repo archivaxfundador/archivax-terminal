@@ -28,7 +28,6 @@ button.active-btn { background:#00ff00; color:#000; }
 </style>
 </head>
 <body>
-
 <div id="online">● ONLINE</div>
 <div class="evp-device">
 <div class="brand">ARCHIVIAX // P-SB26 LATAM</div>
@@ -39,6 +38,9 @@ button.active-btn { background:#00ff00; color:#000; }
 <div id="status">analizando audio</div>
 <audio id="radioReal" crossorigin="anonymous" style="display:none"></audio>
 </div>
+
+<!-- BOTON VOLVER AGREGADO SIN TOCAR NADA MAS -->
+<button onclick="location.href='menu.html'" style="margin-top:20px;background:#000;color:#888;border:1px solid #333;font-size:10px;letter-spacing:2px;padding:10px 20px">◀ VOLVER AL MENU</button>
 
 <script>
 const freqDisplay = document.getElementById('freq-display');
@@ -51,133 +53,119 @@ const led2 = document.getElementById('led-2');
 const led3 = document.getElementById('led-3');
 const radioReal = document.getElementById('radioReal');
 const onlineEl = document.getElementById('online');
-
 let isScanning=false, isRecording=false, scanInterval, radioInterval;
 let audioCtx, whiteNoiseNode, gainStaticNode, destStream, mediaRecorder, audioChunks=[];
 let currentRadio=0;
-
 const RADIOS_LATINAS = [
-  "https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_MITRE.mp3",
-  "https://radios.sonidoshd.com:8161/stream",
-  "https://streaming.radiolider.com:10913/stream",
-  "https://us2.streamingpulse.com:7006/live",
-  "https://server6.hostradios.com:8042/stream",
-  "https://server8.streams.cl:8002/rivadavia",
-  "https://stream.zeno.fm/5y5q1a1q1w0uv",
-  "https://cdn.instream.audio:8001/cronica",
-  "https://icecast.serviciosdedns.com:8000/radiocolonia"
+"https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO_MITRE.mp3",
+"https://radios.sonidoshd.com:8161/stream",
+"https://streaming.radiolider.com:10913/stream",
+"https://us2.streamingpulse.com:7006/live",
+"https://server6.hostradios.com:8042/stream",
+"https://server8.streams.cl:8002/rivadavia",
+"https://stream.zeno.fm/5y5q1a1q1w0uv",
+"https://cdn.instream.audio:8001/cronica",
+"https://icecast.serviciosdedns.com:8000/radiocolonia"
 ];
-
 // GENERADOR DE 10.000 FRASES EVP LATINAS LARGAS
 const baseSujeto = ["yo","el","ella","ellos","mi alma","mi espiritu","la niña","el hombre","Mayra","la sombra","mi cuerpo","la voz","el muerto","el niño","la mujer","el padre","la madre","mi hermano"];
 const baseVerbo = ["estoy","estaba","me quede","me fui","me llaman","me trajeron","me dejaron","me escondo","no puedo","quiero","necesito","busco","veo","siento","escucho","espero","vuelvo","sigo","estoy atrapado","me perdi"];
 const baseLugar = ["aqui","aqui abajo","en el cementerio","en la oscuridad","en la tumba","detras tuyo","a tu lado","en la cruz","en la capilla","en el pasillo","bajo tierra","en la fosa","en la iglesia","en tu casa","muy cerca","lejos de aqui","en el limbo","atrapado aqui","en el panteon","entre las tumbas"];
 const basePedido = ["ayudame","sal de aqui","no te vayas","mirame","buscame","sacame","dejame salir","no me dejes","cuidado","corre","vete","quedate","ven conmigo","hablame","escuchame","perdoname","reza por mi"];
-
 function generarFrasesEVP(total){
-  const frases = new Set();
-  while(frases.size < total){
-    const s = baseSujeto[Math.floor(Math.random()*baseSujeto.length)];
-    const v = baseVerbo[Math.floor(Math.random()*baseVerbo.length)];
-    const l = baseLugar[Math.floor(Math.random()*baseLugar.length)];
-    const p = basePedido[Math.floor(Math.random()*basePedido.length)];
-    const tipo = Math.random();
-    if(tipo < 0.33) frases.add(`${v} ${l}`);
-    else if(tipo < 0.66) frases.add(`${s} ${v} ${l}`);
-    else frases.add(`${p}, ${v} ${l}`);
-  }
-  return Array.from(frases);
+const frases = new Set();
+while(frases.size < total){
+const s = baseSujeto[Math.floor(Math.random()*baseSujeto.length)];
+const v = baseVerbo[Math.floor(Math.random()*baseVerbo.length)];
+const l = baseLugar[Math.floor(Math.random()*baseLugar.length)];
+const p = basePedido[Math.floor(Math.random()*basePedido.length)];
+const tipo = Math.random();
+if(tipo < 0.33) frases.add(`${v} ${l}`);
+else if(tipo < 0.66) frases.add(`${s} ${v} ${l}`);
+else frases.add(`${p}, ${v} ${l}`);
+}
+return Array.from(frases);
 }
 const fonemasLatinos = generarFrasesEVP(10000);
-
 speedSlider.addEventListener('input', () => { speedVal.innerText = speedSlider.value+'ms'; if(isScanning){ stopScan(); startScan(); }});
-
 powerBtn.addEventListener('click', async () => {
-  if(!audioCtx) initAudioContext();
-  if(audioCtx.state==='suspended') await audioCtx.resume();
-  if(!isScanning){
-    isScanning=true; powerBtn.innerText="DETENER"; powerBtn.classList.add('active-btn');
-    startStatic(); startScan(); startRadiosReales();
-  }else{
-    isScanning=false; powerBtn.innerText="ESCUCHAR"; powerBtn.classList.remove('active-btn');
-    stopStatic(); stopScan(); stopRadiosReales(); apagarLeds(); freqDisplay.innerText="OFF";
-  }
-});
-
-recBtn.addEventListener('click', () => {
-  if(!audioCtx){ alert("Primero ESCUCHAR"); return; }
-  if(!isRecording) startRecordingProcess(); else stopRecordingProcess();
-});
-
-function initAudioContext(){
-  audioCtx = new (window.AudioContext||window.webkitAudioContext)();
-  destStream = audioCtx.createMediaStreamDestination();
+if(!audioCtx) initAudioContext();
+if(audioCtx.state==='suspended') await audioCtx.resume();
+if(!isScanning){
+isScanning=true; powerBtn.innerText="DETENER"; powerBtn.classList.add('active-btn');
+startStatic(); startScan(); startRadiosReales();
+}else{
+isScanning=false; powerBtn.innerText="ESCUCHAR"; powerBtn.classList.remove('active-btn');
+stopStatic(); stopScan(); stopRadiosReales(); apagarLeds(); freqDisplay.innerText="OFF";
 }
-
+});
+recBtn.addEventListener('click', () => {
+if(!audioCtx){ alert("Primero ESCUCHAR"); return; }
+if(!isRecording) startRecordingProcess(); else stopRecordingProcess();
+});
+function initAudioContext(){
+audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+destStream = audioCtx.createMediaStreamDestination();
+}
 function startScan(){
-  const speed=parseInt(speedSlider.value);
-  scanInterval=setInterval(()=>{
-    if(Math.random()>0.5){
-      const am=Math.floor(Math.random()*(1600-540+1))+540; freqDisplay.innerText=am+" kHz";
-    }else{
-      const fm=(Math.random()*(107.9-87.5)+87.5).toFixed(1); freqDisplay.innerText=fm+" MHz";
-    }
-    actualizarLedsParanormales();
-    if(Math.random()>0.45){ atenuarEstatica(0.03,80); pronunciarFonemaAleatorio(); }else{ atenuarEstatica(0.18,80); }
-  },speed);
+const speed=parseInt(speedSlider.value);
+scanInterval=setInterval(()=>{
+if(Math.random()>0.5){
+const am=Math.floor(Math.random()*(1600-540+1))+540; freqDisplay.innerText=am+" kHz";
+}else{
+const fm=(Math.random()*(107.9-87.5)+87.5).toFixed(1); freqDisplay.innerText=fm+" MHz";
+}
+actualizarLedsParanormales();
+if(Math.random()>0.45){ atenuarEstatica(0.03,80); pronunciarFonemaAleatorio(); }else{ atenuarEstatica(0.18,80); }
+},speed);
 }
 function stopScan(){ clearInterval(scanInterval); if(window.speechSynthesis) speechSynthesis.cancel(); }
-
 function startStatic(){
-  const bufferSize=2*audioCtx.sampleRate;
-  const noiseBuffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
-  const output=noiseBuffer.getChannelData(0);
-  for(let i=0;i<bufferSize;i++) output[i]=Math.random()*2-1;
-  whiteNoiseNode=audioCtx.createBufferSource(); whiteNoiseNode.buffer=noiseBuffer; whiteNoiseNode.loop=true;
-  const filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=950;
-  gainStaticNode=audioCtx.createGain(); gainStaticNode.gain.setValueAtTime(0.18,audioCtx.currentTime);
-  whiteNoiseNode.connect(filter); filter.connect(gainStaticNode);
-  gainStaticNode.connect(audioCtx.destination); gainStaticNode.connect(destStream);
-  whiteNoiseNode.start();
+const bufferSize=2*audioCtx.sampleRate;
+const noiseBuffer=audioCtx.createBuffer(1,bufferSize,audioCtx.sampleRate);
+const output=noiseBuffer.getChannelData(0);
+for(let i=0;i<bufferSize;i++) output[i]=Math.random()*2-1;
+whiteNoiseNode=audioCtx.createBufferSource(); whiteNoiseNode.buffer=noiseBuffer; whiteNoiseNode.loop=true;
+const filter=audioCtx.createBiquadFilter(); filter.type='bandpass'; filter.frequency.value=950;
+gainStaticNode=audioCtx.createGain(); gainStaticNode.gain.setValueAtTime(0.18,audioCtx.currentTime);
+whiteNoiseNode.connect(filter); filter.connect(gainStaticNode);
+gainStaticNode.connect(audioCtx.destination); gainStaticNode.connect(destStream);
+whiteNoiseNode.start();
 }
 function stopStatic(){ if(whiteNoiseNode){ try{whiteNoiseNode.stop();}catch(e){} whiteNoiseNode=null; } }
 function atenuarEstatica(volumen,tiempoMs){ if(gainStaticNode&&audioCtx) gainStaticNode.gain.linearRampToValueAtTime(volumen,audioCtx.currentTime+(tiempoMs/1000)); }
-
 function startRadiosReales(){
-  if(!navigator.onLine) return;
-  const playNext=()=>{ radioReal.src=RADIOS_LATINAS[currentRadio%RADIOS_LATINAS.length]; radioReal.volume=0.8; radioReal.play().catch(()=>{}); currentRadio++; };
-  playNext(); radioInterval=setInterval(playNext, parseInt(speedSlider.value)+20);
+if(!navigator.onLine) return;
+const playNext=()=>{ radioReal.src=RADIOS_LATINAS[currentRadio%RADIOS_LATINAS.length]; radioReal.volume=0.8; radioReal.play().catch(()=>{}); currentRadio++; };
+playNext(); radioInterval=setInterval(playNext, parseInt(speedSlider.value)+20);
 }
 function stopRadiosReales(){ clearInterval(radioInterval); radioReal.pause(); }
-
 function actualizarLedsParanormales(){ apagarLeds(); const r=Math.random(); if(r>0.1) led1.classList.add('active'); if(r>0.4) led2.classList.add('active'); if(r>0.75) led3.classList.add('active'); }
 function apagarLeds(){ led1.classList.remove('active'); led2.classList.remove('active'); led3.classList.remove('active'); }
-
 function pronunciarFonemaAleatorio(){
-  if(!window.speechSynthesis) return;
-  window.speechSynthesis.cancel();
-  const frase=fonemasLatinos[Math.floor(Math.random()*fonemasLatinos.length)];
-  const utter=new SpeechSynthesisUtterance(frase);
-  utter.lang='es-MX';
-  utter.pitch=0.7 + Math.random()*0.3;
-  utter.rate=0.75 + Math.random()*0.25;
-  utter.volume=1;
-  window.speechSynthesis.speak(utter);
+if(!window.speechSynthesis) return;
+window.speechSynthesis.cancel();
+const frase=fonemasLatinos[Math.floor(Math.random()*fonemasLatinos.length)];
+const utter=new SpeechSynthesisUtterance(frase);
+utter.lang='es-MX';
+utter.pitch=0.7 + Math.random()*0.3;
+utter.rate=0.75 + Math.random()*0.25;
+utter.volume=1;
+window.speechSynthesis.speak(utter);
 }
-
 function startRecordingProcess(){
-  isRecording=true; recBtn.innerText="Detener y Guardar"; recBtn.classList.add('recording'); audioChunks=[];
-  mediaRecorder=new MediaRecorder(destStream.stream);
-  mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
-  mediaRecorder.onstop=()=>{
-    const blob=new Blob(audioChunks,{type:'audio/webm'}); const url=URL.createObjectURL(blob);
-    const a=document.createElement('a'); a.href=url; a.download=`EVP_Sesion_${Date.now()}.webm`; a.click();
-  };
-  mediaRecorder.start();
+isRecording=true; recBtn.innerText="Detener y Guardar"; recBtn.classList.add('recording'); audioChunks=[];
+mediaRecorder=new MediaRecorder(destStream.stream);
+mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
+mediaRecorder.onstop=()=>{
+const blob=new Blob(audioChunks,{type:'audio/webm'}); const url=URL.createObjectURL(blob);
+const a=document.createElement('a'); a.href=url; a.download=`EVP_Sesion_${Date.now()}.webm`; a.click();
+};
+mediaRecorder.start();
 }
 function stopRecordingProcess(){
-  isRecording=false; recBtn.innerText="GRABAR EVP"; recBtn.classList.remove('recording');
-  if(mediaRecorder&&mediaRecorder.state!=="inactive") mediaRecorder.stop();
+isRecording=false; recBtn.innerText="GRABAR EVP"; recBtn.classList.remove('recording');
+if(mediaRecorder&&mediaRecorder.state!=="inactive") mediaRecorder.stop();
 }
 function updateOnline(){ onlineEl.style.display=navigator.onLine?"block":"none"; }
 window.addEventListener('online',updateOnline); window.addEventListener('offline',updateOnline); updateOnline();
