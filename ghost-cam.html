@@ -1,86 +1,129 @@
-<script>
-let ctx, gain, dest, playing=false, scanInterval;
-let rec, chunks=[], recording=false;
-let isRecording=false;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ARCHIVIAX - Spirit Box</title>
+<style>
+body{background:#050505;color:#ccc;font-family:monospace;text-align:center;padding:20px;margin:0}
+h1{color:#8b0000;letter-spacing:4px;font-size:18px}
+#reels{display:flex;justify-content:center;gap:20px;margin:25px 0}
+.reel-img{width:180px;height:180px;border-radius:50%;box-shadow:0 0 25px #000;animation:spin 1.5s linear infinite;animation-play-state:paused}
+.playing{animation-play-state:running!important}
+@keyframes spin{100%{transform:rotate(360deg)}}
+button{background:#111;border:2px solid #8b0000;color:#fff;padding:16px 28px;margin:8px;font-size:16px;cursor:pointer}
+button.on{background:#8b0000}
+#status{margin-top:12px;color:#777;font-size:12px}
+</style>
+</head>
+<body>
+<h1>ARCHIVIAX.COM.AR // SB7 OFFLINE</h1>
 
-document.getElementById('btnListen').onclick=async()=>{
+<div id="reels">
+  <img src="revox.png" class="reel-img" id="r1" onerror="this.style.background='#222';this.style.border='2px solid #444'">
+  <img src="revox.png" class="reel-img" id="r2" onerror="this.style.background='#222';this.style.border='2px solid #444'">
+</div>
+
+<button id="btnListen">▶ ESCUCHAR</button>
+<button id="btnRecord">● GRABAR AUDIO</button>
+<div id="status">OFFLINE - LISTO - SIN INTERNET</div>
+
+<script>
+let ctx, gain, dest, playing=false, scanTimer=null, noiseSrc=null;
+let rec, chunks=[], recording=false;
+
+const r1 = document.getElementById('r1');
+const r2 = document.getElementById('r2');
+const btnListen = document.getElementById('btnListen');
+const btnRecord = document.getElementById('btnRecord');
+const statusEl = document.getElementById('status');
+
+btnListen.onclick = async () => {
   if(!ctx){
-    ctx=new (window.AudioContext||window.webkitAudioContext)();
-    dest=ctx.createMediaStreamDestination();
-    gain=ctx.createGain();
-    gain.gain.value=1;
+    ctx = new (window.AudioContext || window.webkitAudioContext)();
+    dest = ctx.createMediaStreamDestination();
+    gain = ctx.createGain();
+    gain.gain.value = 1;
     gain.connect(ctx.destination);
     gain.connect(dest);
   }
-  const r1=document.getElementById('r1'), r2=document.getElementById('r2'), btn=document.getElementById('btnListen');
+  if(ctx.state === 'suspended') await ctx.resume();
 
   if(playing){
-    clearInterval(scanInterval);
+    clearInterval(scanTimer);
+    if(noiseSrc){ try{noiseSrc.stop();}catch(e){} }
     try{window.speechSynthesis.cancel();}catch(e){}
     playing=false;
-    r1.classList.remove('playing');r2.classList.remove('playing');
-    btn.innerText='▶ ESCUCHAR';btn.classList.remove('on');
-    document.getElementById('status').innerText='DETENIDO';
+    r1.classList.remove('playing'); r2.classList.remove('playing');
+    btnListen.innerText='▶ ESCUCHAR'; btnListen.classList.remove('on');
+    statusEl.innerText='DETENIDO';
     return;
   }
 
-  // --- MOTOR REAL SB7 ---
-  // Ruido base de radio sin sintonizar
-  const noiseBuf = ctx.createBuffer(1, ctx.sampleRate*2, ctx.sampleRate);
-  const out = noiseBuf.getChannelData(0);
-  for(let i=0;i<out.length;i++) out[i]=Math.random()*2-1;
+  // Crear ruido
+  const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for(let i=0;i<data.length;i++) data[i]=Math.random()*2-1;
 
-  const noise = ctx.createBufferSource();
-  noise.buffer=noiseBuf;
-  noise.loop=true;
+  noiseSrc = ctx.createBufferSource();
+  noiseSrc.buffer=buf;
+  noiseSrc.loop=true;
 
   const filter = ctx.createBiquadFilter();
   filter.type='bandpass';
-  filter.Q.value=15;
+  filter.Q.value=12;
+  filter.frequency.value=800;
 
-  const staticGain = ctx.createGain();
-  staticGain.gain.value=0.7;
+  const g = ctx.createGain();
+  g.gain.value=0.9;
 
-  noise.connect(filter);
-  filter.connect(staticGain);
-  staticGain.connect(gain);
-  noise.start();
+  noiseSrc.connect(filter);
+  filter.connect(g);
+  g.connect(gain);
+  noiseSrc.start();
 
-  // Barrido cada 100ms como en tu video
-  const voces = ["si","no","aquí","atrás","salgan","abajo","ayuda","corre","mira","oye","quién","cuatro","Mayra"];
+  const voces = ["si","no","aqui","abajo","salgan","ayuda","corre","oye","cuatro","Mayra","quien"];
 
-  scanInterval = setInterval(()=>{
-    // Salta a otra frecuencia de radio al azar
-    filter.frequency.value = 300 + Math.random()*3000;
-    staticGain.gain.value = 0.3 + Math.random()*0.8;
-
-    // 40% de chance de que aparezca una voz cortada en el barrido
-    if(Math.random()>0.6){
+  scanTimer = setInterval(()=>{
+    filter.frequency.value = 400 + Math.random()*2500;
+    if(Math.random()>0.65){
       const palabra = voces[Math.floor(Math.random()*voces.length)];
-      const utter = new SpeechSynthesisUtterance(palabra);
-      utter.rate = 1.6 + Math.random()*0.5; // rápido y cortado
-      utter.pitch = 0.6 + Math.random()*0.8; // grave como psicofonia
-      utter.volume = 0.9;
-      // Lo manda al mismo destino para que se grabe
-      window.speechSynthesis.speak(utter);
+      const u = new SpeechSynthesisUtterance(palabra);
+      u.rate=1.8; u.pitch=0.7; u.volume=0.8;
+      speechSynthesis.speak(u);
     }
-  }, 110); // 110ms = velocidad Spirit Box real
+  },120);
 
   playing=true;
-  r1.classList.add('playing');r2.classList.add('playing');
-  btn.innerText='■ DETENER';btn.classList.add('on');
-  document.getElementById('status').innerText='SB7 REAL - 100ms - OFFLINE';
+  r1.classList.add('playing'); r2.classList.add('playing');
+  btnListen.innerText='■ DETENER'; btnListen.classList.add('on');
+  statusEl.innerText='BARRIENDO 120ms - SB7 REAL';
 };
 
-document.getElementById('btnRecord').onclick=()=>{
-  if(!dest){alert('Primero ESCUCHAR');return;}
-  const btn=document.getElementById('btnRecord');
+btnRecord.onclick = ()=>{
+  if(!dest){ alert('Primero toca ESCUCHAR'); return; }
   if(!recording){
-    chunks=[];rec=new MediaRecorder(dest.stream);rec.ondataavailable=e=>{if(e.data.size>0)chunks.push(e.data);};
-    rec.onstop=()=>{const blob=new Blob(chunks,{type:'audio/webm'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download='ARCHIVIAX_'+Date.now()+'.webm';a.click();};
-    rec.start();recording=true;btn.innerText='■ GUARDANDO...';btn.classList.add('on');
+    chunks=[];
+    rec = new MediaRecorder(dest.stream);
+    rec.ondataavailable = e=>{ if(e.data.size>0) chunks.push(e.data); };
+    rec.onstop = ()=>{
+      const blob = new Blob(chunks,{type:'audio/webm'});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href=url; a.download='ARCHIVIAX_'+Date.now()+'.webm'; a.click();
+      statusEl.innerText='GUARDADO EN DESCARGAS';
+    };
+    rec.start();
+    recording=true;
+    btnRecord.innerText='■ GUARDANDO...';
+    btnRecord.classList.add('on');
   }else{
-    rec.stop();recording=false;btn.innerText='● GRABAR AUDIO';btn.classList.remove('on');
+    rec.stop();
+    recording=false;
+    btnRecord.innerText='● GRABAR AUDIO';
+    btnRecord.classList.remove('on');
   }
 };
 </script>
+</body>
+</html>
