@@ -4,41 +4,40 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SLS Ghost Camera & EVP Scanner</title>
-<!-- Librerías SLS reales -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-<script src="https://unpkg.com/ml5@0.12.2/dist/ml5.min.js"></script>
+<script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
-body { background-color: #050505; color: #00ff00; font-family: 'Courier New', Courier, monospace; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 100vh; margin: 0; overflow-x: hidden; }
-.container { text-align: center; background: #111; border: 3px solid #333; border-radius: 15px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
-h2 { margin: 0 0 10px 0; font-size: 1.2rem; letter-spacing: 2px; text-shadow: 0 0 5px #00ff00; }
-#canvas-holder { position: relative; border: 3px solid #00ff00; background-color: #000; width: 640px; height: 480px; margin: 0 auto; border-radius: 8px; box-shadow: inset 0 0 20px rgba(0,255,0,0.2); max-width:90vw; }
-.hud-overlay { position: absolute; top: 15px; left: 15px; text-align: left; pointer-events: none; font-weight: bold; font-size: 0.9rem; z-index: 10; }
-.anomaly-alert { position: absolute; top: 15px; right: 15px; background: rgba(255, 0, 0, 0.2); border: 1px solid #ff0000; color: #ff3333; padding: 5px 10px; font-size: 0.8rem; border-radius: 5px; display: none; animation: blink 0.5s infinite alternate; z-index: 10; }
-@keyframes blink { from { opacity: 1; } to { opacity: 0.4; } }
-.controls { margin-top: 15px; display: flex; justify-content: center; gap: 15px; }
-button { background: #222; color: #00ff00; border: 2px solid #00ff00; padding: 10px 20px; font-size: 0.9rem; font-family: inherit; font-weight: bold; cursor: pointer; border-radius: 6px; text-transform: uppercase; box-shadow: 0 3px 0 #005500; transition: all 0.1s ease; }
-button:active { transform: translateY(2px); box-shadow: none; }
-button.recording { color: #ffffff; background: #ff0000; border-color: #ff3333; box-shadow: 0 3px 0 #550000; animation: pulse 1s infinite alternate; }
-@keyframes pulse { from { transform: scale(1); } to { transform: scale(1.03); } }
-#status-msg { margin-top: 10px; font-size: 0.8rem; color: #888; }
+body{background:#050505;color:#0f0;font-family:'Courier New',monospace;display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;margin:0}
+.container{text-align:center;background:#111;border:3px solid #333;border-radius:15px;padding:20px}
+#canvas-holder{position:relative;border:3px solid #0f0;background:#000;width:640px;height:480px;margin:0 auto;border-radius:8px;max-width:90vw}
+.hud-overlay{position:absolute;top:15px;left:15px;text-align:left;pointer-events:none;font-weight:bold;font-size:.9rem;z-index:10}
+.anomaly-alert{position:absolute;top:15px;right:15px;background:rgba(255,0,0,.2);border:1px solid #f00;color:#f33;padding:5px 10px;font-size:.8rem;border-radius:5px;display:none;z-index:10}
+.controls{margin-top:15px;display:flex;justify-content:center;gap:15px}
+button{background:#222;color:#0f0;border:2px solid #0f0;padding:10px 20px;font-weight:bold;cursor:pointer;border-radius:6px;text-transform:uppercase}
+button.recording{color:#fff;background:#f00;border-color:#f33;animation:pulse 1s infinite alternate}
+@keyframes pulse{from{transform:scale(1)}to{transform:scale(1.03)}}
+#status-msg{margin-top:10px;font-size:.8rem;color:#888}
 </style>
 </head>
 <body>
 <div class="container">
 <h2>SLS KINECT SENSOR & EVP SCANNER</h2>
 <div id="canvas-holder">
-<div class="hud-overlay" id="hud"> SYS STATUS: ONLINE<br> AUDIO GATE: ACCUMULATING... </div>
+<div class="hud-overlay" id="hud">SYS STATUS: OFFLINE<br>CLICK PARA INICIAR</div>
 <div class="anomaly-alert" id="alert-ui">⚠️ AUDIO ANOMALY DETECTED</div>
 </div>
 <div class="controls">
-<button id="rec-btn">Iniciar Grabación EVP</button>
+<button id="start-btn">INICIAR SENSORES</button>
+<button id="rec-btn" disabled>Iniciar Grabación EVP</button>
 </div>
-<div id="status-msg">Cargando sensores de mapeo neuronal... Por favor espera.</div>
+<div id="status-msg">Listo. Presioná INICIAR SENSORES.</div>
 </div>
-<button onclick="goMenu()" style="margin-top:20px;background:#000;color:#888;border:1px solid #333;font-size:10px;letter-spacing:2px;padding:10px 20px;cursor:pointer;font-family:monospace">◀ VOLVER AL MENU</button>
+
+<button onclick="goMenu()" style="margin-top:20px;background:#000;color:#888;border:1px solid #333;font-size:10px;padding:10px 20px;cursor:pointer;font-family:monospace">◀ VOLVER AL MENU</button>
+
 <script>
-// === PARCHE AGREGADO - NO ROMPE NADA - PERMITE USAR EN MODO PRUEBA ===
+// === TU PARCHE DE SUPABASE Y TRIAL (INTACTO) ===
 const SUPA_URL='https://yxfzvogiladjupikgqyt.supabase.co'
 const SUPA_ANON='sb_publishable_a1vTW1SY3abxVyn2qFDNlA_K_n3xgOc'
 const supa=supabase.createClient(SUPA_URL,SUPA_ANON)
@@ -46,151 +45,151 @@ const STORAGE_KEY='archiviax_v26';
 const urlParams=new URLSearchParams(location.search);
 const isTrialParam=urlParams.get('mode')==='trial';
 function goMenu(){ if(isTrialParam) location.href='menu.html?mode=trial'; else location.href='menu.html'; }
-(async()=>{
-  try{
-    const {data:{session}}=await supa.auth.getSession();
-    if(session){
-      const meta=session.user.user_metadata||{};
-      if(meta.expires_at && new Date(meta.expires_at)>new Date()) return;
-    }
-    const state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}');
-    const now=Date.now();
-    if(state.blockedUntil && now < state.blockedUntil){
-      location.href='index.html?blocked=1'; return;
-    }
-    if(isTrialParam || state.trialStart){
-      const start=state.trialStart||now;
-      const left=30-Math.floor((now-start)/60000);
-      if(left<=0){
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({blockedUntil: now + 24*3600*1000}));
-        location.href='index.html?blocked=1'; return;
-      }
-      document.getElementById('hud').innerHTML=`SYS STATUS: ONLINE<br>TRIAL ${left} MIN`;
-    }
-  }catch(e){}
-})();
-// === FIN PARCHE ===
+(async()=>{ try{
+ const {data:{session}}=await supa.auth.getSession();
+ if(session){ const meta=session.user.user_metadata||{}; if(meta.expires_at && new Date(meta.expires_at)>new Date()) return; }
+ const state=JSON.parse(localStorage.getItem(STORAGE_KEY)||'{}'); const now=Date.now();
+ if(state.blockedUntil && now < state.blockedUntil){ location.href='index.html?blocked=1'; return; }
+ if(isTrialParam || state.trialStart){
+  const start=state.trialStart||now;
+  const left=30-Math.floor((now-start)/60000);
+  if(left<=0){ localStorage.setItem(STORAGE_KEY, JSON.stringify({blockedUntil: now + 24*3600*1000})); location.href='index.html?blocked=1'; return; }
+  document.getElementById('hud').innerHTML=`SYS STATUS: ONLINE<br>TRIAL ${left} MIN`;
+ }
+}catch(e){}})();
 
-let video;
-let bodyPose;
-let poses = [];
-let audioContext;
-let analyser;
-let microphoneStream;
-let mediaRecorder;
-let audioChunks = [];
-let isRecording = false;
-let noiseThreshold = 45;
-let statusMsg = document.getElementById('status-msg');
-let alertUi = document.getElementById('alert-ui');
-let recBtn = document.getElementById('rec-btn');
-function preload() {
-bodyPose = ml5.bodyPose("BlazePose", { flipped: true });
+// === SLS FIXEADO ===
+let video, bodyPose, poses = [];
+let audioContext, analyser, micStream, mediaRecorder, audioChunks=[];
+let isRecording=false;
+let noiseThreshold=45;
+let statusMsg=document.getElementById('status-msg');
+let alertUi=document.getElementById('alert-ui');
+let hud=document.getElementById('hud');
+let recBtn=document.getElementById('rec-btn');
+let startBtn=document.getElementById('start-btn');
+
+let sketch = function(p){
+ p.setup = async ()=>{
+  let canvas = p.createCanvas(640,480);
+  canvas.parent('canvas-holder');
+  p.background(0);
+  statusMsg.innerText="Presioná INICIAR SENSORES y aceptá cámara y micrófono.";
+ }
+
+ p.draw = ()=>{
+  p.background(15,15,18);
+  if(video){
+   p.tint(0,255,0,25);
+   p.image(video,0,0,p.width,p.height);
+   p.noTint();
+  }
+  if(analyser){
+   let data=new Uint8Array(analyser.frequencyBinCount);
+   analyser.getByteFrequencyData(data);
+   let avg=data.reduce((a,b)=>a+b,0)/data.length;
+   alertUi.style.display = avg > noiseThreshold ? "block" : "none";
+   hud.innerHTML=`SYS STATUS: ONLINE<br>AUDIO LVL: ${avg.toFixed(0)}<br>POSES: ${poses.length}`;
+  }
+  if(poses.length>0){
+   for(let pose of poses){
+    p.stroke(0,255,0); p.strokeWeight(4);
+    if(pose.keypoints){
+     for(let kp of pose.keypoints){
+      if(kp.confidence>0.3){
+       p.fill(255,200,0); p.noStroke();
+       p.circle(kp.x,kp.y,12);
+      }
+     }
+    }
+   }
+  }
+ }
 }
-function setup() {
-let canvas = createCanvas(640, 480);
-canvas.parent('canvas-holder');
-video = createCapture(VIDEO);
-video.size(640, 480);
-video.hide();
-bodyPose.detectStart(video, gotPoses);
-statusMsg.innerText = "Sistema de mapeo listo. Haz clic en la pantalla para activar el sensor de Audio.";
-userStartAudio().then(() => { initAudioAnalysis(); });
+
+new p5(sketch);
+
+async function iniciarTodo(){
+ startBtn.disabled=true;
+ statusMsg.innerText="Iniciando cámara...";
+ hud.innerText="SYS STATUS: INICIANDO...";
+ try{
+  // 1. Video
+  video = document.createElement('video');
+  let stream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480}, audio:true});
+  video.srcObject=stream;
+  video.muted=true;
+  await video.play();
+  let p5Video = { elt: video, width:640, height:480 }; // para compatibilidad
+  // Convertir el video element a p5 captura real
+  // Hack: usamos el elemento directamente en draw
+  window.videoElement = video; // para draw lo usa via p5.image
+  // Para ml5 usamos el elemento video HTML
+  micStream = stream;
+
+  // 2. Audio analyser
+  audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  let source = audioContext.createMediaStreamSource(stream);
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize=256;
+  source.connect(analyser);
+
+  // 3. BodyPose ml5 v1
+  statusMsg.innerText="Cargando modelo BlazePose... puede tardar 10s";
+  bodyPose = await ml5.bodyPose("BlazePose");
+  statusMsg.innerText="Modelo cargado, iniciando detección...";
+  
+  // Detección continua
+  setInterval(async ()=>{
+   if(video && video.readyState>=2){
+    let results = await bodyPose.detect(video);
+    poses = results;
+   }
+  }, 200);
+
+  statusMsg.innerText="✅ Sensores ópticos y micrófono EVP sincronizados.";
+  hud.innerText="SYS STATUS: ONLINE\nAUDIO GATE: ACTIVE";
+  recBtn.disabled=false;
+  startBtn.innerText="SENSORES ACTIVOS";
+  recBtn.addEventListener('click', toggleRecording);
+
+ }catch(err){
+  console.error(err);
+  statusMsg.innerText="Error: "+err.message+" - Revisá permisos de cámara/micrófono y usá HTTPS.";
+  startBtn.disabled=false;
+ }
 }
-function draw() {
-background(15, 15, 18);
-tint(0, 255, 0, 25);
-image(video, 0, 0, width, height);
-noTint();
-if (analyser) {
-let dataArray = new Uint8Array(analyser.frequencyBinCount);
-analyser.getByteFrequencyData(dataArray);
-let totalVolume = 0;
-for (let i = 0; i < dataArray.length; i++) { totalVolume += dataArray[i]; }
-let averageVolume = totalVolume / dataArray.length;
-if (averageVolume > noiseThreshold) { alertUi.style.display = "block"; } else { alertUi.style.display = "none"; }
+
+function toggleRecording(){
+ if(!micStream) return;
+ if(!isRecording){
+  isRecording=true; recBtn.innerText="Detener y Guardar Audio"; recBtn.classList.add('recording');
+  statusMsg.innerText="🔴 GRABANDO SESIÓN EVP...";
+  audioChunks=[];
+  mediaRecorder=new MediaRecorder(micStream);
+  mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
+  mediaRecorder.onstop=()=>{
+   let blob=new Blob(audioChunks,{type:'audio/wav'});
+   let url=URL.createObjectURL(blob);
+   let a=document.createElement('a'); a.href=url; a.download=`EVP_SLS_Sesion_${Date.now()}.wav`; a.click();
+   statusMsg.innerText="Sesión guardada en descargas.";
+  };
+  mediaRecorder.start();
+ }else{
+  isRecording=false; recBtn.innerText="Iniciar Grabación EVP"; recBtn.classList.remove('recording');
+  mediaRecorder.stop();
+ }
 }
-if (poses.length > 0) {
-for (let i = 0; i < poses.length; i++) {
-let pose = poses[i];
-stroke(0, 255, 0);
-strokeWeight(4);
-drawBone(pose, "left_shoulder", "right_shoulder");
-drawBone(pose, "left_shoulder", "left_elbow");
-drawBone(pose, "left_elbow", "left_wrist");
-drawBone(pose, "right_shoulder", "right_elbow");
-drawBone(pose, "right_elbow", "right_wrist");
-drawBone(pose, "left_shoulder", "left_hip");
-drawBone(pose, "right_shoulder", "right_hip");
-drawBone(pose, "left_hip", "right_hip");
-drawBone(pose, "left_hip", "left_knee");
-drawBone(pose, "left_knee", "left_ankle");
-drawBone(pose, "right_hip", "right_knee");
-drawBone(pose, "right_knee", "right_ankle");
-for (let j = 0; j < pose.keypoints.length; j++) {
-let keypoint = pose.keypoints[j];
-if (keypoint.confidence > 0.4) {
-fill(255, 200, 0);
-noStroke();
-circle(keypoint.x, keypoint.y, 12);
-}
-}
-}
-}
-}
-function drawBone(pose, partA, partB) {
-let kpA = pose[partA];
-let kpB = pose[partB];
-if (kpA && kpB && kpA.confidence > 0.4 && kpB.confidence > 0.4) {
-line(kpA.x, kpA.y, kpB.x, kpB.y);
-}
-}
-function gotPoses(results) { poses = results; }
-async function initAudioAnalysis() {
-try {
-const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-microphoneStream = stream;
-audioContext = new (window.AudioContext || window.webkitAudioContext)();
-const source = audioContext.createMediaStreamSource(stream);
-analyser = audioContext.createAnalyser();
-analyser.fftSize = 256;
-source.connect(analyser);
-statusMsg.innerText = "Sensores ópticos y micrófono EVP sincronizados.";
-recBtn.addEventListener('click', toggleRecording);
-} catch (err) {
-statusMsg.innerText = "Error: Permiso de micrófono denegado o no disponible.";
-console.error(err);
-}
-}
-function toggleRecording() {
-if (!microphoneStream) return;
-if (!isRecording) {
-isRecording = true;
-recBtn.innerText = "Detener y Guardar Audio";
-recBtn.classList.add('recording');
-statusMsg.innerText = "🔴 GRABANDO SESIÓN EVP... Mantén silencio para oír fluctuaciones.";
-audioChunks = [];
-mediaRecorder = new MediaRecorder(microphoneStream);
-mediaRecorder.ondataavailable = (event) => { if (event.data.size > 0) audioChunks.push(event.data); };
-mediaRecorder.onstop = () => {
-const audioBlob = new Blob(audioChunks, { type: 'audio/wav' });
-const audioUrl = URL.createObjectURL(audioBlob);
-const link = document.createElement('a');
-link.href = audioUrl;
-link.download = `EVP_SLS_Sesion_${Date.now()}.wav`;
-document.body.appendChild(link);
-link.click();
-document.body.removeChild(link);
-statusMsg.innerText = "Sesión guardada exitosamente en tus descargas.";
-};
-mediaRecorder.start();
-} else {
-isRecording = false;
-recBtn.innerText = "Iniciar Grabación EVP";
-recBtn.classList.remove('recording');
-mediaRecorder.stop();
-}
-}
+
+document.getElementById('start-btn').addEventListener('click', iniciarTodo);
+// Hace que el video p5.image funcione con elemento HTML
+p5.prototype.image = (function(orig){
+ return function(img,x,y,w,h){
+  if(img && img.tagName==='VIDEO'){ this.drawingContext.drawImage(img,x,y,w||640,h||480); }
+  else{ orig.apply(this, arguments); }
+ }
+})(p5.prototype.image);
+
 </script>
 </body>
 </html>
