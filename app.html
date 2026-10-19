@@ -3,12 +3,12 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>SLS Ghost Camera & EVP Scanner</title>
+<title>SLS Kinect Ghost Camera & EVP Scanner</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
 <style>
   body { 
-    background: #050505; 
+    background: #030303; 
     color: #00ff00; 
     font-family: 'Courier New', monospace; 
     display: flex; 
@@ -25,12 +25,13 @@
     max-width: 680px; 
     text-align: center; 
     background: #111; 
-    border: 3px solid #333; 
+    border: 3px solid #00ff00; 
     border-radius: 15px; 
     padding: 15px; 
     box-sizing: border-box; 
+    box-shadow: 0 0 20px rgba(0, 255, 0, 0.2);
   }
-  h2 { margin: 0 0 10px 0; font-size: 14px; letter-spacing: 2px; text-shadow: 0 0 5px #00ff00; }
+  h2 { margin: 0 0 10px 0; font-size: 13px; letter-spacing: 2px; text-shadow: 0 0 8px #00ff00; }
   #canvas-holder { 
     position: relative; 
     border: 3px solid #00ff00; 
@@ -40,47 +41,51 @@
     border-radius: 8px; 
     overflow: hidden; 
     margin: 0 auto; 
+    /* Filtro estilo cámara infrarroja / Kinect */
+    filter: contrast(170%) brightness(95%) hue-rotate(30deg);
   }
   #canvas-holder canvas { width: 100% !important; height: 100% !important; display: block; }
   .hud-overlay { 
     position: absolute; top: 10px; left: 10px; text-align: left; 
-    pointer-events: none; font-weight: bold; font-size: 11px; z-index: 10; 
-    background: rgba(0,0,0,0.7); padding: 6px; border-radius: 4px; border: 1px solid #00ff00;
+    pointer-events: none; font-weight: bold; font-size: 10px; z-index: 10; 
+    background: rgba(0,0,0,0.8); padding: 6px; border-radius: 4px; border: 1px solid #00ff00;
+    color: #00ff00;
   }
   .anomaly-alert { 
-    position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.5); 
-    border: 1px solid #ff0000; color: #fff; padding: 4px 8px; font-size: 11px; 
+    position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.6); 
+    border: 1px solid #ff0000; color: #fff; padding: 4px 8px; font-size: 10px; 
     border-radius: 5px; display: none; z-index: 10; font-weight: bold;
-    animation: blink 0.5s infinite alternate;
+    animation: blink 0.4s infinite alternate;
   }
-  @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
+  @keyframes blink { from { opacity: 0.2; } to { opacity: 1; } }
   .controls { margin-top: 12px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
   button { 
-    background: #222; color: #00ff00; border: 2px solid #00ff00; 
-    padding: 10px 14px; font-size: 11px; font-weight: bold; cursor: pointer; 
-    border-radius: 6px; text-transform: uppercase; 
+    background: #151515; color: #00ff00; border: 2px solid #00ff00; 
+    padding: 10px 12px; font-size: 10px; font-weight: bold; cursor: pointer; 
+    border-radius: 6px; text-transform: uppercase; transition: 0.2s;
   }
-  button:disabled { opacity: 0.3; cursor: not-allowed; }
+  button:hover { background: #00ff00; color: #000; }
+  button:disabled { opacity: 0.3; cursor: not-allowed; border-color: #444; color: #666; }
   button.recording { color: #fff; background: #ff0000; border-color: #ff3333; animation: pulse 1s infinite alternate; }
   @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
-  #status-msg { margin-top: 10px; font-size: 11px; color: #888; min-height: 18px; }
+  #status-msg { margin-top: 10px; font-size: 11px; color: #00aa00; min-height: 18px; font-weight: bold; }
 </style>
 </head>
 <body>
 
 <div class="container">
-  <h2>SLS KINECT SENSOR & EVP SCANNER</h2>
+  <h2>XBOX KINECT SLS & EVP SPIRIT BOX</h2>
   <div id="canvas-holder">
-    <div class="hud-overlay" id="hud">ESTADO: INACTIVE<br>SEÑAL: N/A</div>
-    <div class="anomaly-alert" id="alert-ui">⚠️ ANOMALÍA DETECTADA</div>
+    <div class="hud-overlay" id="hud">KINECT: STANDBY<br>FREQ: 0Hz</div>
+    <div class="anomaly-alert" id="alert-ui">⚠️ ENTIDAD DETECTADA</div>
   </div>
   <div class="controls">
     <button id="start-btn">INICIAR CÁMARA</button>
-    <button id="flip-btn" disabled>🔄 GIRAR CÁMARA</button>
-    <button id="audio-btn" disabled>🔇 EVP SCANNER OFF</button>
+    <button id="flip-btn" disabled>🔄 CAMBIAR CÁMARA</button>
+    <button id="audio-btn" disabled>🔇 SPIRIT BOX OFF</button>
     <button id="rec-btn" disabled>● REC EVP</button>
   </div>
-  <div id="status-msg">Presioná INICIAR. Se requiere HTTPS o localhost.</div>
+  <div id="status-msg">Presioná INICIAR para activar los sensores.</div>
 </div>
 
 <script>
@@ -93,13 +98,15 @@ let audioContext;
 let micStream;
 let analyser;
 let noiseNode;
+let filterNode;
 let evpGain;
 let mediaRecorder;
 let audioChunks = [];
 let isRecording = false;
 let isEvpActive = false;
+let sweepInterval;
 
-// Conexiones típicas de torso y extremidades para dibujar el esqueleto estilo SLS
+// Conexiones del esqueleto estilo SLS Kinect
 const connections = [
   [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
   [9, 10], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
@@ -113,52 +120,58 @@ function setup() {
 }
 
 function draw() {
-  background(10, 10, 12);
+  background(0);
 
-  // Dibujar el video de la cámara
+  // Renderizar video de cámara
   if (capture && capture.loadedmetadata) {
     image(capture, 0, 0, width, height);
   }
 
-  // Dibujar el esqueleto SLS cuando detecte una figura humana
+  // Dibujar esqueletos múltiples estilo Kinect (Verde y Magenta)
   if (poses && poses.length > 0) {
     for (let i = 0; i < poses.length; i++) {
       let pose = poses[i];
       
-      // Dibujar líneas de conexión del esqueleto (Verde Neón estilo Kinect)
-      stroke(0, 255, 0);
-      strokeWeight(3);
+      // Alternar color por figura detectada (Verde o Rosa como en las referencias)
+      if (i % 2 === 0) {
+        stroke(0, 255, 0); // Verde neón
+        fill(255, 200, 0);
+      } else {
+        stroke(255, 100, 220); // Magenta / Rosa
+        fill(255, 255, 255);
+      }
+      
+      strokeWeight(4);
       if (pose.keypoints) {
         for (let conn of connections) {
           let kp1 = pose.keypoints[conn[0]];
           let kp2 = pose.keypoints[conn[1]];
-          if (kp1 && kp2 && kp1.confidence > 0.3 && kp2.confidence > 0.3) {
+          if (kp1 && kp2 && kp1.confidence > 0.25) {
             line(kp1.x, kp1.y, kp2.x, kp2.y);
           }
         }
 
-        // Dibujar articulaciones
         noStroke();
-        fill(255, 200, 0);
         for (let kp of pose.keypoints) {
-          if (kp.confidence > 0.3) {
-            circle(kp.x, kp.y, 8);
+          if (kp.confidence > 0.25) {
+            circle(kp.x, kp.y, 9);
           }
         }
       }
     }
   }
 
-  // Monitorear nivel de audio
+  // Monitoreo de actividad y HUD
   if (analyser) {
     let data = new Uint8Array(analyser.frequencyBinCount);
     analyser.getByteFrequencyData(data);
     let avg = data.reduce((a, b) => a + b, 0) / data.length;
 
-    document.getElementById('hud').innerHTML = `ONLINE | ${currentFacing.toUpperCase()}<br>AUDIO LVL: ${avg.toFixed(0)} | ENTIDADES: ${poses.length}`;
+    let freqText = filterNode ? Math.round(filterNode.frequency.value) : 0;
+    document.getElementById('hud').innerHTML = `KINECT SLS | ${currentFacing.toUpperCase()} <br>AUDIO LVL: ${avg.toFixed(0)} | FIG: ${poses.length}<br>FREQ SWEEP: ${freqText}Hz`;
     
-    // Alerta visual de anomalía si detecta esqueleto o pico de sonido
-    if (poses.length > 0 || avg > 60) {
+    // Alerta visual de anomalía si hay cuerpos o fluctuación de audio fuerte
+    if (poses.length > 0 || avg > 50) {
       document.getElementById('alert-ui').style.display = "block";
     } else {
       document.getElementById('alert-ui').style.display = "none";
@@ -166,16 +179,16 @@ function draw() {
   }
 }
 
-// Inicializar ml5 bodyPose
+// Cargar modelo BlazePose de ml5.js
 async function initModel() {
-  bodyPose = await ml5.bodyPose("BlazePose", { modelType: "LITE" });
-  document.getElementById('status-msg').innerText = "✅ Sistema de escaneo SLS activo.";
+  bodyPose = await ml5.bodyPose("BlazePose", { modelType: "FULL" });
+  document.getElementById('status-msg').innerText = "✅ Sensores corporales y EVP calibrados.";
 }
 
-// Iniciar cámara y flujo de audio
+// Iniciar Cámara
 async function startCamera(facing) {
   currentFacing = facing;
-  document.getElementById('status-msg').innerText = "Iniciando sensores...";
+  document.getElementById('status-msg').innerText = "Conectando cámara y micrófono...";
 
   if (capture) capture.remove();
 
@@ -187,14 +200,12 @@ async function startCamera(facing) {
   micStream = await navigator.mediaDevices.getUserMedia(constraints);
 
   capture = createCapture(VIDEO, function() {
-    document.getElementById('status-msg').innerText = "Cargando detector de pose SLS...";
     if (!bodyPose) {
       initModel().then(() => {
         bodyPose.detectStart(capture.elt, gotPoses);
       });
     } else {
       bodyPose.detectStart(capture.elt, gotPoses);
-      document.getElementById('status-msg').innerText = "✅ Escaneo SLS activo.";
     }
   });
 
@@ -202,16 +213,15 @@ async function startCamera(facing) {
   capture.size(640, 480);
   capture.hide();
 
-  // Configurar audio para EVP
-  setupAudioContext(micStream);
+  setupSpiritBoxAudio(micStream);
 }
 
 function gotPoses(results) {
   poses = results;
 }
 
-// Sintetizador y escáner de ruido blanco / psicofonía EVP
-function setupAudioContext(stream) {
+// Configuración de Audio Spirit Box / EVP (Barrido de frecuencias automatizado)
+function setupSpiritBoxAudio(stream) {
   if (!audioContext) {
     audioContext = new (window.AudioContext || window.webkitAudioContext)();
   }
@@ -221,35 +231,44 @@ function setupAudioContext(stream) {
   analyser.fftSize = 256;
   micSource.connect(analyser);
 
-  // Crear generador de ruido blanco (Spirit Box EVP Simulation)
-  let bufferSize = audioContext.sampleRate * 2;
+  // Generador de ruido blanco simulando radioemisoras
+  let bufferSize = audioContext.sampleRate * 3;
   let noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
   let output = noiseBuffer.getChannelData(0);
   for (let i = 0; i < bufferSize; i++) {
-    output[i] = Math.random() * 2 - 1;
+    output[i] = (Math.random() * 2 - 1) * 0.5;
   }
 
   noiseNode = audioContext.createBufferSource();
   noiseNode.buffer = noiseBuffer;
   noiseNode.loop = true;
 
-  // Filtro de frecuencia estilo Radio Frecuencia Sweep
-  let bandpass = audioContext.createBiquadFilter();
-  bandpass.type = 'bandpass';
-  bandpass.frequency.value = 1000;
-  bandpass.Q.value = 3.0;
+  filterNode = audioContext.createBiquadFilter();
+  filterNode.type = 'bandpass';
+  filterNode.frequency.value = 800;
+  filterNode.Q.value = 4.0;
 
   evpGain = audioContext.createGain();
-  evpGain.gain.value = 0; // Desactivado por defecto
+  evpGain.gain.value = 0; // Apagado por defecto
 
-  noiseNode.connect(bandpass);
-  bandpass.connect(evpGain);
+  noiseNode.connect(filterNode);
+  filterNode.connect(evpGain);
   evpGain.connect(audioContext.destination);
 
   noiseNode.start();
+
+  // Simular barrido constante de frecuencias tipo Spirit Box
+  if (sweepInterval) clearInterval(sweepInterval);
+  sweepInterval = setInterval(() => {
+    if (isEvpActive && filterNode) {
+      // Salto aleatorio de frecuencias entre 300Hz y 3500Hz simulando voces y estática lejana
+      let randomFreq = Math.floor(Math.random() * 3200) + 300;
+      filterNode.frequency.setTargetAtTime(randomFreq, audioContext.currentTime, 0.1);
+    }
+  }, 250);
 }
 
-// Eventos de botones
+// Botones de control
 document.getElementById('start-btn').onclick = async () => {
   document.getElementById('start-btn').disabled = true;
   try {
@@ -257,9 +276,9 @@ document.getElementById('start-btn').onclick = async () => {
     document.getElementById('flip-btn').disabled = false;
     document.getElementById('audio-btn').disabled = false;
     document.getElementById('rec-btn').disabled = false;
-    document.getElementById('start-btn').innerText = "CÁMARA ACTIVA";
+    document.getElementById('start-btn').innerText = "SISTEMA ACTIVO";
   } catch (e) {
-    alert("Error al acceder a la cámara o micrófono: " + e.message);
+    alert("Error de permisos: " + e.message + "\nAsegurate de usar HTTPS o localhost.");
     document.getElementById('start-btn').disabled = false;
   }
 };
@@ -275,10 +294,10 @@ document.getElementById('audio-btn').onclick = () => {
   }
   isEvpActive = !isEvpActive;
   if (evpGain) {
-    evpGain.gain.value = isEvpActive ? 0.15 : 0;
+    evpGain.gain.value = isEvpActive ? 0.35 : 0;
   }
-  document.getElementById('audio-btn').innerText = isEvpActive ? "🔊 EVP SCANNER ON" : "🔇 EVP SCANNER OFF";
-  document.getElementById('audio-btn').style.background = isEvpActive ? "#00ff00" : "#222";
+  document.getElementById('audio-btn').innerText = isEvpActive ? "🔊 SPIRIT BOX ON" : "🔇 SPIRIT BOX OFF";
+  document.getElementById('audio-btn').style.background = isEvpActive ? "#00ff00" : "#151515";
   document.getElementById('audio-btn').style.color = isEvpActive ? "#000" : "#00ff00";
 };
 
@@ -294,14 +313,14 @@ document.getElementById('rec-btn').onclick = () => {
       let url = URL.createObjectURL(blob);
       let a = document.createElement('a');
       a.href = url;
-      a.download = `EVP_CAPTURE_${Date.now()}.webm`;
+      a.download = `EVP_RECORDING_${Date.now()}.webm`;
       a.click();
-      document.getElementById('status-msg').innerText = "Grabación EVP guardada con éxito.";
+      document.getElementById('status-msg').innerText = "Sesión EVP guardada correctamente.";
     };
     mediaRecorder.start();
     document.getElementById('rec-btn').innerText = "■ DETENER Y GUARDAR";
     document.getElementById('rec-btn').classList.add('recording');
-    document.getElementById('status-msg').innerText = "🔴 GRABANDO SESIÓN EVP...";
+    document.getElementById('status-msg').innerText = "🔴 GRABANDO PSICOFONÍA / EVP...";
   } else {
     isRecording = false;
     mediaRecorder.stop();
