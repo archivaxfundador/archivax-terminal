@@ -7,129 +7,307 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 <script src="https://unpkg.com/ml5@1/dist/ml5.min.js"></script>
 <style>
-body { background:#050505; color:#00ff00; font-family:'Courier New',monospace; display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:100vh; margin:0; padding:10px; overflow-x:hidden; }
-.container { width:100%; max-width:680px; text-align:center; background:#111; border:3px solid #333; border-radius:15px; padding:15px; box-sizing:border-box; }
-h2 { margin:0 0 10px 0; font-size:14px; letter-spacing:2px; text-shadow:0 0 5px #00ff00; }
-#canvas-holder { position:relative; border:3px solid #00ff00; background:#000; width:100%; aspect-ratio:4/3; border-radius:8px; overflow:hidden; margin:0 auto; }
-#canvas-holder canvas { width:100% !important; height:100% !important; object-fit:cover; display:block; }
-.hud-overlay { position:absolute; top:10px; left:10px; text-align:left; pointer-events:none; font-weight:bold; font-size:11px; z-index:10; background:rgba(0,0,0,0.6); padding:5px; border-radius:4px; }
-.anomaly-alert { position:absolute; top:10px; right:10px; background:rgba(255,0,0,0.3); border:1px solid #ff0000; color:#ff3333; padding:4px 8px; font-size:10px; border-radius:5px; display:none; z-index:10; }
-.controls { margin-top:12px; display:flex; flex-wrap:wrap; justify-content:center; gap:8px; }
-button { background:#222; color:#00ff00; border:2px solid #00ff00; padding:10px 14px; font-size:11px; font-weight:bold; cursor:pointer; border-radius:6px; text-transform:uppercase; }
-button:disabled { opacity:0.3; }
-button.recording { color:#fff; background:#ff0000; border-color:#ff3333; animation:pulse 1s infinite alternate; }
-@keyframes pulse { from{transform:scale(1)} to{transform:scale(1.05)} }
-#status-msg { margin-top:10px; font-size:11px; color:#888; min-height:18px; }
+  body { 
+    background: #050505; 
+    color: #00ff00; 
+    font-family: 'Courier New', monospace; 
+    display: flex; 
+    flex-direction: column; 
+    align-items: center; 
+    justify-content: center; 
+    min-height: 100vh; 
+    margin: 0; 
+    padding: 10px; 
+    box-sizing: border-box;
+  }
+  .container { 
+    width: 100%; 
+    max-width: 680px; 
+    text-align: center; 
+    background: #111; 
+    border: 3px solid #333; 
+    border-radius: 15px; 
+    padding: 15px; 
+    box-sizing: border-box; 
+  }
+  h2 { margin: 0 0 10px 0; font-size: 14px; letter-spacing: 2px; text-shadow: 0 0 5px #00ff00; }
+  #canvas-holder { 
+    position: relative; 
+    border: 3px solid #00ff00; 
+    background: #000; 
+    width: 100%; 
+    aspect-ratio: 4/3; 
+    border-radius: 8px; 
+    overflow: hidden; 
+    margin: 0 auto; 
+  }
+  #canvas-holder canvas { width: 100% !important; height: 100% !important; display: block; }
+  .hud-overlay { 
+    position: absolute; top: 10px; left: 10px; text-align: left; 
+    pointer-events: none; font-weight: bold; font-size: 11px; z-index: 10; 
+    background: rgba(0,0,0,0.7); padding: 6px; border-radius: 4px; border: 1px solid #00ff00;
+  }
+  .anomaly-alert { 
+    position: absolute; top: 10px; right: 10px; background: rgba(255,0,0,0.5); 
+    border: 1px solid #ff0000; color: #fff; padding: 4px 8px; font-size: 11px; 
+    border-radius: 5px; display: none; z-index: 10; font-weight: bold;
+    animation: blink 0.5s infinite alternate;
+  }
+  @keyframes blink { from { opacity: 0.3; } to { opacity: 1; } }
+  .controls { margin-top: 12px; display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  button { 
+    background: #222; color: #00ff00; border: 2px solid #00ff00; 
+    padding: 10px 14px; font-size: 11px; font-weight: bold; cursor: pointer; 
+    border-radius: 6px; text-transform: uppercase; 
+  }
+  button:disabled { opacity: 0.3; cursor: not-allowed; }
+  button.recording { color: #fff; background: #ff0000; border-color: #ff3333; animation: pulse 1s infinite alternate; }
+  @keyframes pulse { from { transform: scale(1); } to { transform: scale(1.05); } }
+  #status-msg { margin-top: 10px; font-size: 11px; color: #888; min-height: 18px; }
 </style>
 </head>
 <body>
+
 <div class="container">
-<h2>SLS KINECT SENSOR & EVP SCANNER</h2>
-<div id="canvas-holder">
-<div class="hud-overlay" id="hud">TOCA INICIAR</div>
-<div class="anomaly-alert" id="alert-ui">⚠️ ANOMALIA</div>
-</div>
-<div class="controls">
-<button id="start-btn">INICIAR CÁMARA TRASERA</button>
-<button id="flip-btn" disabled>🔄 GIRAR CÁMARA</button>
-<button id="audio-btn" disabled>🔇 AUDIO OFF</button>
-<button id="rec-btn" disabled>● REC EVP</button>
-</div>
-<div id="status-msg">Listo. Tocá INICIAR. Requiere HTTPS.</div>
+  <h2>SLS KINECT SENSOR & EVP SCANNER</h2>
+  <div id="canvas-holder">
+    <div class="hud-overlay" id="hud">ESTADO: INACTIVE<br>SEÑAL: N/A</div>
+    <div class="anomaly-alert" id="alert-ui">⚠️ ANOMALÍA DETECTADA</div>
+  </div>
+  <div class="controls">
+    <button id="start-btn">INICIAR CÁMARA</button>
+    <button id="flip-btn" disabled>🔄 GIRAR CÁMARA</button>
+    <button id="audio-btn" disabled>🔇 EVP SCANNER OFF</button>
+    <button id="rec-btn" disabled>● REC EVP</button>
+  </div>
+  <div id="status-msg">Presioná INICIAR. Se requiere HTTPS o localhost.</div>
 </div>
 
 <script>
-let videoEl, bodyPose, poses=[], audioContext, analyser, micStream, mediaRecorder, audioChunks=[], isRecording=false, currentFacing="environment", gainNode, audioHearing=false;
+let capture;
+let bodyPose;
+let poses = [];
+let currentFacing = "environment";
 
-let sketch = function(p){
- p.setup = () => { let c = p.createCanvas(640,480); c.parent('canvas-holder'); p.background(0); }
- p.draw = () => {
-  p.background(15,15,18);
-  if(window._videoEl) p.image(window._videoEl,0,0,p.width,p.height);
-  if(poses.length>0){
-   p.stroke(0,255,0); p.strokeWeight(3);
-   for(let pose of poses){
-    if(pose.keypoints){
-     for(let kp of pose.keypoints){
-      if(kp.confidence>0.3){ p.fill(255,200,0); p.noStroke(); p.circle(kp.x,kp.y,12); }
-     }
+let audioContext;
+let micStream;
+let analyser;
+let noiseNode;
+let evpGain;
+let mediaRecorder;
+let audioChunks = [];
+let isRecording = false;
+let isEvpActive = false;
+
+// Conexiones típicas de torso y extremidades para dibujar el esqueleto estilo SLS
+const connections = [
+  [0, 1], [1, 2], [2, 3], [3, 7], [0, 4], [4, 5], [5, 6], [6, 8],
+  [9, 10], [11, 12], [11, 13], [13, 15], [12, 14], [14, 16],
+  [11, 23], [12, 24], [23, 24], [23, 25], [24, 26], [25, 27], [26, 28]
+];
+
+function setup() {
+  let canvas = createCanvas(640, 480);
+  canvas.parent('canvas-holder');
+  background(0);
+}
+
+function draw() {
+  background(10, 10, 12);
+
+  // Dibujar el video de la cámara
+  if (capture && capture.loadedmetadata) {
+    image(capture, 0, 0, width, height);
+  }
+
+  // Dibujar el esqueleto SLS cuando detecte una figura humana
+  if (poses && poses.length > 0) {
+    for (let i = 0; i < poses.length; i++) {
+      let pose = poses[i];
+      
+      // Dibujar líneas de conexión del esqueleto (Verde Neón estilo Kinect)
+      stroke(0, 255, 0);
+      strokeWeight(3);
+      if (pose.keypoints) {
+        for (let conn of connections) {
+          let kp1 = pose.keypoints[conn[0]];
+          let kp2 = pose.keypoints[conn[1]];
+          if (kp1 && kp2 && kp1.confidence > 0.3 && kp2.confidence > 0.3) {
+            line(kp1.x, kp1.y, kp2.x, kp2.y);
+          }
+        }
+
+        // Dibujar articulaciones
+        noStroke();
+        fill(255, 200, 0);
+        for (let kp of pose.keypoints) {
+          if (kp.confidence > 0.3) {
+            circle(kp.x, kp.y, 8);
+          }
+        }
+      }
     }
-   }
   }
- }
-}
-new p5(sketch);
-p5.prototype.image = (function(o){ return function(img,x,y,w,h){ if(img && img.tagName==='VIDEO'){ this.drawingContext.drawImage(img,x,y,w||640,h||480); } else { o.apply(this, arguments); } } })(p5.prototype.image);
 
-async function iniciar(facing){
- currentFacing=facing;
- document.getElementById('status-msg').innerText="Pidiendo permisos...";
- let s = await navigator.mediaDevices.getUserMedia({
-  video:{ facingMode: facing, width:{ideal:1280}, height:{ideal:720} },
-  audio:{ echoCancellation:false, noiseSuppression:false, autoGainControl:false }
- });
- if(micStream) micStream.getTracks().forEach(t=>t.stop());
- micStream=s;
- videoEl=document.createElement('video'); videoEl.srcObject=s; videoEl.muted=true; videoEl.playsInline=true; await videoEl.play();
- window._videoEl=videoEl;
+  // Monitorear nivel de audio
+  if (analyser) {
+    let data = new Uint8Array(analyser.frequencyBinCount);
+    analyser.getByteFrequencyData(data);
+    let avg = data.reduce((a, b) => a + b, 0) / data.length;
 
- if(!audioContext) audioContext=new (window.AudioContext||window.webkitAudioContext)();
- if(audioContext.state==='suspended') await audioContext.resume();
- let src=audioContext.createMediaStreamSource(s);
- analyser=audioContext.createAnalyser(); analyser.fftSize=512;
- gainNode=audioContext.createGain(); gainNode.gain.value=0;
- src.connect(analyser); analyser.connect(gainNode); gainNode.connect(audioContext.destination);
-
- document.getElementById('status-msg').innerText="Cargando BlazePose (10s)...";
- bodyPose = await ml5.bodyPose("BlazePose");
- 
- setInterval(async()=>{
-  if(videoEl && videoEl.readyState>=2){
-   try{
-    poses = await bodyPose.detect(videoEl);
-    let data=new Uint8Array(analyser.frequencyBinCount); analyser.getByteFrequencyData(data);
-    let avg=data.reduce((a,b)=>a+b,0)/data.length;
-    document.getElementById('alert-ui').style.display = avg>55 ? "block" : "none";
-    document.getElementById('hud').innerHTML=`ONLINE | ${facing}<br>LVL:${avg.toFixed(0)} | FIG:${poses.length}`;
-   }catch(e){}
+    document.getElementById('hud').innerHTML = `ONLINE | ${currentFacing.toUpperCase()}<br>AUDIO LVL: ${avg.toFixed(0)} | ENTIDADES: ${poses.length}`;
+    
+    // Alerta visual de anomalía si detecta esqueleto o pico de sonido
+    if (poses.length > 0 || avg > 60) {
+      document.getElementById('alert-ui').style.display = "block";
+    } else {
+      document.getElementById('alert-ui').style.display = "none";
+    }
   }
- }, 250);
-
- document.getElementById('status-msg').innerText="✅ ACTIVO. Tocá AUDIO para escuchar.";
- document.getElementById('start-btn').innerText="ACTIVO - "+facing.toUpperCase();
 }
 
-document.getElementById('start-btn').onclick=async()=>{
- document.getElementById('start-btn').disabled=true;
- try{ await iniciar("environment"); document.getElementById('flip-btn').disabled=false; document.getElementById('audio-btn').disabled=false; document.getElementById('rec-btn').disabled=false; }
- catch(e){ alert("Error: "+e.message+"\nUsá HTTPS y dale permiso a cámara/mic"); document.getElementById('start-btn').disabled=false; }
+// Inicializar ml5 bodyPose
+async function initModel() {
+  bodyPose = await ml5.bodyPose("BlazePose", { modelType: "LITE" });
+  document.getElementById('status-msg').innerText = "✅ Sistema de escaneo SLS activo.";
+}
+
+// Iniciar cámara y flujo de audio
+async function startCamera(facing) {
+  currentFacing = facing;
+  document.getElementById('status-msg').innerText = "Iniciando sensores...";
+
+  if (capture) capture.remove();
+
+  let constraints = {
+    video: { facingMode: facing, width: { ideal: 640 }, height: { ideal: 480 } },
+    audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: false }
+  };
+
+  micStream = await navigator.mediaDevices.getUserMedia(constraints);
+
+  capture = createCapture(VIDEO, function() {
+    document.getElementById('status-msg').innerText = "Cargando detector de pose SLS...";
+    if (!bodyPose) {
+      initModel().then(() => {
+        bodyPose.detectStart(capture.elt, gotPoses);
+      });
+    } else {
+      bodyPose.detectStart(capture.elt, gotPoses);
+      document.getElementById('status-msg').innerText = "✅ Escaneo SLS activo.";
+    }
+  });
+
+  capture.elt.srcObject = micStream;
+  capture.size(640, 480);
+  capture.hide();
+
+  // Configurar audio para EVP
+  setupAudioContext(micStream);
+}
+
+function gotPoses(results) {
+  poses = results;
+}
+
+// Sintetizador y escáner de ruido blanco / psicofonía EVP
+function setupAudioContext(stream) {
+  if (!audioContext) {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+
+  let micSource = audioContext.createMediaStreamSource(stream);
+  analyser = audioContext.createAnalyser();
+  analyser.fftSize = 256;
+  micSource.connect(analyser);
+
+  // Crear generador de ruido blanco (Spirit Box EVP Simulation)
+  let bufferSize = audioContext.sampleRate * 2;
+  let noiseBuffer = audioContext.createBuffer(1, bufferSize, audioContext.sampleRate);
+  let output = noiseBuffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) {
+    output[i] = Math.random() * 2 - 1;
+  }
+
+  noiseNode = audioContext.createBufferSource();
+  noiseNode.buffer = noiseBuffer;
+  noiseNode.loop = true;
+
+  // Filtro de frecuencia estilo Radio Frecuencia Sweep
+  let bandpass = audioContext.createBiquadFilter();
+  bandpass.type = 'bandpass';
+  bandpass.frequency.value = 1000;
+  bandpass.Q.value = 3.0;
+
+  evpGain = audioContext.createGain();
+  evpGain.gain.value = 0; // Desactivado por defecto
+
+  noiseNode.connect(bandpass);
+  bandpass.connect(evpGain);
+  evpGain.connect(audioContext.destination);
+
+  noiseNode.start();
+}
+
+// Eventos de botones
+document.getElementById('start-btn').onclick = async () => {
+  document.getElementById('start-btn').disabled = true;
+  try {
+    await startCamera("environment");
+    document.getElementById('flip-btn').disabled = false;
+    document.getElementById('audio-btn').disabled = false;
+    document.getElementById('rec-btn').disabled = false;
+    document.getElementById('start-btn').innerText = "CÁMARA ACTIVA";
+  } catch (e) {
+    alert("Error al acceder a la cámara o micrófono: " + e.message);
+    document.getElementById('start-btn').disabled = false;
+  }
 };
 
-document.getElementById('flip-btn').onclick=async()=>{
- let next = currentFacing==="environment" ? "user" : "environment";
- await iniciar(next);
+document.getElementById('flip-btn').onclick = async () => {
+  let nextFacing = currentFacing === "environment" ? "user" : "environment";
+  await startCamera(nextFacing);
 };
 
-document.getElementById('audio-btn').onclick=()=>{
- audioHearing=!audioHearing;
- gainNode.gain.value = audioHearing ? 0.9 : 0;
- document.getElementById('audio-btn').innerText = audioHearing ? "🔊 AUDIO ON" : "🔇 AUDIO OFF";
- if(audioHearing) document.getElementById('status-msg').innerText="🔊 Escuchando micrófono (usá auriculares para evitar acople)";
+document.getElementById('audio-btn').onclick = () => {
+  if (audioContext && audioContext.state === 'suspended') {
+    audioContext.resume();
+  }
+  isEvpActive = !isEvpActive;
+  if (evpGain) {
+    evpGain.gain.value = isEvpActive ? 0.15 : 0;
+  }
+  document.getElementById('audio-btn').innerText = isEvpActive ? "🔊 EVP SCANNER ON" : "🔇 EVP SCANNER OFF";
+  document.getElementById('audio-btn').style.background = isEvpActive ? "#00ff00" : "#222";
+  document.getElementById('audio-btn').style.color = isEvpActive ? "#000" : "#00ff00";
 };
 
-document.getElementById('rec-btn').onclick=()=>{
- if(!isRecording){
-  isRecording=true; audioChunks=[];
-  mediaRecorder=new MediaRecorder(micStream);
-  mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) audioChunks.push(e.data); };
-  mediaRecorder.onstop=()=>{ let b=new Blob(audioChunks,{type:'audio/webm'}); let u=URL.createObjectURL(b); let a=document.createElement('a'); a.href=u; a.download=`EVP_${Date.now()}.webm`; a.click(); document.getElementById('status-msg').innerText="Grabación guardada."; };
-  mediaRecorder.start();
-  document.getElementById('rec-btn').innerText="■ STOP Y GUARDAR"; document.getElementById('rec-btn').classList.add('recording');
-  document.getElementById('status-msg').innerText="🔴 GRABANDO EVP...";
- }else{
-  isRecording=false; mediaRecorder.stop();
-  document.getElementById('rec-btn').innerText="● REC EVP"; document.getElementById('rec-btn').classList.remove('recording');
- }
+// Grabación de EVP
+document.getElementById('rec-btn').onclick = () => {
+  if (!isRecording) {
+    isRecording = true;
+    audioChunks = [];
+    mediaRecorder = new MediaRecorder(micStream);
+    mediaRecorder.ondataavailable = e => { if (e.data.size > 0) audioChunks.push(e.data); };
+    mediaRecorder.onstop = () => {
+      let blob = new Blob(audioChunks, { type: 'audio/webm' });
+      let url = URL.createObjectURL(blob);
+      let a = document.createElement('a');
+      a.href = url;
+      a.download = `EVP_CAPTURE_${Date.now()}.webm`;
+      a.click();
+      document.getElementById('status-msg').innerText = "Grabación EVP guardada con éxito.";
+    };
+    mediaRecorder.start();
+    document.getElementById('rec-btn').innerText = "■ DETENER Y GUARDAR";
+    document.getElementById('rec-btn').classList.add('recording');
+    document.getElementById('status-msg').innerText = "🔴 GRABANDO SESIÓN EVP...";
+  } else {
+    isRecording = false;
+    mediaRecorder.stop();
+    document.getElementById('rec-btn').innerText = "● REC EVP";
+    document.getElementById('rec-btn').classList.remove('recording');
+  }
 };
 </script>
 </body>
