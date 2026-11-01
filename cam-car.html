@@ -3,36 +3,22 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Dashcam Vision + Map</title>
+<title>Vision Tesla Real</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#000;color:#fff;font-family:sans-serif;height:100vh;overflow:hidden}
-#camera-container{position:relative;width:100%;height:100vh}
-video,#overlay{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
-#overlay{z-index:5;pointer-events:none}
-.hud{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:14px;z-index:10}
-.top-bar{display:flex;justify-content:space-between}
-.rec-badge{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.7);padding:8px 14px;border-radius:30px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.1)}
-.red-dot{width:9px;height:9px;background:#ff3b30;border-radius:50%}
-.recording .red-dot{animation:blink 1s infinite}
-@keyframes blink{50%{opacity:0.2}}
-.status-pill{background:rgba(20,20,20,0.85);padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.2)}
-.status-pill.alert{background:#ff3b30;box-shadow:0 0 15px #ff3b30}
-#map-container{position:absolute;bottom:90px;left:14px;width:140px;height:140px;border-radius:16px;overflow:hidden;border:2px solid rgba(255,255,255,0.25);z-index:12;background:#111;pointer-events:auto}
-#map{width:100%;height:100%}
-#map.dark-map{filter:invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.2)}
-.map-label{position:absolute;bottom:0;left:0;width:100%;text-align:center;font-size:8px;background:rgba(0,0,0,0.7);padding:3px 0;z-index:500}
-.radar-arc{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);width:220px;height:50px;border-radius:50% / 100% 100% 0 0;border-top:5px solid #4caf50;z-index:10;transition:0.3s}
-.radar-arc.danger{border-color:#ff3b30;box-shadow:0 -10px 20px rgba(255,59,48,0.6)}
-.bottom-controls{display:flex;justify-content:space-around;align-items:center;padding:10px 20px 22px;background:linear-gradient(transparent,rgba(0,0,0,0.9));pointer-events:auto;width:100%}
-.btn{background:rgba(20,20,25,0.9);border:1px solid rgba(255,255,255,0.15);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center}
-.btn-record{width:64px;height:64px;border:3px solid #fff;background:#ff3b30}
-.btn-record.active-rec{background:#fff;border-color:#ff3b30;border-radius:12px}
+*{box-sizing:border-box;margin:0;padding:0}body{background:#000;color:#fff;font-family:sans-serif;height:100vh;overflow:hidden}
+#camera-container{position:relative;width:100%;height:100vh}video,#overlay{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+#overlay{z-index:5;pointer-events:none}.hud{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:14px;z-index:10;pointer-events:none}
+.top-bar{display:flex;justify-content:space-between}.rec-badge{display:flex;gap:8px;background:rgba(0,0,0,0.7);padding:8px 14px;border-radius:30px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.1)}.red-dot{width:9px;height:9px;background:#ff3b30;border-radius:50%}.recording .red-dot{animation:blink 1s infinite}@keyframes blink{50%{opacity:0.2}}
+.status-pill{background:rgba(20,20,20,0.85);padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.2)}.status-pill.alert{background:#ff3b30}
+#map-container{position:absolute;bottom:90px;left:14px;width:140px;height:140px;border-radius:16px;overflow:hidden;border:2px solid rgba(255,255,255,0.25);z-index:12;background:#111;pointer-events:auto}#map{width:100%;height:100%}#map.dark-map{filter:invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.2)}.map-label{position:absolute;bottom:0;left:0;width:100%;text-align:center;font-size:8px;background:rgba(0,0,0,0.7);padding:3px 0;z-index:500}
+.radar-arc{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);width:220px;height:50px;border-radius:50% / 100% 100% 0 0;border-top:5px solid #4caf50;z-index:10}.radar-arc.danger{border-color:#ff3b30}
+.bottom-controls{display:flex;justify-content:space-around;padding:10px 20px 22px;background:linear-gradient(transparent,rgba(0,0,0,0.9));pointer-events:auto;width:100%}
+.btn{background:rgba(20,20,25,0.9);border:1px solid rgba(255,255,255,0.15);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center}.btn-record{width:64px;height:64px;border:3px solid #fff;background:#ff3b30}.btn-record.active-rec{background:#fff;border-color:#ff3b30;border-radius:12px}
 #loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);padding:16px 22px;border-radius:20px;font-size:13px;z-index:20;text-align:center}
 #enableAudio{position:absolute;top:65%;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:30;border:0}
 svg{width:22px;height:22px;fill:currentColor}
@@ -42,20 +28,13 @@ svg{width:22px;height:22px;fill:currentColor}
 <div id="camera-container">
 <video id="webcam" autoplay playsinline muted></video>
 <canvas id="overlay"></canvas>
-<div id="loading" id="loading">Cargando IA...<br><small id="loadingSub">Esto tarda 10 seg la primera vez</small></div>
+<div id="loading">Cargando Tesla Vision...<br><small id="loadingSub">10 seg la primera vez</small></div>
 <button id="enableAudio">🔊 TOCA PARA ACTIVAR AUDIO</button>
-<div id="map-container"><div id="map" class="dark-map"></div><div class="map-label" id="mapLabel">GPS: buscando...</div></div>
+<div id="map-container"><div id="map" class="dark-map"></div><div class="map-label" id="mapLabel">GPS</div></div>
 <div class="hud">
-<div class="top-bar">
-<div class="rec-badge" id="recBadge"><div class="red-dot"></div><span id="timerTxt">VISION SYSTEM</span></div>
-<div class="status-pill" id="statusPill">SISTEMA: LISTO</div>
-</div>
+<div class="top-bar"><div class="rec-badge" id="recBadge"><div class="red-dot"></div><span id="timerTxt">VISION SYSTEM</span></div><div class="status-pill" id="statusPill">SISTEMA: LISTO</div></div>
 <div class="radar-arc" id="radarArc"></div>
-<div class="bottom-controls">
-<button class="btn" id="toggleCam"><svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg></button>
-<button class="btn btn-record" id="recordBtn"></button>
-<button class="btn" id="sentryTrigger"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button>
-</div>
+<div class="bottom-controls"><button class="btn" id="toggleCam"><svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg></button><button class="btn btn-record" id="recordBtn"></button><button class="btn" id="sentryTrigger"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button></div>
 </div>
 </div>
 <script>
@@ -69,42 +48,75 @@ function initMap(){
  map=L.map('map',{zoomControl:false,attributionControl:false,dragging:false}).setView([-34.6037,-58.3816],16);
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
  marker=L.circleMarker([-34.6037,-58.3816],{radius:7,fillColor:'#4285F4',color:'#fff',weight:2,fillOpacity:1}).addTo(map);
- if(navigator.geolocation) navigator.geolocation.watchPosition(pos=>{ const ll=[pos.coords.latitude,pos.coords.longitude]; map.setView(ll,17); marker.setLatLng(ll); mapLabel.textContent=`GPS OK`; },()=>{mapLabel.textContent="GPS: sin permiso";},{enableHighAccuracy:true});
+ if(navigator.geolocation) navigator.geolocation.watchPosition(pos=>{ const ll=[pos.coords.latitude,pos.coords.longitude]; map.setView(ll,17); marker.setLatLng(ll); mapLabel.textContent=`GPS OK`; },{},{enableHighAccuracy:true});
 }
 async function initCamera(){
  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280}},audio:true});
- window.localStream=stream; video.srcObject=stream; await video.play();
- canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+ window.localStream=stream; video.srcObject=stream; await video.play(); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
 }
 async function loadAI(){
  await tf.ready();
- loadingSub.textContent="Bajando modelo personas...";
  model=await cocoSsd.load({base:'lite_mobilenet_v2'});
- loadingSub.textContent="Bajando modelo silueta...";
  detectorPose=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
- loading.style.display='none';
- detectLoop();
+ loading.style.display='none'; detectLoop();
 }
 function speak(text){
- if(!audioEnabled) return;
- const now=Date.now(); if(now-lastVoiceAlert<4000) return; lastVoiceAlert=now;
- speechSynthesis.cancel();
- const u=new SpeechSynthesisUtterance(text); u.lang='es-AR'; u.rate=0.95; u.pitch=1;
- speechSynthesis.speak(u);
+ if(!audioEnabled) return; const now=Date.now(); if(now-lastVoiceAlert<4000) return; lastVoiceAlert=now;
+ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(text); u.lang='es-AR'; u.rate=0.95; speechSynthesis.speak(u);
 }
 function takePhotoAuto(){
  const now=Date.now(); if(now-lastPhotoTime<3000) return; lastPhotoTime=now;
- const tmp=document.createElement('canvas'); tmp.width=video.videoWidth; tmp.height=video.videoHeight;
- tmp.getContext('2d').drawImage(video,0,0);
+ const tmp=document.createElement('canvas'); tmp.width=video.videoWidth; tmp.height=video.videoHeight; tmp.getContext('2d').drawImage(video,0,0);
  const a=document.createElement('a'); a.href=tmp.toDataURL('image/jpeg',0.8); a.download=`SENTRY_${Date.now()}.jpg`; a.click();
 }
-function drawSilueta(pose){
- if(!pose.keypoints) return;
- const get=n=>pose.keypoints.find(k=>k.name===n);
- [['left_shoulder','right_shoulder'],['left_shoulder','left_elbow'],['left_elbow','left_wrist'],['right_shoulder','right_elbow'],['right_elbow','right_wrist'],['left_shoulder','left_hip'],['right_shoulder','right_hip'],['left_hip','right_hip'],['left_hip','left_knee'],['left_knee','left_ankle'],['right_hip','right_knee'],['right_knee','right_ankle']].forEach(([a,b])=>{
-  const k1=get(a),k2=get(b); if(k1&&k2&&k1.score>0.25&&k2.score>0.25){ ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.shadowColor='#fff'; ctx.shadowBlur=10; ctx.beginPath(); ctx.moveTo(k1.x,k1.y); ctx.lineTo(k2.x,k2.y); ctx.stroke(); ctx.shadowBlur=0; }
+
+// === MUÑECO TESLA 100% REAL ===
+function drawTeslaMannequin(pose){
+ const kps=pose.keypoints; const get=n=>kps.find(k=>k.name===n);
+ const ls=get('left_shoulder'), rs=get('right_shoulder'), lh=get('left_hip'), rh=get('right_hip');
+ const le=get('left_elbow'), re=get('right_elbow'), lw=get('left_wrist'), rw=get('right_wrist');
+ const lk=get('left_knee'), rk=get('right_knee'), la=get('left_ankle'), ra=get('right_ankle');
+ const nose=get('nose');
+
+ if(!ls||!rs||!lh||!rh) return;
+ if(ls.score<0.2||rs.score<0.2) return;
+
+ ctx.save();
+ ctx.shadowColor='rgba(255,255,255,0.8)'; ctx.shadowBlur=15;
+ ctx.fillStyle='#ffffff'; ctx.strokeStyle='#ffffff'; ctx.lineCap='round'; ctx.lineJoin='round';
+
+ // 1. CABEZA
+ if(nose&&nose.score>0.2){
+   const headRadius = Math.abs(ls.x-rs.x)*0.35;
+   ctx.beginPath(); ctx.arc(nose.x, nose.y-headRadius*0.5, headRadius, 0, Math.PI*2); ctx.fill();
+ }
+
+ // 2. TORSO (trapecio como Tesla)
+ ctx.beginPath();
+ ctx.moveTo(ls.x, ls.y); ctx.lineTo(rs.x, rs.y); ctx.lineTo(rh.x, rh.y); ctx.lineTo(lh.x, lh.y); ctx.closePath();
+ ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.fill();
+ ctx.lineWidth=4; ctx.stroke();
+
+ // 3. BRAZOS GORDOS
+ function drawLimb(p1,p2){
+   if(!p1||!p2||p1.score<0.2||p2.score<0.2) return;
+   ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+   ctx.lineWidth=14; ctx.strokeStyle='#ffffff'; ctx.stroke();
+   ctx.lineWidth=8; ctx.strokeStyle='rgba(255,255,255,0.9)'; ctx.stroke();
+ }
+ drawLimb(ls, le); drawLimb(le, lw); drawLimb(rs, re); drawLimb(re, rw);
+
+ // 4. PIERNAS GORDAS
+ drawLimb(lh, lk); drawLimb(lk, la); drawLimb(rh, rk); drawLimb(rk, ra);
+
+ // 5. ARTICULACIONES (puntitos negros como Tesla)
+ [ls,rs,lh,rh,le,re,lk,rk].forEach(k=>{
+   if(k&&k.score>0.2){
+     ctx.fillStyle='#000'; ctx.beginPath(); ctx.arc(k.x,k.y,4,0,Math.PI*2); ctx.fill();
+     ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(k.x,k.y,2,0,Math.PI*2); ctx.fill();
+   }
  });
- pose.keypoints.forEach(k=>{ if(k.score>0.25){ ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(k.x,k.y,5,0,6.28); ctx.fill(); } });
+ ctx.restore();
 }
 
 async function detectLoop(){
@@ -112,32 +124,26 @@ async function detectLoop(){
  if(isDetecting){ requestAnimationFrame(detectLoop); return; }
  isDetecting=true;
  try{
-  const preds=await model.detect(video,10,0.33); // UMBRAL BAJO PARA FANTASMAS PERO VISIBLE
+  const preds=await model.detect(video,10,0.33);
   ctx.clearRect(0,0,canvas.width,canvas.height);
   let found=false, best=0;
-  preds.forEach(p=>{
-   if(p.class==='person'){
-    const [x,y,w,h]=p.bbox;
-    // Ahora si dibuja el cuadro SIEMPRE
-    ctx.strokeStyle='#ff3b30'; ctx.lineWidth=3; ctx.strokeRect(x,y,w,h);
-    ctx.fillStyle='#ff3b30'; ctx.fillRect(x,Math.max(0,y-20),90,20);
-    ctx.fillStyle='#fff'; ctx.font='bold 12px sans-serif'; ctx.fillText(`PERSONA ${Math.round(p.score*100)}%`,x+4,Math.max(12,y-6));
-    found=true; best=Math.max(best,p.score);
-   }
-  });
+  preds.forEach(p=>{ if(p.class==='person'){ found=true; best=Math.max(best,p.score); } });
   detectionHistory.push(found); if(detectionHistory.length>3) detectionHistory.shift();
   if(detectionHistory.filter(v=>v).length>=1){
-   if(detectorPose){ try{ const poses=await detectorPose.estimatePoses(video,{maxPoses:1}); if(poses[0]) drawSilueta(poses[0]); }catch(e){} }
+   if(detectorPose){
+     const poses=await detectorPose.estimatePoses(video,{maxPoses:1,flipHorizontal:false});
+     if(poses&&poses[0]&&poses[0].keypoints) drawTeslaMannequin(poses[0]);
+   }
    statusPill.textContent=`PERSONA ${Math.round(best*100)}%`; statusPill.classList.add('alert'); radarArc.classList.add('danger');
    speak('Persona detectada'); takePhotoAuto();
    if(!isRecording){ startRecording(true); if(navigator.vibrate) navigator.vibrate([100,50,200]); }
   } else {
    statusPill.textContent='SISTEMA: LISTO'; statusPill.classList.remove('alert'); radarArc.classList.remove('danger');
   }
- }catch(e){ console.log(e); }
- isDetecting=false; setTimeout(()=>requestAnimationFrame(detectLoop),120);
+ }catch(e){}
+ isDetecting=false; setTimeout(()=>requestAnimationFrame(detectLoop),100);
 }
-function getMime(){ for(let m of ['video/webm;codecs=vp9,opus','video/webm','video/mp4']) if(MediaRecorder.isTypeSupported(m)) return m; return ''; }
+function getMime(){ for(let m of ['video/webm;codecs=vp9,opus','video/webm']) if(MediaRecorder.isTypeSupported(m)) return m; return ''; }
 function startRecording(auto=false){
  if(isRecording) return; recordedChunks=[]; const mime=getMime();
  mediaRecorder=new MediaRecorder(window.localStream,mime?{mimeType:mime}:{}); mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
@@ -146,12 +152,10 @@ function startRecording(auto=false){
  seconds=0; timerInterval=setInterval(()=>{ seconds++; const m=String(Math.floor(seconds/60)).padStart(2,'0'); const s=String(seconds%60).padStart(2,'0'); timerTxt.textContent=`REC ${m}:${s}`; },1000);
 }
 function stopRecording(){ if(mediaRecorder) mediaRecorder.stop(); isRecording=false; recordBtn.classList.remove('active-rec'); recBadge.classList.remove('recording'); clearInterval(timerInterval); timerTxt.textContent="VISION SYSTEM"; }
-
 enableAudioBtn.addEventListener('click',()=>{ audioEnabled=true; enableAudioBtn.style.display='none'; speak('Modo centinela activado'); });
 recordBtn.addEventListener('click',()=>isRecording?stopRecording():startRecording(false));
 document.getElementById('toggleCam').addEventListener('click',async()=>{ await initCamera(); });
 document.getElementById('sentryTrigger').addEventListener('click',()=>{ if(!audioEnabled){ audioEnabled=true; enableAudioBtn.style.display='none'; } speak('Modo centinela activado'); });
-
 window.addEventListener('load',async()=>{ initMap(); await initCamera(); await loadAI(); });
 </script>
 </body>
