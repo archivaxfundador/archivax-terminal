@@ -18,115 +18,122 @@
 #mapWrap{position:absolute;bottom:90px;left:14px;width:140px;height:140px;border-radius:16px;overflow:hidden;border:2px solid rgba(255,255,255,0.25);z-index:12;background:#111;pointer-events:auto}#map{width:100%;height:100%}#map.dark{filter:invert(1) hue-rotate(180deg) brightness(0.8) contrast(1.2)}.mapL{position:absolute;bottom:0;left:0;width:100%;text-align:center;font-size:8px;background:rgba(0,0,0,0.7);padding:3px 0;z-index:500}
 .radar{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);width:220px;height:50px;border-radius:50% / 100% 100% 0 0;border-top:5px solid #4caf50;z-index:10}.radar.danger{border-color:#ff3b30}
 .bottom{display:flex;justify-content:space-around;padding:10px 20px 22px;background:linear-gradient(transparent,rgba(0,0,0,0.9));pointer-events:auto;width:100%}
-.btn{background:rgba(20,20,25,0.9);border:1px solid rgba(255,255,255,0.15);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center}.btnR{width:64px;height:64px;border:3px solid #fff;background:#ff3b30}.btnR.on{background:#fff;border-color:#ff3b30;border-radius:12px}
+.btn{background:rgba(20,20,25,0.9);border:1px solid rgba(255,255,255,0.15);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}.btnR{width:64px;height:64px;border:3px solid #fff;background:#ff3b30}.btnR.on{background:#fff;border-color:#ff3b30;border-radius:12px}
 #load{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);padding:16px 22px;border-radius:20px;font-size:13px;z-index:20;text-align:center}
 #audioBtn{position:absolute;top:62%;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:30;border:0}
-svg{width:22px;height:22px;fill:currentColor}
+svg{width:20px;height:20px;fill:currentColor}
 </style>
 </head>
 <body>
 <div id="cam">
 <video id="webcam" autoplay playsinline muted></video>
 <canvas id="overlay"></canvas>
-<div id="load">Iniciando...<br><small id="loadSub">Dame 10 segundos</small></div>
+<div id="load">Cargando visión...<br><small id="loadSub">10 segundos</small></div>
 <button id="audioBtn">🔊 TOCA PARA ACTIVAR AUDIO</button>
 <div id="mapWrap"><div id="map" class="dark"></div><div class="mapL" id="mapLabel">GPS buscando...</div></div>
 <div class="hud">
 <div class="top"><div class="badge" id="recBadge"><div class="dot"></div><span id="timerTxt">VISION SYSTEM</span></div><div class="pill" id="statusPill">SISTEMA: LISTO</div></div>
-<div class="radar" id="radarArc"></div>
-<div class="bottom"><button class="btn" id="toggleCam"><svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg></button><button class="btn btnR" id="recordBtn"></button><button class="btn" id="sentryBtn"><svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg></button></div>
+<div class="radar" id="radar"></div>
+<div class="bottom">
+<button class="btn" id="btnCam">CAM</button>
+<button class="btn" id="btnPhoto">FOTO</button>
+<button class="btn btnR" id="btnRec"></button>
+<button class="btn" id="btnVoice">VOZ</button>
+</div>
 </div>
 </div>
 <script>
 const video=document.getElementById('webcam'), canvas=document.getElementById('overlay'), ctx=canvas.getContext('2d');
-const statusPill=document.getElementById('statusPill'), radar=document.getElementById('radarArc'), load=document.getElementById('load'), loadSub=document.getElementById('loadSub');
-const mapLabel=document.getElementById('mapLabel'), timerTxt=document.getElementById('timerTxt'), recBadge=document.getElementById('recBadge'), recordBtn=document.getElementById('recordBtn'), audioBtn=document.getElementById('audioBtn');
-let model=null, poseDetector=null, detecting=false, audioOk=false;
-let recorder=null, chunks=[], rec=false, tInt=null, sec=0, lastVoice=0, lastPhoto=0, hist=[], map, marker;
+const statusPill=document.getElementById('statusPill'), radar=document.getElementById('radar'), load=document.getElementById('load'), loadSub=document.getElementById('loadSub');
+const mapLabel=document.getElementById('mapLabel'), timerTxt=document.getElementById('timerTxt'), recBadge=document.getElementById('recBadge');
+let model=null, poseDetector=null, detecting=false, audioOk=false, rec=false, recorder=null, chunks=[], tInt=null, sec=0, lastVoice=0, map, marker;
 
 function initMap(){
- try{
-  map=L.map('map',{zoomControl:false,attributionControl:false,dragging:false}).setView([-34.6,-58.38],16);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
-  marker=L.circleMarker([-34.6,-58.38],{radius:7,fillColor:'#4285F4',color:'#fff',weight:2,fillOpacity:1}).addTo(map);
-  if(navigator.geolocation) navigator.geolocation.watchPosition(p=>{ const ll=[p.coords.latitude,p.coords.longitude]; map.setView(ll,17); marker.setLatLng(ll); mapLabel.textContent='GPS OK'; });
- }catch(e){ mapLabel.textContent='GPS no'; }
+ map=L.map('map',{zoomControl:false,attributionControl:false,dragging:false}).setView([-34.6,-58.38],16);
+ L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
+ marker=L.circleMarker([-34.6,-58.38],{radius:7,fillColor:'#4285F4',color:'#fff',weight:2,fillOpacity:1}).addTo(map);
+ if(navigator.geolocation) navigator.geolocation.watchPosition(p=>{ const ll=[p.coords.latitude,p.coords.longitude]; map.setView(ll,17); marker.setLatLng(ll); mapLabel.textContent='GPS OK'; });
 }
 async function initCam(){
- try{
-  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:true});
-  window.localStream=s; video.srcObject=s; await video.play(); canvas.width=video.videoWidth||1280; canvas.height=video.videoHeight||720;
- }catch(e){ load.innerHTML='Error cámara<br><small>Usa HTTPS y dale permiso</small>'; console.log(e); }
+ const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:true});
+ window.localStream=s; video.srcObject=s; await video.play(); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
 }
 async function loadAI(){
- try{
-  await tf.ready();
-  loadSub.textContent='Cargando detector...';
-  model=await cocoSsd.load({base:'lite_mobilenet_v2'});
-  loadSub.textContent='Cargando muñeco...';
-  poseDetector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
-  load.style.display='none';
-  loop();
- }catch(e){ load.innerHTML='Sin internet no carga IA<br><small>Conectate y recarga</small>'; console.log(e); }
+ await tf.ready();
+ loadSub.textContent='Detector personas...'; model=await cocoSsd.load({base:'lite_mobilenet_v2'});
+ loadSub.textContent='Detector muñeco...'; poseDetector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
+ load.style.display='none'; loop();
 }
 function speak(t){
- if(!audioOk) return; const now=Date.now(); if(now-lastVoice<4000) return; lastVoice=now;
- speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='es-AR'; u.rate=0.95; speechSynthesis.speak(u);
+ if(!audioOk) return; const now=Date.now(); if(now-lastVoice<3000) return; lastVoice=now;
+ speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='es-AR'; speechSynthesis.speak(u);
 }
-function photo(){
- const now=Date.now(); if(now-lastPhoto<3000) return; lastPhoto=now;
+function takePhoto(){
  const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight; c.getContext('2d').drawImage(video,0,0);
- const a=document.createElement('a'); a.href=c.toDataURL('image/jpeg',0.8); a.download=`SENTRY_${Date.now()}.jpg`; a.click();
+ const a=document.createElement('a'); a.href=c.toDataURL('image/jpeg',0.9); a.download=`FOTO_${Date.now()}.jpg`; a.click();
+ statusPill.textContent='FOTO GUARDADA'; setTimeout(()=>statusPill.textContent='SISTEMA: LISTO',1500);
 }
+
+// DIBUJO MUÑECO REAL - AHORA INDEPENDIENTE
 function drawMannequin(pose){
  const g=n=>pose.keypoints.find(k=>k.name===n);
  const ls=g('left_shoulder'), rs=g('right_shoulder'), lh=g('left_hip'), rh=g('right_hip');
- if(!ls||!rs||!lh||!rh||ls.score<0.2) return;
- const le=g('left_elbow'), re=g('right_elbow'), lw=g('left_wrist'), rw=g('right_wrist');
- const lk=g('left_knee'), rk=g('right_knee'), la=g('left_ankle'), ra=g('right_ankle'), nose=g('nose');
- ctx.save(); ctx.shadowColor='rgba(255,255,255,0.7)'; ctx.shadowBlur=12;
+ const nose=g('nose'), le=g('left_elbow'), re=g('right_elbow'), lw=g('left_wrist'), rw=g('right_wrist');
+ const lk=g('left_knee'), rk=g('right_knee'), la=g('left_ankle'), ra=g('right_ankle');
+ if(!ls||!rs) return;
+ ctx.save();
+ ctx.shadowColor='rgba(255,255,255,0.8)'; ctx.shadowBlur=12;
  // cabeza
- if(nose&&nose.score>0.2){ const r=Math.abs(ls.x-rs.x)*0.32; ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(nose.x, nose.y-r*0.4, r, 0, 6.28); ctx.fill(); }
- // torso
- ctx.fillStyle='rgba(255,255,255,0.95)'; ctx.strokeStyle='#fff'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(ls.x,ls.y); ctx.lineTo(rs.x,rs.y); ctx.lineTo(rh.x,rh.y); ctx.lineTo(lh.x,lh.y); ctx.closePath(); ctx.fill(); ctx.stroke();
- function limb(a,b){ if(!a||!b||a.score<0.2||b.score<0.2) return; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineWidth=13; ctx.strokeStyle='#fff'; ctx.lineCap='round'; ctx.stroke(); }
- limb(ls,le); limb(le,lw); limb(rs,re); limb(re,rw); limb(lh,lk); limb(lk,la); limb(rh,rk); limb(rk,ra);
+ if(nose&&nose.score>0.2){ const r=Math.max(12, Math.abs(ls.x-rs.x)*0.35); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(nose.x, nose.y-10, r, 0, Math.PI*2); ctx.fill(); }
+ // torso - si tenemos caderas
+ if(lh&&rh&&lh.score>0.2&&rh.score>0.2){
+   ctx.fillStyle='#fff'; ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.beginPath();
+   ctx.moveTo(ls.x,ls.y); ctx.lineTo(rs.x,rs.y); ctx.lineTo(rh.x,rh.y); ctx.lineTo(lh.x,lh.y); ctx.closePath(); ctx.fill();
+ }
+ function limb(a,b){ if(!a||!b||a.score<0.15||b.score<0.15) return; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineWidth=14; ctx.lineCap='round'; ctx.strokeStyle='#fff'; ctx.stroke(); }
+ limb(ls,le); limb(le,lw); limb(rs,re); limb(re,rw);
+ limb(lh,lk); limb(lk,la); limb(rh,rk); limb(rk,ra);
+ // si no hay caderas, igual dibuja hombros a rodillas
+ if(!lh||lh.score<0.2){ if(ls&&lk) limb(ls,lk); if(rs&&rk) limb(rs,rk); }
  ctx.restore();
 }
+
 async function loop(){
- if(!model||video.paused||video.readyState<2){ requestAnimationFrame(loop); return; }
+ if(!model||!poseDetector||video.paused||video.readyState<2){ requestAnimationFrame(loop); return; }
  if(detecting){ requestAnimationFrame(loop); return; }
  detecting=true;
  try{
-  const preds=await model.detect(video,8,0.35);
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  let found=false, best=0;
+  // 1. DETECTA PERSONA (caja)
+  const preds=await model.detect(video,6,0.40);
+  let found=false;
   preds.forEach(p=>{
    if(p.class==='person'){
     const [x,y,w,h]=p.bbox; ctx.strokeStyle='#ff3b30'; ctx.lineWidth=2; ctx.strokeRect(x,y,w,h);
-    ctx.fillStyle='#ff3b30'; ctx.fillRect(x,Math.max(0,y-18),86,18); ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.fillText(`PERSONA ${Math.round(p.score*100)}%`,x+4,Math.max(10,y-5));
-    found=true; best=Math.max(best,p.score);
+    ctx.fillStyle='#ff3b30'; ctx.fillRect(x,y-18,80,18); ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.fillText(`PERSONA ${Math.round(p.score*100)}%`,x+4,y-5);
+    found=true;
    }
   });
-  hist.push(found); if(hist.length>3) hist.shift();
-  if(hist.filter(v=>v).length>=1){
-   if(poseDetector){ try{ const ps=await poseDetector.estimatePoses(video,{maxPoses:1}); if(ps[0]) drawMannequin(ps[0]); }catch(e){} }
-   statusPill.textContent=`PERSONA ${Math.round(best*100)}%`; statusPill.classList.add('alert'); radar.classList.add('danger');
-   speak('Persona detectada'); photo();
-   if(!rec){ startRec(true); if(navigator.vibrate) navigator.vibrate([100,50,200]); }
-  }else{
-   if(hist.filter(v=>!v).length>=2){ statusPill.textContent='SISTEMA: LISTO'; statusPill.classList.remove('alert'); radar.classList.remove('danger'); }
+  // 2. DETECTA MUÑECO (SIEMPRE, aunque no haya caja)
+  const poses=await poseDetector.estimatePoses(video,{maxPoses:1,flipHorizontal:false});
+  if(poses&&poses[0]&&poses[0].keypoints){
+   const hasBody = poses[0].keypoints.filter(k=>k.score>0.2).length >= 4;
+   if(hasBody){ drawMannequin(poses[0]); found=true; }
   }
+  if(found){ statusPill.textContent='PERSONA DETECTADA'; statusPill.classList.add('alert'); radar.classList.add('danger'); }
+  else{ statusPill.textContent='SISTEMA: LISTO'; statusPill.classList.remove('alert'); radar.classList.remove('danger'); }
  }catch(e){ console.log(e); }
- detecting=false; setTimeout(()=>requestAnimationFrame(loop),100);
+ detecting=false; setTimeout(()=>requestAnimationFrame(loop),80);
 }
 function getMime(){ for(let m of ['video/webm;codecs=vp9,opus','video/webm']) if(MediaRecorder.isTypeSupported(m)) return m; return ''; }
-function startRec(auto){ if(rec) return; chunks=[]; const mime=getMime(); recorder=new MediaRecorder(window.localStream,mime?{mimeType:mime}:{}); recorder.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); }; recorder.onstop=()=>{ if(!auto){ const b=new Blob(chunks,{type:mime}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`DASHCAM_${Date.now()}.webm`; a.click(); } }; recorder.start(100); rec=true; recordBtn.classList.add('on'); recBadge.classList.add('rec'); sec=0; tInt=setInterval(()=>{ sec++; const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); timerTxt.textContent=`REC ${m}:${s}`; },1000); }
-function stopRec(){ if(recorder) recorder.stop(); rec=false; recordBtn.classList.remove('on'); recBadge.classList.remove('rec'); clearInterval(tInt); timerTxt.textContent='VISION SYSTEM'; }
-audioBtn.addEventListener('click',()=>{ audioOk=true; audioBtn.style.display='none'; speak('Modo centinela activado'); });
-recordBtn.addEventListener('click',()=>rec?stopRec():startRec(false));
-document.getElementById('toggleCam').addEventListener('click',async()=>{ await initCam(); });
-document.getElementById('sentryBtn').addEventListener('click',()=>{ if(!audioOk){ audioOk=true; audioBtn.style.display='none'; } speak('Modo centinela activado'); });
+function startRec(){ if(rec) return; chunks=[]; const mime=getMime(); recorder=new MediaRecorder(window.localStream,mime?{mimeType:mime}:{}); recorder.ondataavailable=e=>{ if(e.data.size>0) chunks.push(e.data); }; recorder.onstop=()=>{ const b=new Blob(chunks,{type:mime}); const u=URL.createObjectURL(b); const a=document.createElement('a'); a.href=u; a.download=`VIDEO_${Date.now()}.webm`; a.click(); }; recorder.start(100); rec=true; document.getElementById('btnRec').classList.add('on'); recBadge.classList.add('rec'); sec=0; tInt=setInterval(()=>{ sec++; const m=String(Math.floor(sec/60)).padStart(2,'0'); const s=String(sec%60).padStart(2,'0'); timerTxt.textContent=`REC ${m}:${s}`; },1000); }
+function stopRec(){ if(recorder) recorder.stop(); rec=false; document.getElementById('btnRec').classList.remove('on'); recBadge.classList.remove('rec'); clearInterval(tInt); timerTxt.textContent='VISION SYSTEM'; }
+
+document.getElementById('audioBtn').addEventListener('click',()=>{ audioOk=true; document.getElementById('audioBtn').style.display='none'; speak('Sistema listo'); });
+document.getElementById('btnCam').addEventListener('click',initCam);
+document.getElementById('btnPhoto').addEventListener('click',takePhoto);
+document.getElementById('btnRec').addEventListener('click',()=>rec?stopRec():startRec());
+document.getElementById('btnVoice').addEventListener('click',()=>{ if(!audioOk){ audioOk=true; document.getElementById('audioBtn').style.display='none'; } speak('Sistema listo, vigilando'); });
 window.addEventListener('load',async()=>{ initMap(); await initCam(); await loadAI(); });
 </script>
 </body>
