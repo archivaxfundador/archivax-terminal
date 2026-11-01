@@ -3,43 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>Tesla Cam & Autopilot HUD</title>
+<title>Dashcam Vision + Map</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
 <style>
- * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
- body { background:#000; color:#fff; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; height: 100vh; display:flex; flex-direction:column; overflow:hidden; }
- #camera-container { position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; background:#000; }
- video { width:100%; height:100%; object-fit:cover; }
- .tesla-hud { position:absolute; top:0; left:0; width:100%; height:100%; pointer-events:none; display:flex; flex-direction:column; justify-content:space-between; padding:16px; }
- .top-bar { display:flex; justify-content:space-between; align-items:center; z-index:10; }
- .rec-badge { display:flex; align-items:center; gap:8px; background:rgba(0,0,0,0.75); border:1px solid rgba(255,255,255,0.1); padding:8px 14px; border-radius:30px; font-size:12px; font-weight:700; }
- .red-dot { width:10px; height:10px; background:#ff3b30; border-radius:50%; }
- .recording .red-dot { animation:blink 1s infinite; }
- @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
- .status-pill { background:rgba(255,255,255,0.15); padding:6px 12px; border-radius:6px; font-size:11px; font-weight:600; backdrop-filter:blur(10px); border:1px solid rgba(255,255,255,0.1); }
- .parking-lines { position:absolute; top:30%; left:10%; width:80%; height:55%; border-left:4px dashed rgba(255,235,59,0.5); border-right:4px dashed rgba(255,235,59,0.5); transform:perspective(200px) rotateX(40deg); transform-origin:bottom center; display:flex; flex-direction:column; justify-content:space-between; }
- .parking-lines::before { content:''; width:100%; border-top:3px solid rgba(255,59,48,0.6); }
- .parking-lines::after { content:''; width:100%; border-bottom:3px solid rgba(76,175,80,0.6); }
- .radar-arc { position:absolute; bottom:120px; left:50%; transform:translateX(-50%); width:260px; height:60px; border-radius:50% / 100% 100% 0 0; border-top:6px solid #4caf50; box-shadow:0 -10px 20px rgba(76,175,80,0.2); animation:pulse-radar 2s infinite ease-in-out; }
- @keyframes pulse-radar { 0%,100%{border-color:#4caf50; opacity:0.8} 50%{border-color:#ff9500; opacity:0.5} }
- .bottom-controls { display:flex; justify-content:space-around; align-items:center; width:100%; padding:10px 20px 25px; background:linear-gradient(transparent, rgba(0,0,0,0.8)); z-index:10; pointer-events:auto; }
- .btn { background:rgba(20,20,25,0.85); border:1px solid rgba(255,255,255,0.15); color:white; padding:14px; border-radius:50%; width:56px; height:56px; cursor:pointer; display:flex; align-items:center; justify-content:center; backdrop-filter:blur(8px); }
- .btn:active { transform:scale(0.92); }
- .btn-record { width:68px; height:68px; border:3px solid #fff; background:#ff3b30; }
- .btn-record.active-rec { background:#fff; border-color:#ff3b30; border-radius:12px; animation:pulse-rec 1.5s infinite; }
- @keyframes pulse-rec { 0%{box-shadow:0 0 0 0 rgba(255,59,48,0.7)} 70%{box-shadow:0 0 0 15px rgba(255,59,48,0)} 100%{box-shadow:0 0 0 0 rgba(255,59,48,0)} }
- svg { width:24px; height:24px; fill:currentColor; }
+ *{box-sizing:border-box;margin:0;padding:0;user-select:none}
+ body{background:#000;color:#fff;font-family:-apple-system,sans-serif;height:100vh;overflow:hidden}
+ #camera-container{position:relative;width:100%;height:100%}
+ video, #overlay{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+ #overlay{z-index:5;pointer-events:none}
+ .hud{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none;display:flex;flex-direction:column;justify-content:space-between;padding:14px;z-index:10}
+ .top-bar{display:flex;justify-content:space-between;align-items:center}
+ .rec-badge{display:flex;align-items:center;gap:8px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.1);padding:8px 14px;border-radius:30px;font-size:11px;font-weight:700}
+ .red-dot{width:9px;height:9px;background:#ff3b30;border-radius:50%}
+ .recording .red-dot{animation:blink 1s infinite}
+ @keyframes blink{0%,100%{opacity:1}50%{opacity:0.2}}
+ .status-pill{background:rgba(20,20,20,0.8);padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700;backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,0.1);transition:all 0.3s}
+ .status-pill.alert{background:rgba(255,59,48,0.9);box-shadow:0 0 15px #ff3b30}
+ 
+ /* MAPA ESTILO TESLA */
+ #map-container{position:absolute;bottom:90px;left:14px;width:135px;height:135px;border-radius:16px;overflow:hidden;border:2px solid rgba(255,255,255,0.2);box-shadow:0 8px 20px rgba(0,0,0,0.6);z-index:12;pointer-events:auto}
+ #map{width:100%;height:100%;background:#111}
+ .map-label{position:absolute;bottom:2px;left:0;width:100%;text-align:center;font-size:8px;font-weight:700;letter-spacing:1px;background:rgba(0,0,0,0.6);padding:2px 0}
+
+ .parking-lines{position:absolute;top:28%;left:12%;width:76%;height:52%;border-left:3px dashed rgba(255,255,255,0.25);border-right:3px dashed rgba(255,255,255,0.25);transform:perspective(200px) rotateX(38deg);transform-origin:bottom center}
+ .radar-arc{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);width:220px;height:50px;border-radius:50% / 100% 100% 0 0;border-top:5px solid #4caf50;transition:all 0.3s;z-index:10}
+ .radar-arc.danger{border-color:#ff3b30;box-shadow:0 -10px 25px rgba(255,59,48,0.6)}
+ .bottom-controls{display:flex;justify-content:space-around;align-items:center;width:100%;padding:10px 20px 22px;background:linear-gradient(transparent, rgba(0,0,0,0.85));pointer-events:auto}
+ .btn{background:rgba(20,20,25,0.9);border:1px solid rgba(255,255,255,0.15);color:white;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center}
+ .btn-record{width:64px;height:64px;border:3px solid #fff;background:#ff3b30}
+ .btn-record.active-rec{background:#fff;border-color:#ff3b30;border-radius:14px}
+ #loading{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.85);padding:12px 18px;border-radius:20px;font-size:12px;z-index:20}
+ svg{width:22px;height:22px;fill:currentColor}
 </style>
+<script type="importmap">
+{ "imports": { "@tensorflow/tfjs": "https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@4.20.0/dist/tf.min.js", "@tensorflow-models/coco-ssd": "https://cdn.jsdelivr.net/npm/@tensorflow-models/coco-ssd@2.2.3/dist/coco-ssd.min.js" } }
+</script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
 <body>
 <div id="camera-container">
  <video id="webcam" autoplay playsinline muted></video>
- <div class="tesla-hud">
+ <canvas id="overlay"></canvas>
+ <div id="loading">Iniciando visión...</div>
+ 
+ <!-- MAPA -->
+ <div id="map-container"><div id="map"></div><div class="map-label">GPS • SENTRY</div></div>
+
+ <div class="hud">
   <div class="top-bar">
-   <div class="rec-badge" id="recBadge"><div class="red-dot"></div><span id="timerTxt">TESLA DASHCAM</span></div>
-   <div class="status-pill">AUTOPILOT: READY</div>
+   <div class="rec-badge" id="recBadge"><div class="red-dot"></div><span id="timerTxt">VISION SYSTEM</span></div>
+   <div class="status-pill" id="statusPill">SISTEMA: LISTO</div>
   </div>
   <div class="parking-lines"></div>
-  <div class="radar-arc"></div>
+  <div class="radar-arc" id="radarArc"></div>
   <div class="bottom-controls">
    <button class="btn" id="toggleCam"><svg viewBox="0 0 24 24"><path d="M19 8l-4 4h3c0 3.31-2.69 6-6 6-1.01 0-1.97-.25-2.8-.7l-1.46 1.46C8.97 19.54 10.43 20 12 20c4.42 0 8-3.58 8-8h3l-4-4zM6 12c0-3.31 2.69-6 6-6 1.01 0 1.97.25 2.8.7l1.46-1.46C15.03 4.46 13.57 4 12 4c-4.42 0-8 3.58-8 8H1l4 4 4-4H6z"/></svg></button>
    <button class="btn btn-record" id="recordBtn"></button>
@@ -48,118 +64,118 @@
  </div>
 </div>
 
-<script>
-const video = document.getElementById('webcam');
-const toggleCamBtn = document.getElementById('toggleCam');
-const recordBtn = document.getElementById('recordBtn');
-const recBadge = document.getElementById('recBadge');
-const timerTxt = document.getElementById('timerTxt');
+<script type="module">
+import * as cocoSsdModule from '@tensorflow-models/coco-ssd';
+import * as tf from '@tensorflow/tfjs';
 
-let currentFacingMode = 'environment';
-let mediaRecorder;
-let recordedChunks = [];
-let isRecording = false;
-let timerInterval;
-let seconds = 0;
+const video=document.getElementById('webcam'), canvas=document.getElementById('overlay'), ctx=canvas.getContext('2d');
+const statusPill=document.getElementById('statusPill'), radarArc=document.getElementById('radarArc'), loading=document.getElementById('loading');
+const recBadge=document.getElementById('recBadge'), timerTxt=document.getElementById('timerTxt'), recordBtn=document.getElementById('recordBtn');
 
-async function initCamera() {
- try {
-  if (window.localStream) {
-   window.localStream.getTracks().forEach(t => t.stop());
+let currentFacingMode='environment', model, isDetecting=false;
+let mediaRecorder, recordedChunks=[], isRecording=false, timerInterval, seconds=0;
+let lastVoiceAlert=0, lastPhotoTime=0;
+
+// --- MAPA ---
+let map, marker;
+function initMap(){
+ map = L.map('map', {zoomControl:false, attributionControl:false, dragging:false, scrollWheelZoom:false}).setView([-34.6037,-58.3816], 16);
+ L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {maxZoom:19}).addTo(map);
+ marker = L.circleMarker([-34.6037,-58.3816], {radius:6, fillColor:'#4285F4', color:'#fff', weight:2, fillOpacity:1}).addTo(map);
+ if(navigator.geolocation){
+  navigator.geolocation.watchPosition(pos=>{
+   const latlng=[pos.coords.latitude, pos.coords.longitude];
+   map.setView(latlng, 17);
+   marker.setLatLng(latlng);
+  }, null, {enableHighAccuracy:true});
+ }
+}
+
+// --- CAMARA ---
+async function initCamera(){
+ if(window.localStream) window.localStream.getTracks().forEach(t=>t.stop());
+ const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:currentFacingMode,width:{ideal:1280},height:{ideal:720}},audio:true});
+ window.localStream=stream; video.srcObject=stream; await video.play();
+ canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+}
+async function loadAI(){
+ await tf.ready();
+ model=await cocoSsd.load({base:'lite_mobilenet_v2'});
+ loading.style.display='none';
+ detectLoop();
+}
+
+function speak(text){
+ const now=Date.now();
+ if(now-lastVoiceAlert < 5000) return; // no spamear voz
+ lastVoiceAlert=now;
+ const utter=new SpeechSynthesisUtterance(text);
+ utter.lang='es-AR'; utter.rate=1.1; utter.volume=1;
+ speechSynthesis.speak(utter);
+}
+
+function takePhotoAuto(){
+ const now=Date.now();
+ if(now-lastPhotoTime < 4000) return;
+ lastPhotoTime=now;
+ const tmpCanvas=document.createElement('canvas');
+ tmpCanvas.width=video.videoWidth; tmpCanvas.height=video.videoHeight;
+ tmpCanvas.getContext('2d').drawImage(video,0,0);
+ const url=tmpCanvas.toDataURL('image/jpeg');
+ const a=document.createElement('a'); a.href=url; a.download=`SENTRY_FOTO_${Date.now()}.jpg`; a.click();
+}
+
+async function detectLoop(){
+ if(!model || video.paused) { requestAnimationFrame(detectLoop); return; }
+ if(isDetecting){ requestAnimationFrame(detectLoop); return; }
+ isDetecting=true;
+ const preds=await model.detect(video, 8, 0.55);
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+ let personFound=false;
+ preds.forEach(p=>{
+  if(['person','car','truck','motorcycle'].includes(p.class)){
+   if(p.class==='person') personFound=true;
+   const [x,y,w,h]=p.bbox;
+   ctx.strokeStyle=p.class==='person'?'#ff3b30':'#38ff7a';
+   ctx.lineWidth=2.5; ctx.strokeRect(x,y,w,h);
+   ctx.fillStyle=p.class==='person'?'#ff3b30':'#38ff7a';
+   const label=`${p.class.toUpperCase()} ${Math.round(p.score*100)}%`;
+   ctx.fillRect(x, y-18, ctx.measureText(label).width+12, 18);
+   ctx.fillStyle='#000'; ctx.font='11px sans-serif'; ctx.fillText(label, x+4, y-5);
   }
-  const stream = await navigator.mediaDevices.getUserMedia({
-   video: { facingMode: currentFacingMode, width: { ideal: 1920 }, height: { ideal: 1080 } },
-   audio: true
-  });
-  window.localStream = stream;
-  video.srcObject = stream;
-  await video.play();
- } catch (err) {
-  console.error(err);
-  alert("Necesitás HTTPS y dar permiso de cámara. En iPhone usá Safari y no modo privado.");
+ });
+
+ if(personFound){
+  statusPill.textContent='⚠️ PERSONA DETECTADA';
+  statusPill.classList.add('alert'); radarArc.classList.add('danger');
+  speak('Persona detectada. Modo centinela activado');
+  takePhotoAuto();
+  if(!isRecording) startRecording(true);
+  if(navigator.vibrate) navigator.vibrate([120,60,120]);
+ } else {
+  statusPill.textContent='SISTEMA: LISTO'; statusPill.classList.remove('alert'); radarArc.classList.remove('danger');
  }
+ isDetecting=false;
+ setTimeout(()=>requestAnimationFrame(detectLoop),180);
 }
 
-function getSupportedMimeType() {
- const types = [
-  'video/webm;codecs=vp9,opus',
-  'video/webm;codecs=vp8,opus',
-  'video/webm',
-  'video/mp4;codecs=h264,aac',
-  'video/mp4'
- ];
- for (let t of types) {
-  if (MediaRecorder.isTypeSupported(t)) return t;
- }
- return '';
+function getMime(){ const t=['video/webm;codecs=vp9,opus','video/webm','video/mp4']; for(let m of t) if(MediaRecorder.isTypeSupported(m)) return m; return '';}
+function startRecording(auto=false){
+ if(isRecording) return;
+ recordedChunks=[]; const mime=getMime();
+ mediaRecorder=new MediaRecorder(window.localStream, mime?{mimeType:mime}:undefined);
+ mediaRecorder.ondataavailable=e=>{ if(e.data.size>0) recordedChunks.push(e.data); };
+ mediaRecorder.onstop=()=>{ if(!auto){ const blob=new Blob(recordedChunks,{type:mime}); const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=`DASHCAM_${Date.now()}.webm`; a.click(); } };
+ mediaRecorder.start(100); isRecording=true; recordBtn.classList.add('active-rec'); recBadge.classList.add('recording');
+ seconds=0; timerInterval=setInterval(()=>{ seconds++; let m=Math.floor(seconds/60).toString().padStart(2,'0'); let s=(seconds%60).toString().padStart(2,'0'); timerTxt.innerText=`REC ${m}:${s}`; },1000);
 }
+function stopRecording(){ if(mediaRecorder) mediaRecorder.stop(); isRecording=false; recordBtn.classList.remove('active-rec'); recBadge.classList.remove('recording'); clearInterval(timerInterval); timerTxt.innerText="VISION SYSTEM"; }
 
-toggleCamBtn.addEventListener('click', () => {
- currentFacingMode = currentFacingMode === 'environment' ? 'user' : 'environment';
- initCamera();
-});
+recordBtn.addEventListener('click', ()=> isRecording?stopRecording():startRecording(false));
+document.getElementById('toggleCam').addEventListener('click', async()=>{ currentFacingMode=currentFacingMode==='environment'?'user':'environment'; await initCamera(); });
+document.getElementById('sentryTrigger').addEventListener('click', ()=>{ speak('Modo centinela activado, vigilando el entorno'); });
 
-recordBtn.addEventListener('click', () => {
- if (!isRecording) startRecording();
- else stopRecording();
-});
-
-function startRecording() {
- recordedChunks = [];
- const mimeType = getSupportedMimeType();
- console.log("Grabando con:", mimeType);
- 
- try {
-  mediaRecorder = new MediaRecorder(window.localStream, mimeType ? { mimeType } : undefined);
- } catch(e) {
-  alert("Este navegador no soporta grabación");
-  return;
- }
-
- mediaRecorder.ondataavailable = (e) => { if (e.data.size > 0) recordedChunks.push(e.data); };
-
- mediaRecorder.onstop = () => {
-  const blob = new Blob(recordedChunks, { type: mimeType || 'video/webm' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.style.display = 'none';
-  a.href = url;
-  const ext = mimeType.includes('mp4') ? 'mp4' : 'webm';
-  a.download = `TeslaCam_${new Date().toISOString().slice(0,19).replace(/:/g,'-')}.${ext}`;
-  document.body.appendChild(a);
-  a.click();
-  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(url); }, 100);
- };
-
- mediaRecorder.start(100);
- isRecording = true;
- recordBtn.classList.add('active-rec');
- recBadge.classList.add('recording');
- seconds = 0;
- timerInterval = setInterval(() => {
-  seconds++;
-  let m = Math.floor(seconds/60).toString().padStart(2,'0');
-  let s = (seconds%60).toString().padStart(2,'0');
-  timerTxt.innerText = `REC ${m}:${s}`;
- }, 1000);
-}
-
-function stopRecording() {
- if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
- isRecording = false;
- recordBtn.classList.remove('active-rec');
- recBadge.classList.remove('recording');
- clearInterval(timerInterval);
- timerTxt.innerText = "TESLA DASHCAM";
-}
-
-document.getElementById('sentryTrigger').addEventListener('click', () => {
- if(navigator.vibrate) navigator.vibrate(100);
- alert("Modo Centinela: Monitoreando entorno...");
-});
-
-// ESTO ERA LO QUE TE FALTABA
-window.addEventListener('load', initCamera);
+window.addEventListener('load', async()=>{ initMap(); await initCamera(); await loadAI(); });
 </script>
 </body>
 </html>
