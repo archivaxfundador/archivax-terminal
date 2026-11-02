@@ -11,7 +11,7 @@
 <script src="https://cdn.jsdelivr.net/npm/@tensorflow-models/pose-detection@2.1.3/dist/pose-detection.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}body{background:#000;color:#fff;font-family:sans-serif;height:100vh;overflow:hidden}
-#cam{position:relative;width:100%;height:100vh;background:#000}video,#overlay{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0}
+#cam{position:relative;width:100%;height:100vh;background:#000;overflow:hidden}video,#overlay{width:100%;height:100%;object-fit:cover;position:absolute;top:0;left:0;transform-origin:center center}
 #overlay{z-index:5;pointer-events:none}.hud{position:absolute;top:0;left:0;width:100%;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding:14px;z-index:10;pointer-events:none}
 .top{display:flex;justify-content:space-between}.badge{display:flex;gap:8px;background:rgba(0,0,0,0.7);padding:8px 14px;border-radius:30px;font-size:11px;font-weight:700;border:1px solid rgba(255,255,255,0.1)}.dot{width:9px;height:9px;background:#ff3b30;border-radius:50%}.rec .dot{animation:b 1s infinite}@keyframes b{50%{opacity:0.2}}
 .pill{background:rgba(20,20,20,0.85);padding:7px 12px;border-radius:8px;font-size:11px;font-weight:700}.pill.alert{background:#ff3b30}
@@ -19,6 +19,9 @@
 .radar{position:absolute;bottom:110px;left:50%;transform:translateX(-50%);width:220px;height:50px;border-radius:50% / 100% 100% 0 0;border-top:5px solid #4caf50;z-index:10}.radar.danger{border-color:#ff3b30}
 .bottom{display:flex;justify-content:space-around;padding:10px 20px 22px;background:linear-gradient(transparent,rgba(0,0,0,0.9));pointer-events:auto;width:100%}
 .btn{background:rgba(20,20,25,0.9);border:1px solid rgba(255,255,255,0.15);color:#fff;width:52px;height:52px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700}.btnR{width:64px;height:64px;border:3px solid #fff;background:#ff3b30}.btnR.on{background:#fff;border-color:#ff3b30;border-radius:12px}
+.zoomWrap{position:absolute;right:14px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;gap:10px;z-index:15;pointer-events:auto}
+.zoomBtn{width:44px;height:44px;background:rgba(0,0,0,0.7);border:1px solid rgba(255,255,255,0.2);color:#fff;border-radius:12px;font-size:18px;font-weight:700;display:flex;align-items:center;justify-content:center}
+.zoomLabel{background:rgba(0,0,0,0.7);border-radius:8px;padding:4px 0;text-align:center;font-size:10px;font-weight:700}
 #load{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);padding:16px 22px;border-radius:20px;font-size:13px;z-index:20;text-align:center}
 #audioBtn{position:absolute;top:62%;left:50%;transform:translateX(-50%);background:#fff;color:#000;padding:10px 18px;border-radius:20px;font-size:12px;font-weight:700;z-index:30;border:0}
 svg{width:20px;height:20px;fill:currentColor}
@@ -31,6 +34,11 @@ svg{width:20px;height:20px;fill:currentColor}
 <div id="load">Cargando visión...<br><small id="loadSub">10 segundos</small></div>
 <button id="audioBtn">🔊 TOCA PARA ACTIVAR AUDIO</button>
 <div id="mapWrap"><div id="map" class="dark"></div><div class="mapL" id="mapLabel">GPS buscando...</div></div>
+<div class="zoomWrap">
+<button class="zoomBtn" id="zoomIn">+</button>
+<div class="zoomLabel" id="zoomTxt">1.0x</div>
+<button class="zoomBtn" id="zoomOut">−</button>
+</div>
 <div class="hud">
 <div class="top"><div class="badge" id="recBadge"><div class="dot"></div><span id="timerTxt">VISION SYSTEM</span></div><div class="pill" id="statusPill">SISTEMA: LISTO</div></div>
 <div class="radar" id="radar"></div>
@@ -48,78 +56,107 @@ const statusPill=document.getElementById('statusPill'), radar=document.getElemen
 const mapLabel=document.getElementById('mapLabel'), timerTxt=document.getElementById('timerTxt'), recBadge=document.getElementById('recBadge');
 let model=null, poseDetector=null, detecting=false, audioOk=false, rec=false, recorder=null, chunks=[], tInt=null, sec=0, lastVoice=0, map, marker;
 
+// --- NUEVO: CAMARAS Y ZOOM ---
+let cameras=[], currentCamIndex=0, zoomLevel=1, maxZoom=4, track=null, useNativeZoom=false;
+
+async function getCameras(){
+ try{
+  const devices=await navigator.mediaDevices.enumerateDevices();
+  cameras=devices.filter(d=>d.kind==='videoinput');
+ }catch(e){ cameras=[]; }
+}
+
+async function initCam(index=null){
+ try{
+  if(window.localStream) window.localStream.getTracks().forEach(t=>t.stop());
+  if(index!==null) currentCamIndex=index;
+  if(cameras.length===0) await getCameras();
+  
+  let constraints={audio:true, video:{width:{ideal:1280}, height:{ideal:720}}};
+  if(cameras.length>0){
+    constraints.video.deviceId={exact: cameras[currentCamIndex].deviceId};
+  }else{
+    constraints.video.facingMode=currentCamIndex===0?'environment':'user';
+  }
+  
+  const s=await navigator.mediaDevices.getUserMedia(constraints);
+  window.localStream=s; video.srcObject=s; await video.play();
+  canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+  
+  track=s.getVideoTracks()[0];
+  const caps=track.getCapabilities ? track.getCapabilities() : {};
+  if(caps.zoom){ useNativeZoom=true; maxZoom=caps.zoom.max||4; }
+  else{ useNativeZoom=false; }
+  applyZoom();
+  mapLabel.textContent=cameras[currentCamIndex]?.label?.includes('front')?'FRONTAL':'TRASERA';
+  setTimeout(()=>mapLabel.textContent='GPS OK',1500);
+ }catch(e){
+  // fallback
+  const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'}},audio:true});
+  window.localStream=s; video.srcObject=s; await video.play(); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+ }
+}
+
+function applyZoom(){
+ document.getElementById('zoomTxt').textContent=zoomLevel.toFixed(1)+'x';
+ if(useNativeZoom && track){
+   try{ track.applyConstraints({advanced:[{zoom: zoomLevel}]}); }catch(e){}
+   video.style.transform=`scale(1)`; canvas.style.transform=`scale(1)`;
+ }else{
+   video.style.transform=`scale(${zoomLevel})`; canvas.style.transform=`scale(${zoomLevel})`;
+ }
+}
+function changeZoom(delta){
+ zoomLevel=Math.min(maxZoom, Math.max(1, zoomLevel+delta));
+ applyZoom();
+}
+// Pinch zoom
+let lastDist=0;
+video.addEventListener('touchstart',e=>{
+ if(e.touches.length===2){ lastDist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX, e.touches[0].pageY-e.touches[1].pageY); }
+},{passive:true});
+video.addEventListener('touchmove',e=>{
+ if(e.touches.length===2){
+  const dist=Math.hypot(e.touches[0].pageX-e.touches[1].pageX, e.touches[0].pageY-e.touches[1].pageY);
+  if(lastDist){ const diff=(dist-lastDist)*0.01; changeZoom(diff); }
+  lastDist=dist;
+ }
+},{passive:true});
+// --- FIN NUEVO ---
+
 function initMap(){
  map=L.map('map',{zoomControl:false,attributionControl:false,dragging:false}).setView([-34.6,-58.38],16);
  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(map);
  marker=L.circleMarker([-34.6,-58.38],{radius:7,fillColor:'#4285F4',color:'#fff',weight:2,fillOpacity:1}).addTo(map);
- if(navigator.geolocation) navigator.geolocation.watchPosition(p=>{ const ll=[p.coords.latitude,p.coords.longitude]; map.setView(ll,17); marker.setLatLng(ll); mapLabel.textContent='GPS OK'; });
-}
-async function initCam(){
- const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:1280}},audio:true});
- window.localStream=s; video.srcObject=s; await video.play(); canvas.width=video.videoWidth; canvas.height=video.videoHeight;
+ if(navigator.geolocation) navigator.geolocation.watchPosition(p=>{ const ll=[p.coords.latitude,p.coords.longitude]; map.setView(ll,17); marker.setLatLng(ll); });
 }
 async function loadAI(){
- await tf.ready();
- loadSub.textContent='Detector personas...'; model=await cocoSsd.load({base:'lite_mobilenet_v2'});
+ await tf.ready(); loadSub.textContent='Detector personas...'; model=await cocoSsd.load({base:'lite_mobilenet_v2'});
  loadSub.textContent='Detector muñeco...'; poseDetector=await poseDetection.createDetector(poseDetection.SupportedModels.MoveNet,{modelType:poseDetection.movenet.modelType.SINGLEPOSE_LIGHTNING});
  load.style.display='none'; loop();
 }
-function speak(t){
- if(!audioOk) return; const now=Date.now(); if(now-lastVoice<3000) return; lastVoice=now;
- speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='es-AR'; speechSynthesis.speak(u);
-}
-function takePhoto(){
- const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight; c.getContext('2d').drawImage(video,0,0);
- const a=document.createElement('a'); a.href=c.toDataURL('image/jpeg',0.9); a.download=`FOTO_${Date.now()}.jpg`; a.click();
- statusPill.textContent='FOTO GUARDADA'; setTimeout(()=>statusPill.textContent='SISTEMA: LISTO',1500);
-}
-
-// DIBUJO MUÑECO REAL - AHORA INDEPENDIENTE
+function speak(t){ if(!audioOk) return; const now=Date.now(); if(now-lastVoice<3000) return; lastVoice=now; speechSynthesis.cancel(); const u=new SpeechSynthesisUtterance(t); u.lang='es-AR'; speechSynthesis.speak(u); }
+function takePhoto(){ const c=document.createElement('canvas'); c.width=video.videoWidth; c.height=video.videoHeight; c.getContext('2d').drawImage(video,0,0); const a=document.createElement('a'); a.href=c.toDataURL('image/jpeg',0.9); a.download=`FOTO_${Date.now()}.jpg`; a.click(); statusPill.textContent='FOTO GUARDADA'; setTimeout(()=>statusPill.textContent='SISTEMA: LISTO',1500); }
 function drawMannequin(pose){
- const g=n=>pose.keypoints.find(k=>k.name===n);
- const ls=g('left_shoulder'), rs=g('right_shoulder'), lh=g('left_hip'), rh=g('right_hip');
+ const g=n=>pose.keypoints.find(k=>k.name===n); const ls=g('left_shoulder'), rs=g('right_shoulder'), lh=g('left_hip'), rh=g('right_hip');
  const nose=g('nose'), le=g('left_elbow'), re=g('right_elbow'), lw=g('left_wrist'), rw=g('right_wrist');
- const lk=g('left_knee'), rk=g('right_knee'), la=g('left_ankle'), ra=g('right_ankle');
- if(!ls||!rs) return;
- ctx.save();
- ctx.shadowColor='rgba(255,255,255,0.8)'; ctx.shadowBlur=12;
- // cabeza
+ const lk=g('left_knee'), rk=g('right_knee'), la=g('left_ankle'), ra=g('right_ankle'); if(!ls||!rs) return;
+ ctx.save(); ctx.shadowColor='rgba(255,255,255,0.8)'; ctx.shadowBlur=12;
  if(nose&&nose.score>0.2){ const r=Math.max(12, Math.abs(ls.x-rs.x)*0.35); ctx.fillStyle='#fff'; ctx.beginPath(); ctx.arc(nose.x, nose.y-10, r, 0, Math.PI*2); ctx.fill(); }
- // torso - si tenemos caderas
- if(lh&&rh&&lh.score>0.2&&rh.score>0.2){
-   ctx.fillStyle='#fff'; ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.beginPath();
-   ctx.moveTo(ls.x,ls.y); ctx.lineTo(rs.x,rs.y); ctx.lineTo(rh.x,rh.y); ctx.lineTo(lh.x,lh.y); ctx.closePath(); ctx.fill();
- }
+ if(lh&&rh&&lh.score>0.2&&rh.score>0.2){ ctx.fillStyle='#fff'; ctx.strokeStyle='#fff'; ctx.lineWidth=4; ctx.beginPath(); ctx.moveTo(ls.x,ls.y); ctx.lineTo(rs.x,rs.y); ctx.lineTo(rh.x,rh.y); ctx.lineTo(lh.x,lh.y); ctx.closePath(); ctx.fill(); }
  function limb(a,b){ if(!a||!b||a.score<0.15||b.score<0.15) return; ctx.beginPath(); ctx.moveTo(a.x,a.y); ctx.lineTo(b.x,b.y); ctx.lineWidth=14; ctx.lineCap='round'; ctx.strokeStyle='#fff'; ctx.stroke(); }
- limb(ls,le); limb(le,lw); limb(rs,re); limb(re,rw);
- limb(lh,lk); limb(lk,la); limb(rh,rk); limb(rk,ra);
- // si no hay caderas, igual dibuja hombros a rodillas
- if(!lh||lh.score<0.2){ if(ls&&lk) limb(ls,lk); if(rs&&rk) limb(rs,rk); }
- ctx.restore();
+ limb(ls,le); limb(le,lw); limb(rs,re); limb(re,rw); limb(lh,lk); limb(lk,la); limb(rh,rk); limb(rk,ra); if(!lh||lh.score<0.2){ if(ls&&lk) limb(ls,lk); if(rs&&rk) limb(rs,rk); } ctx.restore();
 }
-
 async function loop(){
  if(!model||!poseDetector||video.paused||video.readyState<2){ requestAnimationFrame(loop); return; }
  if(detecting){ requestAnimationFrame(loop); return; }
  detecting=true;
  try{
   ctx.clearRect(0,0,canvas.width,canvas.height);
-  // 1. DETECTA PERSONA (caja)
-  const preds=await model.detect(video,6,0.40);
-  let found=false;
-  preds.forEach(p=>{
-   if(p.class==='person'){
-    const [x,y,w,h]=p.bbox; ctx.strokeStyle='#ff3b30'; ctx.lineWidth=2; ctx.strokeRect(x,y,w,h);
-    ctx.fillStyle='#ff3b30'; ctx.fillRect(x,y-18,80,18); ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.fillText(`PERSONA ${Math.round(p.score*100)}%`,x+4,y-5);
-    found=true;
-   }
-  });
-  // 2. DETECTA MUÑECO (SIEMPRE, aunque no haya caja)
+  const preds=await model.detect(video,6,0.40); let found=false;
+  preds.forEach(p=>{ if(p.class==='person'){ const [x,y,w,h]=p.bbox; ctx.strokeStyle='#ff3b30'; ctx.lineWidth=2; ctx.strokeRect(x,y,w,h); ctx.fillStyle='#ff3b30'; ctx.fillRect(x,y-18,80,18); ctx.fillStyle='#fff'; ctx.font='bold 11px sans-serif'; ctx.fillText(`PERSONA ${Math.round(p.score*100)}%`,x+4,y-5); found=true; } });
   const poses=await poseDetector.estimatePoses(video,{maxPoses:1,flipHorizontal:false});
-  if(poses&&poses[0]&&poses[0].keypoints){
-   const hasBody = poses[0].keypoints.filter(k=>k.score>0.2).length >= 4;
-   if(hasBody){ drawMannequin(poses[0]); found=true; }
-  }
+  if(poses&&poses[0]&&poses[0].keypoints){ const hasBody=poses[0].keypoints.filter(k=>k.score>0.2).length>=4; if(hasBody){ drawMannequin(poses[0]); found=true; } }
   if(found){ statusPill.textContent='PERSONA DETECTADA'; statusPill.classList.add('alert'); radar.classList.add('danger'); }
   else{ statusPill.textContent='SISTEMA: LISTO'; statusPill.classList.remove('alert'); radar.classList.remove('danger'); }
  }catch(e){ console.log(e); }
@@ -130,11 +167,14 @@ function startRec(){ if(rec) return; chunks=[]; const mime=getMime(); recorder=n
 function stopRec(){ if(recorder) recorder.stop(); rec=false; document.getElementById('btnRec').classList.remove('on'); recBadge.classList.remove('rec'); clearInterval(tInt); timerTxt.textContent='VISION SYSTEM'; }
 
 document.getElementById('audioBtn').addEventListener('click',()=>{ audioOk=true; document.getElementById('audioBtn').style.display='none'; speak('Sistema listo'); });
-document.getElementById('btnCam').addEventListener('click',initCam);
+document.getElementById('btnCam').addEventListener('click',async()=>{ currentCamIndex=(currentCamIndex+1)%(cameras.length||2); await initCam(currentCamIndex); });
 document.getElementById('btnPhoto').addEventListener('click',takePhoto);
 document.getElementById('btnRec').addEventListener('click',()=>rec?stopRec():startRec());
 document.getElementById('btnVoice').addEventListener('click',()=>{ if(!audioOk){ audioOk=true; document.getElementById('audioBtn').style.display='none'; } speak('Sistema listo, vigilando'); });
-window.addEventListener('load',async()=>{ initMap(); await initCam(); await loadAI(); });
+document.getElementById('zoomIn').addEventListener('click',()=>changeZoom(0.5));
+document.getElementById('zoomOut').addEventListener('click',()=>changeZoom(-0.5));
+
+window.addEventListener('load',async()=>{ await getCameras(); initMap(); await initCam(0); await loadAI(); });
 </script>
 </body>
 </html>
